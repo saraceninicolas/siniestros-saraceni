@@ -14,5 +14,5 @@
 // guardar todo en Supabase.
 // ─────────────────────────────────────────────────────────────────────────────
 
-window.SUPABASE_URL = "";
-window.SUPABASE_ANON_KEY = "";
+window.SUPABASE_URL = "https://yscvpdogjgfvllizbyxp.supabase.co";
+window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzY3ZwZG9namdmdmxsaXpieXhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNDA2NTEsImV4cCI6MjA5NTkxNjY1MX0.mv5q-LJ73nm9TnfSq9pWC-sM5mBIwsJ6i7QM0d0JNLk";
