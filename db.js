@@ -142,11 +142,26 @@
     if (error) throw error;
   }
 
+  // Suscripción en tiempo real: llama onChange ante cualquier INSERT/UPDATE/DELETE.
+  // Devuelve una función para cancelar la suscripción.
+  function dbSubscribe(onChange) {
+    const c = client();
+    if (!c) return null;
+    const ch = c
+      .channel("siniestros-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "siniestros" }, (payload) => {
+        try { onChange(payload); } catch (e) { console.error(e); }
+      })
+      .subscribe();
+    return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
+  }
+
   window.DB = {
     configured: dbConfigured,
     list: dbList,
     create: dbCreate,
     update: dbUpdate,
     remove: dbRemove,
+    subscribe: dbSubscribe,
   };
 })();

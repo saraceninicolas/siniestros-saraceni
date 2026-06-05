@@ -81,6 +81,24 @@ function App() {
     return () => { alive = false; };
   }, [flash]);
 
+  // ---- tiempo real: refresca cuando otro puesto carga/edita/elimina ----
+  React.useEffect(() => {
+    if (!usingDb || !window.DB || !window.DB.subscribe) return;
+    let timer = null;
+    let alive = true;
+    const refresh = () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        try {
+          const items = await window.DB.list();
+          if (alive && items.length) setSiniestros(items);
+        } catch (e) { console.error("Realtime refresh:", e); }
+      }, 400);
+    };
+    const unsub = window.DB.subscribe(refresh);
+    return () => { alive = false; clearTimeout(timer); if (unsub) unsub(); };
+  }, [usingDb]);
+
   const activos = siniestros.filter((s) => !s.eliminado);
   const abiertos = activos.filter((s) => s.estado === "Abierto");
   const porVencer = abiertos.filter((s) => ["vencido", "hoy", "proximo"].includes(urgenciaDe(s))).length;

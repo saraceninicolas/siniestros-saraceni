@@ -129,3 +129,17 @@ values
    null, 'Reseña pedida y recibida — cerrado', 'Coca, Julieta', 'julieta.coca@lamercantil.com.ar',
    'Reseña pedida y recibida', null, false, 'PC_OFICINA_1', now() - interval '8 days')
 on conflict (codigo) do nothing;
+
+-- ---- Tiempo real (Realtime) -----------------------------------------------
+-- Permite que los cambios de un puesto aparezcan en el otro sin recargar.
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'siniestros'
+  ) then
+    alter publication supabase_realtime add table public.siniestros;
+  end if;
+end $$;
