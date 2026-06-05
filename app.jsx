@@ -21,6 +21,8 @@ function App() {
   const [siniestros, setSiniestros] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [usingDb, setUsingDb] = React.useState(false);
+  const [session, setSession] = React.useState(null);
+  const [authChecked, setAuthChecked] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const [estadoFilter, setEstadoFilter] = React.useState("Todos");
   const [ramoFilter, setRamoFilter] = React.useState("Todos");
@@ -47,21 +49,35 @@ function App() {
     r.dataset.sidebar = t.sidebar;
   }, [t.brand, t.fontScale, t.density, t.sidebar]);
 
-  // ---- carga inicial: Supabase si está configurado, si no datos de ejemplo ----
+  // ---- sesión: ¿hay alguien logueado? ----
   React.useEffect(() => {
+    if (!window.DB || !window.DB.configured()) { setAuthChecked(true); return; }
     let alive = true;
     (async () => {
-      if (window.DB && window.DB.configured()) {
+      try { const s = await window.DB.auth.session(); if (alive) setSession(s); }
+      catch (e) { console.error("Auth:", e); }
+      if (alive) setAuthChecked(true);
+    })();
+    const unsub = window.DB.auth.onChange((s) => { if (alive) setSession(s); });
+    return () => { alive = false; if (unsub) unsub(); };
+  }, []);
+
+  // ---- carga de datos: solo con sesión (o modo demo sin Supabase) ----
+  React.useEffect(() => {
+    const configured = window.DB && window.DB.configured();
+    if (configured && !session) {
+      // sin login: limpiamos y esperamos
+      setSiniestros([]); setUsingDb(false); setLoading(false);
+      return;
+    }
+    let alive = true;
+    (async () => {
+      setLoading(true);
+      if (configured) {
         try {
           const items = await window.DB.list();
           if (!alive) return;
-          if (items.length) {
-            setSiniestros(items);
-          } else {
-            // base vacía: mostramos el seed solo en memoria (no se guarda)
-            setSiniestros(buildSeed());
-            flash("Supabase conectado · base vacía — corré el SQL de carga inicial");
-          }
+          setSiniestros(items.length ? items : buildSeed());
           setUsingDb(true);
         } catch (e) {
           console.error("Supabase:", e);
@@ -71,7 +87,6 @@ function App() {
           flash("No se pudo conectar a Supabase — modo demo");
         }
       } else {
-        if (!alive) return;
         setSiniestros(buildSeed());
         setUsingDb(false);
         flash("Modo demo · cargá tus claves de Supabase para guardar cambios");
@@ -79,7 +94,7 @@ function App() {
       if (alive) setLoading(false);
     })();
     return () => { alive = false; };
-  }, [flash]);
+  }, [session, flash]);
 
   // ---- tiempo real: refresca cuando otro puesto carga/edita/elimina ----
   React.useEffect(() => {
@@ -201,6 +216,24 @@ function App() {
     flash(`Puesto activo: ${next}`);
   };
 
+  const configured = !!(window.DB && window.DB.configured());
+  const logout = async () => {
+    setModal(null); setDetailId(null); setSelectedId(null);
+    try { await window.DB.auth.signOut(); } catch (e) { console.error(e); }
+    setSession(null);
+  };
+
+  // verificando sesión
+  if (configured && !authChecked) {
+    return (
+      <div className="boot"><div className="boot-inner"><div className="boot-spin" /></div></div>
+    );
+  }
+  // sin login → pantalla de acceso
+  if (configured && !session) {
+    return <LoginScreen onSignIn={(email, password) => window.DB.auth.signIn(email, password)} />;
+  }
+  // cargando datos
   if (loading) {
     return (
       <div className="boot"><div className="boot-inner"><div className="boot-spin" />Cargando portal…</div></div>
@@ -215,7 +248,7 @@ function App() {
       <main className="main">
         <Topbar active={active} query={query} onQuery={setQuery} station={station}
           onSwitchStation={switchStation} onNew={() => setModal({ type: "new" })}
-          onOpenSync={() => setModal({ type: "sync" })} />
+          onOpenSync={() => setModal({ type: "sync" })} onLogout={configured ? logout : undefined} />
 
         {detailItem ? (
           <div className="content">

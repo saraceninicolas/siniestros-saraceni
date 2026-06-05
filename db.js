@@ -156,6 +156,31 @@
     return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
   }
 
+  // ---- autenticación ----
+  async function authSession() {
+    const c = client();
+    if (!c) return null;
+    const { data } = await c.auth.getSession();
+    return data ? data.session : null;
+  }
+  async function authSignIn(email, password) {
+    const c = client();
+    if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    return data.session;
+  }
+  async function authSignOut() {
+    const c = client();
+    if (c) { try { await c.auth.signOut(); } catch (e) { /* noop */ } }
+  }
+  function authOnChange(cb) {
+    const c = client();
+    if (!c) return null;
+    const { data } = c.auth.onAuthStateChange((_event, session) => cb(session));
+    return () => { try { data.subscription.unsubscribe(); } catch (e) { /* noop */ } };
+  }
+
   window.DB = {
     configured: dbConfigured,
     list: dbList,
@@ -163,5 +188,11 @@
     update: dbUpdate,
     remove: dbRemove,
     subscribe: dbSubscribe,
+    auth: {
+      session: authSession,
+      signIn: authSignIn,
+      signOut: authSignOut,
+      onChange: authOnChange,
+    },
   };
 })();

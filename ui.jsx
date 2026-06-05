@@ -34,6 +34,7 @@ const Icons = {
   arrowR: ["M5 12h14", "M13 6l6 6-6 6"],
   download:["M12 3v12", "M8 11l4 4 4-4", "M5 21h14"],
   info:   ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M12 11v5", "M12 8h.01"],
+  logout: ["M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", "M16 17l5-5-5-5", "M21 12H9"],
 };
 const Ico = ({ name, ...rest }) => <Icon d={Icons[name]} {...rest} />;
 
@@ -111,7 +112,7 @@ const TITLES = {
   siniestros: ["Siniestros", "Listado completo"],
   agenda: ["Agenda de gestiones", "Gestiones pendientes por fecha límite"],
 };
-function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpenSync }) {
+function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpenSync, onLogout }) {
   const [title, sub] = TITLES[active] || TITLES.dashboard;
   return (
     <header className="tb">
@@ -133,6 +134,7 @@ function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpe
           <span className="sb-station-led" /><Ico name="monitor" size={14} />{station}
         </button>
         <button className="btn-primary" onClick={onNew}><Ico name="plus" size={17} />Registrar siniestro</button>
+        {onLogout && <button className="btn-ghost tb-icon" title="Cerrar sesión" onClick={onLogout}><Ico name="logout" size={18} /></button>}
       </div>
     </header>
   );

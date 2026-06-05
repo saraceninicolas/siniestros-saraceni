@@ -94,19 +94,23 @@ El repo ya está inicializado localmente con un commit. Para subirlo:
 
 ---
 
-## 🔒 Seguridad (importante)
+## 🔒 Seguridad — Login activado
 
-El portal está pensado **sin login** (puesto compartido en la oficina) y usa la
-clave pública `anon`. Eso significa que **cualquiera que tenga la URL podría ver
-o editar los datos**. Para uso real, recomiendo una de estas opciones:
+El portal **requiere iniciar sesión** (Supabase Auth, email + contraseña) y la
+base de datos está cerrada con RLS a **usuarios autenticados**: sin login, la
+clave pública `anon` no puede leer ni escribir nada.
 
-- **Proteger el sitio con contraseña** en Vercel
-  (Project → Settings → **Deployment Protection / Password Protection**). Es lo
-  más simple. *(Requiere plan Pro de Vercel.)*
-- **Agregar login** con Supabase Auth y restringir las políticas RLS a usuarios
-  autenticados. Es más trabajo pero es la opción más robusta. Avisame y lo armamos.
+- **Pantalla de acceso** (`auth.jsx`) al entrar; la sesión queda recordada en el
+  navegador hasta que tocás **Cerrar sesión** (ícono arriba a la derecha).
+- Las credenciales **no** están en este repo. Pedíselas al administrador.
 
-Mientras tanto, mantené la URL privada (no la publiques).
+### Gestionar usuarios
+- **Ver / borrar usuarios:** Supabase → **Authentication → Users**.
+- **Agregar un usuario:** Authentication → Users → **Add user** → *Create new user*
+  (marcá *Auto Confirm User* para que pueda entrar sin verificar email).
+- **Cambiar una contraseña:** en ese mismo usuario → *Reset password* / *Update*.
+
+> Recomendado igualmente mantener la URL en círculo reducido.
 
 ---
 
