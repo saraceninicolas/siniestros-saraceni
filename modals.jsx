@@ -32,16 +32,52 @@ function FormSection({ label }) { return <div className="form-section">{label}</
 
 // ---- Create / Edit ----
 function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
+  const todayISO = () => new Date().toISOString().slice(0, 10);
+  const byFecha = (a, b) => (a.fecha || "").localeCompare(b.fecha || "");
   const blank = {
-    estado: "Abierto", cliente: "", cia: CIAS[0], ramo: "AUTO", hecho: HECHOS[0], cobertura: COBERTURAS[0],
+    estado: "Abierto", cliente: "", cia: CIAS[0], ramo: "AUTO", hecho: HECHOS[0], cobertura: COBERTURAS_AUTO[0],
     poliza: "", nroSiniestro: "", fechaOcurrido: "", fechaDenuncia: "", fechaLimite: "", fechaInspeccion: "",
-    gestionAR: "", gestionReal: "", gestor: "", gestorEmail: "", obs: "", ticket: "", enCalendario: false,
+    gestionAR: "", gestionReal: "", gestiones: [], gestor: "", gestorEmail: "", obs: "", ticket: "",
+    franquiciaPct: "", franquiciaMonto: "", enCalendario: false,
   };
-  const [f, setF] = React.useState(initial ? { ...initial } : blank);
+  const [f, setF] = React.useState(() => {
+    const base = initial ? { ...blank, ...initial } : blank;
+    return { ...base, gestiones: [...(base.gestiones || [])].sort(byFecha) };
+  });
   const [touched, setTouched] = React.useState(false);
+  const [newGest, setNewGest] = React.useState({ fecha: todayISO(), texto: "" });
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
+  // Al cambiar el ramo ajustamos la cobertura (AUTO usa lista fija; el resto, texto libre)
+  const setRamo = (ramo) => setF((p) => ({
+    ...p, ramo,
+    cobertura: esRamoAuto(ramo) ? (COBERTURAS_AUTO.includes(p.cobertura) ? p.cobertura : COBERTURAS_AUTO[0]) : "",
+    franquiciaPct: esRamoAuto(ramo) ? p.franquiciaPct : "",
+    franquiciaMonto: esRamoAuto(ramo) ? p.franquiciaMonto : "",
+  }));
+  // La franquicia solo aplica a TODO RIESGO
+  const setCobertura = (cobertura) => setF((p) => ({
+    ...p, cobertura,
+    franquiciaPct: aplicaFranquicia(cobertura) ? p.franquiciaPct : "",
+    franquiciaMonto: aplicaFranquicia(cobertura) ? p.franquiciaMonto : "",
+  }));
+  const addGestion = () => {
+    const texto = (newGest.texto || "").trim();
+    if (!texto) return;
+    const entry = { fecha: newGest.fecha || todayISO(), texto, pc: station };
+    setF((p) => ({ ...p, gestiones: [...(p.gestiones || []), entry].sort(byFecha) }));
+    setNewGest({ fecha: todayISO(), texto: "" });
+  };
+  const removeGestion = (idx) => setF((p) => {
+    const g = [...(p.gestiones || [])]; g.splice(idx, 1); return { ...p, gestiones: g };
+  });
   const valid = f.cliente.trim() && f.nroSiniestro.trim();
-  const submit = () => { setTouched(true); if (!valid) return; onSubmit({ ...f }); };
+  // La última gestión del historial queda como "gestión realizada" (compatibilidad)
+  const submit = () => {
+    setTouched(true);
+    if (!valid) return;
+    const last = (f.gestiones || []).length ? f.gestiones[f.gestiones.length - 1].texto : f.gestionReal;
+    onSubmit({ ...f, gestionReal: last || "" });
+  };
 
   return (
     <ModalShell wide
@@ -71,7 +107,7 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
           </select>
         </Field>
         <Field label="Ramo">
-          <select className="input" value={f.ramo} onChange={(e) => set("ramo", e.target.value)}>
+          <select className="input" value={f.ramo} onChange={(e) => setRamo(e.target.value)}>
             {RAMOS.map((r) => <option key={r} value={r}>{RAMO_LABEL[r]}</option>)}
           </select>
         </Field>
@@ -81,9 +117,28 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
           </select>
         </Field>
         <Field label="Cobertura">
-          <input className="input" list="cob-list" value={f.cobertura} onChange={(e) => set("cobertura", e.target.value)} />
+          {esRamoAuto(f.ramo) ? (
+            <select className="input" value={f.cobertura} onChange={(e) => setCobertura(e.target.value)}>
+              {COBERTURAS_AUTO.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          ) : (
+            <input className="input" list="cob-list" value={f.cobertura}
+              onChange={(e) => set("cobertura", e.target.value)} placeholder="Cobertura" />
+          )}
           <datalist id="cob-list">{COBERTURAS.map((c) => <option key={c} value={c} />)}</datalist>
         </Field>
+        {esRamoAuto(f.ramo) && aplicaFranquicia(f.cobertura) && (
+          <>
+            <Field label="Franquicia (% de la suma asegurada)">
+              <input className="input" inputMode="decimal" value={f.franquiciaPct}
+                onChange={(e) => set("franquiciaPct", e.target.value)} placeholder="Ej: 10" />
+            </Field>
+            <Field label="Franquicia (monto en $)">
+              <input className="input mono" inputMode="decimal" value={f.franquiciaMonto}
+                onChange={(e) => set("franquiciaMonto", e.target.value)} placeholder="Ej: 500000" />
+            </Field>
+          </>
+        )}
         <Field label="N° de póliza">
           <input className="input mono" value={f.poliza} onChange={(e) => set("poliza", e.target.value)} placeholder="000000000" />
         </Field>
@@ -106,9 +161,38 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
         <Field label="Gestión a realizar (próximo paso)" full>
           <input className="input" value={f.gestionAR} onChange={(e) => set("gestionAR", e.target.value)} placeholder="Qué hay que hacer y cuándo" />
         </Field>
-        <Field label="Gestión realizada (última)" full>
-          <input className="input" value={f.gestionReal} onChange={(e) => set("gestionReal", e.target.value)} placeholder="Último avance registrado" />
-        </Field>
+        <div className="field field-full">
+          <div className="hist-head">
+            <span className="field-label">Historial de gestiones realizadas</span>
+            <span className="hist-count">{(f.gestiones || []).length}</span>
+          </div>
+          {(f.gestiones || []).length > 0 ? (
+            <ul className="hist-list">
+              {f.gestiones.map((g, i) => (
+                <li className="hist-item" key={i}>
+                  <span className="hist-date mono">{fmtDateShort(g.fecha)}</span>
+                  <span className="hist-text">{g.texto}</span>
+                  <button type="button" className="hist-del" title="Quitar" onClick={() => removeGestion(i)}>
+                    <Ico name="close" size={13} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="hist-empty">Sin gestiones registradas todavía.</div>
+          )}
+          <div className="hist-add">
+            <input className="input hist-add-date" type="date" value={newGest.fecha}
+              onChange={(e) => setNewGest((p) => ({ ...p, fecha: e.target.value }))} />
+            <input className="input hist-add-text" value={newGest.texto}
+              onChange={(e) => setNewGest((p) => ({ ...p, texto: e.target.value }))}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addGestion(); } }}
+              placeholder="Describí la gestión realizada…" />
+            <button type="button" className="btn-ghost hist-add-btn" onClick={addGestion} disabled={!newGest.texto.trim()}>
+              <Ico name="plus" size={15} />Agregar gestión
+            </button>
+          </div>
+        </div>
         <Field label="Gestor (compañía)"><input className="input" value={f.gestor} onChange={(e) => set("gestor", e.target.value)} placeholder="Apellido, Nombre" /></Field>
         <Field label="Contacto del gestor"><input className="input" value={f.gestorEmail} onChange={(e) => set("gestorEmail", e.target.value)} placeholder="email@compañia.com" /></Field>
         <Field label="Estado">

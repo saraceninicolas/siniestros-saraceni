@@ -286,6 +286,36 @@ html[data-sidebar="claro"] .sb-foot-mark{ color:var(--ink); }
 .check-row{ display:flex; align-items:center; gap:9px; font-size:13px; color:var(--ink-2); cursor:pointer; }
 .check-row input{ width:16px; height:16px; accent-color:var(--brand); }
 
+/* historial de gestiones (formulario) */
+.hist-head{ display:flex; align-items:center; gap:9px; margin-bottom:8px; }
+.hist-count{ background:var(--surface-2); border:1px solid var(--line); color:var(--ink-2); font-size:11px;
+  font-weight:700; border-radius:99px; padding:1px 8px; min-width:20px; text-align:center; }
+.hist-list{ list-style:none; margin:0 0 10px; padding:0; display:flex; flex-direction:column; gap:6px; }
+.hist-item{ display:flex; align-items:center; gap:10px; background:var(--surface-2); border:1px solid var(--line);
+  border-radius:9px; padding:7px 10px; }
+.hist-date{ font-size:12px; color:var(--ink-2); font-weight:600; flex-shrink:0; min-width:42px; }
+.hist-text{ flex:1; font-size:12.5px; color:var(--ink); line-height:1.35; }
+.hist-del{ border:none; background:none; color:var(--muted); display:grid; place-items:center; padding:3px;
+  border-radius:6px; flex-shrink:0; }
+.hist-del:hover{ color:var(--brand); background:#fdf2f2; }
+.hist-empty{ font-size:12.5px; color:var(--muted); padding:6px 2px 10px; }
+.hist-add{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.hist-add-date{ width:150px; flex:0 0 auto; }
+.hist-add-text{ flex:1; min-width:160px; }
+.hist-add-btn{ flex:0 0 auto; }
+
+/* historial de gestiones (línea de tiempo · detalle) */
+.hist-tl{ list-style:none; margin:2px 0 0; padding:0; display:flex; flex-direction:column; }
+.hist-tl-item{ display:flex; gap:13px; padding:0 0 14px; position:relative; }
+.hist-tl-item:last-child{ padding-bottom:0; }
+.hist-tl-dot{ width:11px; height:11px; border-radius:99px; background:var(--brand); flex-shrink:0; margin-top:3px;
+  box-shadow:0 0 0 3px #fdecec; position:relative; z-index:1; }
+.hist-tl-item:not(:last-child)::before{ content:""; position:absolute; left:5px; top:14px; bottom:0;
+  width:2px; background:var(--line); }
+.hist-tl-body{ flex:1; }
+.hist-tl-date{ font-size:12px; font-weight:700; color:var(--ink-2); }
+.hist-tl-text{ margin:3px 0 0; font-size:13.5px; color:var(--ink); line-height:1.5; }
+
 /* detail */
 .dt-head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:2px 0 15px; border-bottom:1px solid var(--line-2); }
 .dt-cal{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; color:var(--ink-2);

@@ -13,14 +13,27 @@ const CIA_FULL = {
 const CIAS = Object.keys(CIA_FULL);
 const ciaLabel = (k) => CIA_FULL[k] || k;
 
-const RAMOS = ["AUTO", "HOGAR", "ICO", "COMERCIO", "VIDA"];
-const RAMO_LABEL = { AUTO: "Auto", HOGAR: "Hogar", ICO: "Int. Comercio", COMERCIO: "Comercio", VIDA: "Vida" };
-const RAMO_ICON = { AUTO: "car", HOGAR: "home", ICO: "store", COMERCIO: "store", VIDA: "shield" };
+// COMERCIO se quita del selector; INT_CONSORCIO se agrega.
+// (Se mantiene COMERCIO en los labels para que registros viejos se muestren bien.)
+const RAMOS = ["AUTO", "HOGAR", "ICO", "INT_CONSORCIO", "VIDA"];
+const RAMO_LABEL = { AUTO: "Auto", HOGAR: "Hogar", ICO: "Int. Comercio", INT_CONSORCIO: "Int. Consorcio", COMERCIO: "Comercio", VIDA: "Vida" };
+const RAMO_ICON = { AUTO: "car", HOGAR: "home", ICO: "store", INT_CONSORCIO: "store", COMERCIO: "store", VIDA: "shield" };
 
 const HECHOS = ["DAÑO PARCIAL", "ROBO TOTAL", "CRISTAL", "INCENDIO", "GRANIZO", "RC"];
 const HECHO_LABEL = { "DAÑO PARCIAL": "Daño parcial", "ROBO TOTAL": "Robo total", "CRISTAL": "Cristal", "INCENDIO": "Incendio", "GRANIZO": "Granizo", "RC": "Resp. civil" };
 
+// Coberturas: solo el ramo AUTO usa este desplegable fijo.
+// Para el resto de los ramos la cobertura es texto libre.
+const COBERTURAS_AUTO = ["TERCEROS COMPLETOS", "TODO RIESGO", "B"];
+// Sugerencias (datalist) para ramos no-auto:
 const COBERTURAS = ["M PLUS", "TR 2%", "TR 4%", "TR PORTATIL", "TC", "CRISTAL"];
+
+// ¿El ramo usa el desplegable fijo de coberturas de auto?
+function esRamoAuto(ramo) { return ramo === "AUTO"; }
+// Coberturas disponibles según ramo (array si es auto, null si es texto libre).
+function coberturasDe(ramo) { return esRamoAuto(ramo) ? COBERTURAS_AUTO : null; }
+// La franquicia solo aplica a la cobertura TODO RIESGO (auto).
+function aplicaFranquicia(cobertura) { return cobertura === "TODO RIESGO"; }
 
 const STATIONS = ["PC_OFICINA_1", "PC_OFICINA_2"];
 
@@ -108,12 +121,16 @@ function buildSeed() {
   return raw.map((r) => {
     const [estado, cliente, cia, ramo, hecho, cobertura, poliza, nroSiniestro, ocurrido, denuncia, limite, inspeccion, gestionAR, gestionReal, gestor, gestorEmail, obs, ticket, calendar, modAgo] = r;
     const n = nextNum();
+    const gestiones = gestionReal && gestionReal.trim()
+      ? [{ fecha: (denuncia || ocurrido || ""), texto: gestionReal, pc: STATIONS[n % 2] }]
+      : [];
     return {
       id: sinId(n), n, estado, cliente, cia, ramo, hecho, cobertura,
       poliza, nroSiniestro,
       fechaOcurrido: ocurrido, fechaDenuncia: denuncia, fechaLimite: limite,
       fechaInspeccion: inspeccion,
-      gestionAR, gestionReal, gestor, gestorEmail, obs, ticket,
+      gestionAR, gestionReal, gestiones, gestor, gestorEmail, obs, ticket,
+      franquiciaPct: "", franquiciaMonto: "",
       enCalendario: !!calendar,
       ultimaModPor: STATIONS[n % 2], ultimaModFecha: recentIso(modAgo, 9 + (n % 7), (n * 11) % 60),
       eliminado: false,
@@ -122,7 +139,8 @@ function buildSeed() {
 }
 
 Object.assign(window, {
-  CIA_FULL, CIAS, ciaLabel, RAMOS, RAMO_LABEL, RAMO_ICON, HECHOS, HECHO_LABEL, COBERTURAS,
+  CIA_FULL, CIAS, ciaLabel, RAMOS, RAMO_LABEL, RAMO_ICON, HECHOS, HECHO_LABEL,
+  COBERTURAS, COBERTURAS_AUTO, esRamoAuto, coberturasDe, aplicaFranquicia,
   STATIONS, ESTADOS, ESTADO_LIST, URGENCIA,
   fmtDate, fmtDateShort, fmtTimeAgo, daysUntil, urgenciaDe, venceTexto, nowIso,
   nextNum, sinId, buildSeed,
