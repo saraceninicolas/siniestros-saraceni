@@ -108,6 +108,7 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
         </Field>
         <Field label="Ramo">
           <select className="input" value={f.ramo} onChange={(e) => setRamo(e.target.value)}>
+            {f.ramo && !RAMOS.includes(f.ramo) && <option value={f.ramo}>{RAMO_LABEL[f.ramo] || f.ramo}</option>}
             {RAMOS.map((r) => <option key={r} value={r}>{RAMO_LABEL[r]}</option>)}
           </select>
         </Field>
@@ -119,6 +120,7 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
         <Field label="Cobertura">
           {esRamoAuto(f.ramo) ? (
             <select className="input" value={f.cobertura} onChange={(e) => setCobertura(e.target.value)}>
+              {f.cobertura && !COBERTURAS_AUTO.includes(f.cobertura) && <option value={f.cobertura}>{f.cobertura}</option>}
               {COBERTURAS_AUTO.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           ) : (
