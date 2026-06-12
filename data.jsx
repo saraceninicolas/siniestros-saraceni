@@ -93,7 +93,7 @@ function fmtTimeAgo(iso) {
 
 let _seq = 0;
 const nextNum = () => { _seq += 1; return _seq; };
-const sinId = (n) => "STR-" + pad(n);
+const sinId = (n) => "STR-" + pad(n) + "-" + Date.now().toString(36).slice(-4);
 
 function nowIso() { return new Date().toISOString(); }
 function recentIso(daysAgo, hh = 10, mm = 0) {
