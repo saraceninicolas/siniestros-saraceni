@@ -186,8 +186,18 @@
     const { data } = c.auth.onAuthStateChange((_event, session) => cb(session));
     return () => { try { data.subscription.unsubscribe(); } catch (e) { /* noop */ } };
   }
-
-  window.DB = {
+async function dbMaxN() {
+  const c = client();
+  if (!c) return 0;
+  const { data, error } = await c
+    .from("siniestros")
+    .select("n")
+    .order("n", { ascending: false })
+    .limit(1);
+  if (error) throw error;
+  return data && data.length ? data[0].n : 0;
+}
+  window.DB = { maxN: dbMaxN,
     configured: dbConfigured,
     list: dbList,
     create: dbCreate,
