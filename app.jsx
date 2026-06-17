@@ -150,17 +150,22 @@ function App() {
   const selected = activos.find((s) => s.id === selectedId) || null;
 
   const handleCreate = async (data) => {
-    const maxN = siniestros.reduce((m, s) => Math.max(m, s.n || 0), 0);
-    const n = maxN + 1;
-    let item = { ...data, id: sinId(n), n, ultimaModPor: station, ultimaModFecha: nowIso(), eliminado: false };
-    if (usingDb) {
-      try { item = await window.DB.create(item); }
-      catch (e) { console.error(e); flash("Error al guardar en Supabase"); return; }
-    }
-    setSiniestros((p) => [item, ...p]);
-    setModal(null);
-    flash(`Siniestro ${data.nroSiniestro} registrado`);
-  };
+  let n;
+  if (usingDb) {
+    try { n = (await window.DB.maxN()) + 1; }
+    catch (e) { console.error(e); n = siniestros.reduce((m, s) => Math.max(m, s.n || 0), 0) + 1; }
+  } else {
+    n = siniestros.reduce((m, s) => Math.max(m, s.n || 0), 0) + 1;
+  }
+  let item = { ...data, id: sinId(n), n, ultimaModPor: station, ultimaModFecha: nowIso(), eliminado: false };
+  if (usingDb) {
+    try { item = await window.DB.create(item); }
+    catch (e) { console.error(e); flash("Error al guardar en Supabase"); return; }
+  }
+  setSiniestros((p) => [item, ...p]);
+  setModal(null);
+  flash(`Siniestro ${data.nroSiniestro} registrado`);
+};
   const handleUpdate = async (data) => {
     let updated = { ...data, ultimaModPor: station, ultimaModFecha: nowIso() };
     if (usingDb) {
