@@ -222,6 +222,7 @@ function App() {
   };
 
   const configured = !!(window.DB && window.DB.configured());
+  const isSiniestros = SINIESTROS_KEYS.includes(active);
   const logout = async () => {
     setModal(null); setDetailId(null); setSelectedId(null);
     try { await window.DB.auth.signOut(); } catch (e) { console.error(e); }
@@ -253,9 +254,14 @@ function App() {
       <main className="main">
         <Topbar active={active} query={query} onQuery={setQuery} station={station}
           onSwitchStation={switchStation} onNew={() => setModal({ type: "new" })}
-          onOpenSync={() => setModal({ type: "sync" })} onLogout={configured ? logout : undefined} />
+          onOpenSync={() => setModal({ type: "sync" })} onLogout={configured ? logout : undefined}
+          isSiniestros={isSiniestros} />
 
-        {detailItem ? (
+        {!isSiniestros ? (
+          <div className="content">
+            <ModuleScreen info={NAV_LOOKUP[active]} />
+          </div>
+        ) : detailItem ? (
           <div className="content">
             <DetailScreen item={detailItem} onBack={() => setDetailId(null)}
               onEdit={openEdit} onDelete={askDelete} onGcal={agendarGcal} onIcs={descargarIcs} />

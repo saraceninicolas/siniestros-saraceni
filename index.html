@@ -13,7 +13,7 @@
   --bg:#F5F6F8; --surface:#FFFFFF; --surface-2:#FBFBFC;
   --ink:#191C22; --ink-2:#5A6271; --muted:#8B93A1;
   --line:#E7E9ED; --line-2:#EFF1F4;
-  --sb-bg:#13161C; --sb-ink:#C9CFD9; --sb-ink-dim:#8A93A1; --sb-active:#1E232C;
+  --sb-bg:#1C1313; --sb-ink:#C9CFD9; --sb-ink-dim:#A18A8A; --sb-active:#2A1E1E;
   --font-scale:1;
   --radius:12px; --radius-sm:9px;
   --row-pad:13px;
@@ -131,6 +131,44 @@ html[data-sidebar="claro"] .sb-foot{ border-top-color:var(--line); }
 .sb-foot-mark{ font-size:12px; font-weight:800; letter-spacing:.16em; color:var(--sb-ink); }
 html[data-sidebar="claro"] .sb-foot-mark{ color:var(--ink); }
 .sb-foot-meta{ font-size:10px; color:var(--sb-ink-dim); }
+
+/* ---------- sidebar · carpetas (accordion) ---------- */
+.sb-folder{ display:flex; flex-direction:column; }
+.sb-folder-head{ display:flex; align-items:center; gap:11px; width:100%; padding:9px 11px; border-radius:9px;
+  background:transparent; border:none; color:var(--sb-ink); font-size:12px; font-weight:700; letter-spacing:.04em;
+  text-transform:uppercase; text-align:left; transition:.14s; }
+.sb-folder-head:hover{ background:var(--sb-active); color:#fff; }
+html[data-sidebar="claro"] .sb-folder-head:hover{ color:var(--ink); }
+.sb-folder-head .sb-item-ico{ color:var(--sb-ink-dim); transition:.14s; }
+.sb-folder.is-open .sb-folder-head{ color:#fff; }
+html[data-sidebar="claro"] .sb-folder.is-open .sb-folder-head{ color:var(--ink); }
+.sb-folder.is-open .sb-folder-head .sb-item-ico,
+.sb-folder-head.has-active .sb-item-ico{ color:var(--brand); }
+.sb-folder-label{ flex:1; }
+.sb-folder-chev{ display:grid; place-items:center; color:var(--sb-ink-dim); transition:transform .22s ease; }
+.sb-folder.is-open .sb-folder-chev{ transform:rotate(90deg); color:var(--sb-ink); }
+.sb-folder-kids{ display:grid; grid-template-rows:0fr; transition:grid-template-rows .24s ease; }
+.sb-folder.is-open .sb-folder-kids{ grid-template-rows:1fr; }
+.sb-folder-kids-inner{ overflow:hidden; display:flex; flex-direction:column; gap:1px;
+  margin:2px 0 4px 20px; padding-left:11px; border-left:1px solid rgba(255,255,255,.09); }
+html[data-sidebar="claro"] .sb-folder-kids-inner{ border-left-color:var(--line); }
+.sb-subitem{ display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:8px;
+  background:transparent; border:none; color:var(--sb-ink-dim); font-size:13px; font-weight:500; text-align:left; transition:.14s; }
+.sb-subitem:hover{ background:var(--sb-active); color:#fff; }
+html[data-sidebar="claro"] .sb-subitem:hover{ color:var(--ink); }
+.sb-subitem.is-active{ background:var(--sb-active); color:#fff; font-weight:600; }
+html[data-sidebar="claro"] .sb-subitem.is-active{ color:var(--ink); }
+.sb-subitem.is-active .sb-subitem-ico{ color:var(--brand); }
+.sb-subitem-ico{ display:grid; place-items:center; flex-shrink:0; opacity:.9; }
+.sb-subitem-label{ flex:1; }
+.sb-subitem .sb-count{ min-width:18px; height:18px; font-size:10.5px; }
+
+/* módulo en preparación */
+.module-ph{ max-width:430px; margin:36px auto 0; }
+.module-ph-tag{ display:inline-flex; align-items:center; gap:7px; font-size:11px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.06em; color:var(--brand); background:#fdf3f3; border:1px solid #f3d6d6; border-radius:99px;
+  padding:5px 11px; margin-bottom:13px; }
+.module-ph-dot{ width:7px; height:7px; border-radius:99px; background:var(--brand); }
 
 /* ---------- topbar ---------- */
 .main{ display:flex; flex-direction:column; overflow:hidden; }
@@ -490,8 +528,13 @@ html[data-sidebar="claro"] .sb-foot-mark{ color:var(--ink); }
 @media (max-width:1100px){
   .app{ grid-template-columns:74px 1fr; }
   .sb{ padding:16px 12px 12px; }
-  .sb-brand,.sb-sub,.sb-group-label,.sb-item-label,.sb-count,.sb-station,.sb-foot{ display:none; }
+  .sb-brand,.sb-sub,.sb-group-label,.sb-item-label,.sb-count,.sb-station,.sb-foot,
+  .sb-folder-label,.sb-folder-chev,.sb-subitem-label{ display:none; }
   .sb-item{ justify-content:center; padding:11px; }
+  .sb-folder-head{ justify-content:center; padding:11px; }
+  .sb-folder-kids{ grid-template-rows:1fr !important; }
+  .sb-folder-kids-inner{ margin:1px 0; padding:0; border:none; }
+  .sb-subitem{ justify-content:center; padding:9px; }
   .sb-nav{ gap:8px; }
   .tb-date,.tb-sep{ display:none; }
   .kpis{ grid-template-columns:repeat(2,1fr); }

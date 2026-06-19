@@ -35,6 +35,8 @@ const Icons = {
   download:["M12 3v12", "M8 11l4 4 4-4", "M5 21h14"],
   info:   ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M12 11v5", "M12 8h.01"],
   logout: ["M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", "M16 17l5-5-5-5", "M21 12H9"],
+  refresh:["M4 11a8 8 0 0 1 13.7-5.3L21 9", "M21 4v5h-5", "M20 13a8 8 0 0 1-13.7 5.3L3 15", "M3 20v-5h5"],
+  card:   ["M3 6h18v12H3z", "M3 10h18", "M7 15h4"],
 };
 const Ico = ({ name, ...rest }) => <Icon d={Icons[name]} {...rest} />;
 
@@ -67,28 +69,68 @@ function RamoTag({ ramo, hecho }) {
   );
 }
 
+// ---------- navegación del portal (carpetas) ----------
+const PORTAL_NAV = [
+  { key: "siniestros", label: "Siniestros", icon: "shield", children: [
+    { key: "dashboard", label: "Panel de control", icon: "grid" },
+    { key: "siniestros", label: "Listado de siniestros", icon: "folder", count: "abiertos" },
+    { key: "agenda", label: "Agenda de gestiones", icon: "agenda", count: "porVencer" } ] },
+  { key: "facturacion", label: "Facturación", icon: "doc", children: [
+    { key: "fact-comprobantes", label: "Comprobantes", icon: "doc" },
+    { key: "fact-reportes", label: "Reportes", icon: "grid" } ] },
+  { key: "renovaciones", label: "Renovaciones", icon: "refresh", children: [
+    { key: "renov-proximas", label: "Próximas a vencer", icon: "clock" },
+    { key: "renov-historial", label: "Historial", icon: "agenda" } ] },
+  { key: "pendientes", label: "Pendientes", icon: "flag", children: [
+    { key: "pend-panel", label: "Panel de control", icon: "grid" },
+    { key: "pend-listado", label: "Listado de pendientes", icon: "folder" },
+    { key: "pend-agenda", label: "Agenda de gestiones", icon: "agenda" } ] },
+];
+const NAV_LOOKUP = {};
+PORTAL_NAV.forEach((g) => g.children.forEach((c) => { NAV_LOOKUP[c.key] = { section: g.label, sectionKey: g.key, title: c.label }; }));
+const SINIESTROS_KEYS = ["dashboard", "siniestros", "agenda"];
+const FACTURACION_KEYS = ["fact-comprobantes", "fact-reportes"];
+
 // ---------- sidebar ----------
 function Sidebar({ active, onNav, station, counts }) {
-  const items = [
-    { key: "dashboard", label: "Panel de control", icon: "grid" },
-    { key: "siniestros", label: "Siniestros", icon: "folder", badge: counts.abiertos },
-    { key: "agenda", label: "Agenda de gestiones", icon: "agenda", badge: counts.porVencer || null },
-  ];
+  const sectionOf = (k) => (PORTAL_NAV.find((g) => g.children.some((c) => c.key === k)) || {}).key;
+  const [open, setOpen] = React.useState(() => ({ [sectionOf(active) || "siniestros"]: true }));
+  const toggle = (k) => setOpen((o) => ({ ...o, [k]: !o[k] }));
   return (
     <aside className="sb">
       <div className="sb-brand">
         <div className="sb-logo"><img src="assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></div>
-        <div className="sb-sub"><span className="sb-sub-dot" />Portal de Siniestros</div>
+        <div className="sb-sub"><span className="sb-sub-dot" />Portal de gestiones</div>
       </div>
       <nav className="sb-nav">
-        <div className="sb-group-label">Gestión</div>
-        {items.map((it) => (
-          <button key={it.key} className={"sb-item" + (active === it.key ? " is-active" : "")} onClick={() => onNav(it.key)}>
-            <span className="sb-item-ico"><Ico name={it.icon} size={17} /></span>
-            <span className="sb-item-label">{it.label}</span>
-            {it.badge != null && <span className={"sb-count" + (it.key === "agenda" ? " warn" : "")}>{it.badge}</span>}
-          </button>
-        ))}
+        <div className="sb-group-label">Carpetas de gestión</div>
+        {PORTAL_NAV.map((g) => {
+          const isOpen = !!open[g.key];
+          const hasActive = g.children.some((c) => c.key === active);
+          return (
+            <div className={"sb-folder" + (isOpen ? " is-open" : "")} key={g.key}>
+              <button className={"sb-folder-head" + (hasActive ? " has-active" : "")} onClick={() => toggle(g.key)}>
+                <span className="sb-item-ico"><Ico name={g.icon} size={17} /></span>
+                <span className="sb-folder-label">{g.label}</span>
+                <span className="sb-folder-chev"><Ico name="chevR" size={15} /></span>
+              </button>
+              <div className="sb-folder-kids">
+                <div className="sb-folder-kids-inner">
+                  {g.children.map((c) => {
+                    const badge = c.count ? counts[c.count] : null;
+                    return (
+                      <button key={c.key} className={"sb-subitem" + (active === c.key ? " is-active" : "")} onClick={() => onNav(c.key)}>
+                        <span className="sb-subitem-ico"><Ico name={c.icon} size={15} /></span>
+                        <span className="sb-subitem-label">{c.label}</span>
+                        {badge != null && badge > 0 && <span className={"sb-count" + (c.key === "agenda" ? " warn" : "")}>{badge}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </nav>
       <div className="sb-station">
         <div className="sb-station-row">
@@ -107,18 +149,13 @@ function Sidebar({ active, onNav, station, counts }) {
 
 // ---------- topbar ----------
 const HOY = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-const TITLES = {
-  dashboard: ["Panel de control", "Seguimiento de siniestros"],
-  siniestros: ["Siniestros", "Listado completo"],
-  agenda: ["Agenda de gestiones", "Gestiones pendientes por fecha límite"],
-};
-function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpenSync, onLogout }) {
-  const [title, sub] = TITLES[active] || TITLES.dashboard;
+function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpenSync, onLogout, isSiniestros }) {
+  const info = NAV_LOOKUP[active] || { section: "Siniestros", title: "Panel de control" };
   return (
     <header className="tb">
       <div className="tb-titles">
-        <div className="tb-crumb"><span>Siniestros</span><Ico name="chevR" size={13} /><b>{title}</b></div>
-        <h1>{title}</h1>
+        <div className="tb-crumb"><span>{info.section}</span><Ico name="chevR" size={13} /><b>{info.title}</b></div>
+        <h1>{info.title}</h1>
       </div>
       <div className="tb-search">
         <Ico name="search" size={17} style={{ color: "var(--muted)" }} />
@@ -129,11 +166,11 @@ function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpe
       <div className="tb-actions">
         <div className="tb-date"><Ico name="clock" size={14} /><span style={{ textTransform: "capitalize" }}>{HOY}</span></div>
         <div className="tb-sep" />
-        <button className="btn-ghost tb-icon" title="Sincronizar con Google Calendar" onClick={onOpenSync}><Ico name="agenda" size={18} /></button>
+        {isSiniestros && <button className="btn-ghost tb-icon" title="Sincronizar con Google Calendar" onClick={onOpenSync}><Ico name="agenda" size={18} /></button>}
         <button className="tb-station-chip" onClick={onSwitchStation} title="Cambiar de puesto (demo)">
           <span className="sb-station-led" /><Ico name="monitor" size={14} />{station}
         </button>
-        <button className="btn-primary" onClick={onNew}><Ico name="plus" size={17} />Registrar siniestro</button>
+        {isSiniestros && <button className="btn-primary" onClick={onNew}><Ico name="plus" size={17} />Registrar siniestro</button>}
         {onLogout && <button className="btn-ghost tb-icon" title="Cerrar sesión" onClick={onLogout}><Ico name="logout" size={18} /></button>}
       </div>
     </header>
@@ -349,4 +386,20 @@ function Agenda({ data, onOpen, onSync, onGcal }) {
   );
 }
 
-Object.assign(window, { Ico, Icons, Badge, UrgBadge, RamoTag, Sidebar, Topbar, Kpis, Toolbar, ClaimsTable, Agenda });
+// ---------- módulo en preparación ----------
+function ModuleScreen({ info }) {
+  const i = info || { section: "Portal", title: "Módulo" };
+  return (
+    <div className="placeholder module-ph">
+      <div className="ph-ico"><Ico name="folder" size={26} /></div>
+      <span className="module-ph-tag"><span className="module-ph-dot" />En preparación</span>
+      <h2>{i.title}</h2>
+      <p>Parte del portal de gestiones de Saraceni. Desde acá vas a administrar {i.title.toLowerCase()} dentro de {i.section}, con el mismo seguimiento diario que usás para los siniestros.</p>
+    </div>
+  );
+}
+
+Object.assign(window, {
+  Ico, Icons, Badge, UrgBadge, RamoTag, Sidebar, Topbar, Kpis, Toolbar, ClaimsTable, Agenda,
+  ModuleScreen, PORTAL_NAV, NAV_LOOKUP, SINIESTROS_KEYS, FACTURACION_KEYS,
+});
