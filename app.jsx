@@ -259,7 +259,9 @@ function App() {
 
         {!isSiniestros ? (
           <div className="content">
-            <ModuleScreen info={NAV_LOOKUP[active]} />
+            {FACTURACION_KEYS.includes(active)
+              ? <FacturacionModule active={active} station={station} query={query} />
+              : <ModuleScreen info={NAV_LOOKUP[active]} />}
           </div>
         ) : detailItem ? (
           <div className="content">

@@ -197,6 +197,89 @@ async function dbMaxN() {
   if (error) throw error;
   return data && data.length ? data[0].n : 0;
 }
+  // ============================ FACTURAS ============================
+  const numOrNull = (v) => {
+    if (v === "" || v === null || v === undefined) return null;
+    const n = Number(String(v).replace(",", "."));
+    return isNaN(n) ? null : n;
+  };
+  function fromRowF(r) {
+    return {
+      _dbId: r.id, id: r.codigo, n: r.n,
+      fechaEmision: r.fecha_emision || "",
+      nroFactura: r.nro_factura || "",
+      tipo: r.tipo || "",
+      cuit: r.cuit || "",
+      razonSocial: r.razon_social || "",
+      neto: r.neto_gravado, iva: r.iva, total: r.total,
+      mailEnvio: r.mail_envio || "",
+      estadoEnvio: r.estado_envio || "",
+      montoPagado: r.monto_pagado,
+      estadoPago: r.estado_pago || "",
+      banco: r.banco || "",
+      observaciones: r.observaciones || "",
+      mes: r.mes, anio: r.anio,
+      ultimaModPor: r.ultima_mod_por || "",
+      ultimaModFecha: r.ultima_mod_fecha || new Date().toISOString(),
+      eliminado: !!r.eliminado,
+    };
+  }
+  function toRowF(it) {
+    return {
+      codigo: it.id, n: it.n,
+      fecha_emision: orNull(it.fechaEmision),
+      nro_factura: orNull(it.nroFactura),
+      tipo: orNull(it.tipo),
+      cuit: orNull(it.cuit),
+      razon_social: it.razonSocial,
+      neto_gravado: numOrNull(it.neto),
+      iva: numOrNull(it.iva),
+      total: numOrNull(it.total),
+      mail_envio: orNull(it.mailEnvio),
+      estado_envio: orNull(it.estadoEnvio),
+      monto_pagado: numOrNull(it.montoPagado),
+      estado_pago: orNull(it.estadoPago),
+      banco: orNull(it.banco),
+      observaciones: orNull(it.observaciones),
+      mes: it.mes, anio: it.anio,
+      ultima_mod_por: orNull(it.ultimaModPor),
+      ultima_mod_fecha: it.ultimaModFecha || new Date().toISOString(),
+      eliminado: !!it.eliminado,
+    };
+  }
+  async function factList() {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("facturas").select("*").eq("eliminado", false).order("n", { ascending: true });
+    if (error) throw error; return (data || []).map(fromRowF);
+  }
+  async function factCreate(item) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("facturas").insert(toRowF(item)).select().single();
+    if (error) throw error; return fromRowF(data);
+  }
+  async function factUpdate(item) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("facturas").update(toRowF(item)).eq("id", item._dbId).select().single();
+    if (error) throw error; return fromRowF(data);
+  }
+  async function factRemove(item) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { error } = await c.from("facturas").update({ eliminado: true, ultima_mod_por: orNull(item.ultimaModPor), ultima_mod_fecha: new Date().toISOString() }).eq("id", item._dbId);
+    if (error) throw error;
+  }
+  async function factMaxN() {
+    const c = client(); if (!c) return 0;
+    const { data, error } = await c.from("facturas").select("n").order("n", { ascending: false }).limit(1);
+    if (error) throw error; return data && data.length ? data[0].n : 0;
+  }
+  function factSubscribe(onChange) {
+    const c = client(); if (!c) return null;
+    const ch = c.channel("facturas-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "facturas" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
+      .subscribe();
+    return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
+  }
+
   window.DB = { maxN: dbMaxN,
     configured: dbConfigured,
     list: dbList,
@@ -209,6 +292,10 @@ async function dbMaxN() {
       signIn: authSignIn,
       signOut: authSignOut,
       onChange: authOnChange,
+    },
+    fact: {
+      list: factList, create: factCreate, update: factUpdate,
+      remove: factRemove, maxN: factMaxN, subscribe: factSubscribe,
     },
   };
 })();
