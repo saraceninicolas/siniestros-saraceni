@@ -86,6 +86,7 @@ function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs }) {
             <Badge estado={item.estado} />
             <RamoTag ramo={item.ramo} hecho={item.hecho} />
             {abierto && <UrgBadge item={item} />}
+            {diasActivo(item) != null && <span className="dt-cal"><Ico name="clock" size={13} />{diasActivo(item)} días activo</span>}
             {item.enCalendario && <span className="dt-cal"><Ico name="agenda" size={13} />En calendario</span>}
           </div>
         </div>

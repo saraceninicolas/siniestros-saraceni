@@ -60,6 +60,7 @@
       enCalendario: !!r.en_calendario,
       ultimaModPor: r.ultima_mod_por || "",
       ultimaModFecha: r.ultima_mod_fecha || new Date().toISOString(),
+      creado: r.created_at || null,
       eliminado: !!r.eliminado,
     };
   }

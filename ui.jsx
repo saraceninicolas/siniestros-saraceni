@@ -37,6 +37,7 @@ const Icons = {
   logout: ["M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", "M16 17l5-5-5-5", "M21 12H9"],
   refresh:["M4 11a8 8 0 0 1 13.7-5.3L21 9", "M21 4v5h-5", "M20 13a8 8 0 0 1-13.7 5.3L3 15", "M3 20v-5h5"],
   card:   ["M3 6h18v12H3z", "M3 10h18", "M7 15h4"],
+  target: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M12 16.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9z", "M12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"],
 };
 const Ico = ({ name, ...rest }) => <Icon d={Icons[name]} {...rest} />;
 
@@ -84,6 +85,9 @@ const PORTAL_NAV = [
     { key: "pend-panel", label: "Panel de control", icon: "grid" },
     { key: "pend-listado", label: "Listado de pendientes", icon: "folder" },
     { key: "pend-agenda", label: "Agenda de gestiones", icon: "agenda" } ] },
+  { key: "objetivos", label: "Objetivos", icon: "target", children: [
+    { key: "obj-panel", label: "Panel de control", icon: "grid" },
+    { key: "obj-metas", label: "Metas y seguimiento", icon: "check" } ] },
 ];
 const NAV_LOOKUP = {};
 PORTAL_NAV.forEach((g) => g.children.forEach((c) => { NAV_LOOKUP[c.key] = { section: g.label, sectionKey: g.key, title: c.label }; }));
@@ -252,48 +256,54 @@ function ClaimsTable({ rows, selectedId, onSelect, onOpen }) {
         <thead>
           <tr>
             <th style={{ width: 34 }}></th>
-            <th>N° Siniestro</th>
+            <th>Vence</th>
+            <th>Estado</th>
             <th>Cliente</th>
             <th>Compañía</th>
             <th>Ramo / Hecho</th>
             <th>Gestión a realizar</th>
-            <th>Vence</th>
-            <th>Estado</th>
+            <th>N° Siniestro</th>
             <th style={{ width: 44 }}></th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
-            <tr key={r.id} className={selectedId === r.id ? "is-selected" : ""} onClick={() => onOpen(r.id)}>
-              <td onClick={(e) => { e.stopPropagation(); onSelect(selectedId === r.id ? null : r.id); }}>
-                <span className={"radio" + (selectedId === r.id ? " on" : "")} />
-              </td>
-              <td>
-                <div className="mono cell-id">{r.nroSiniestro}</div>
-                <div className="cell-sub">{r.id}</div>
-              </td>
-              <td>
-                <div className="cell-strong">{r.cliente}</div>
-                <div className="cell-sub mono">{r.poliza}</div>
-              </td>
-              <td><span className="cia-pill">{ciaLabel(r.cia)}</span></td>
-              <td><RamoTag ramo={r.ramo} hecho={r.hecho} /></td>
-              <td className="cell-gestion">
-                {r.estado === "Terminado"
-                  ? <span className="gestion-done"><Ico name="check" size={13} />Sin pendientes</span>
-                  : <span className="gestion-text" title={r.gestionAR}>{r.gestionAR || "—"}</span>}
-              </td>
-              <td>
-                {r.estado === "Terminado"
-                  ? <span className="urg-none">—</span>
-                  : <div className="vence"><span className="vence-date mono">{fmtDateShort(r.fechaLimite)}</span><UrgBadge item={r} /></div>}
-              </td>
-              <td><Badge estado={r.estado} /></td>
-              <td onClick={(e) => { e.stopPropagation(); onOpen(r.id); }}>
-                <button className="row-open" title="Ver detalle"><Ico name="chevR" size={16} /></button>
-              </td>
-            </tr>
-          ))}
+          {rows.map((r) => {
+            const dias = diasActivo(r);
+            return (
+              <tr key={r.id} className={selectedId === r.id ? "is-selected" : ""} onClick={() => onOpen(r.id)}>
+                <td onClick={(e) => { e.stopPropagation(); onSelect(selectedId === r.id ? null : r.id); }}>
+                  <span className={"radio" + (selectedId === r.id ? " on" : "")} />
+                </td>
+                <td>
+                  {r.estado === "Terminado"
+                    ? <span className="urg-none">—</span>
+                    : <div className="vence"><span className="vence-date mono">{fmtDateShort(r.fechaLimite)}</span><UrgBadge item={r} /></div>}
+                </td>
+                <td>
+                  <Badge estado={r.estado} />
+                  {dias != null && <div className="cell-sub">{dias === 0 ? "hoy" : dias + " d activo"}</div>}
+                </td>
+                <td>
+                  <div className="cell-strong">{r.cliente}</div>
+                  <div className="cell-sub mono">{r.poliza}</div>
+                </td>
+                <td><span className="cia-pill">{ciaLabel(r.cia)}</span></td>
+                <td><RamoTag ramo={r.ramo} hecho={r.hecho} /></td>
+                <td className="cell-gestion">
+                  {r.estado === "Terminado"
+                    ? <span className="gestion-done"><Ico name="check" size={13} />Sin pendientes</span>
+                    : <span className="gestion-text" title={r.gestionAR}>{r.gestionAR || "—"}</span>}
+                </td>
+                <td>
+                  <div className="mono cell-id">{r.nroSiniestro}</div>
+                  <div className="cell-sub">{r.id}</div>
+                </td>
+                <td onClick={(e) => { e.stopPropagation(); onOpen(r.id); }}>
+                  <button className="row-open" title="Ver detalle"><Ico name="chevR" size={16} /></button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

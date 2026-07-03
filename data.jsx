@@ -91,6 +91,15 @@ function fmtTimeAgo(iso) {
   return `hace ${Math.round(h / 24)} d`;
 }
 
+// Días transcurridos desde que el siniestro se cargó (para ver cuántos lleva activo)
+function diasActivo(item) {
+  const base = item.creado || item.ultimaModFecha;
+  if (!base) return null;
+  const d = new Date(base);
+  if (isNaN(d)) return null;
+  return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+}
+
 let _seq = 0;
 const nextNum = () => { _seq += 1; return _seq; };
 const sinId = (n) => "STR-" + pad(n) + "-" + Date.now().toString(36).slice(-4);
@@ -133,6 +142,7 @@ function buildSeed() {
       franquiciaPct: "", franquiciaMonto: "", adjuntos: [],
       enCalendario: !!calendar,
       ultimaModPor: STATIONS[n % 2], ultimaModFecha: recentIso(modAgo, 9 + (n % 7), (n * 11) % 60),
+      creado: denuncia ? denuncia + "T09:00:00" : recentIso(modAgo, 9, 0),
       eliminado: false,
     };
   });
@@ -142,6 +152,6 @@ Object.assign(window, {
   CIA_FULL, CIAS, ciaLabel, RAMOS, RAMO_LABEL, RAMO_ICON, HECHOS, HECHO_LABEL,
   COBERTURAS, COBERTURAS_AUTO, esRamoAuto, coberturasDe, aplicaFranquicia,
   STATIONS, ESTADOS, ESTADO_LIST, URGENCIA,
-  fmtDate, fmtDateShort, fmtTimeAgo, daysUntil, urgenciaDe, venceTexto, nowIso,
+  fmtDate, fmtDateShort, fmtTimeAgo, daysUntil, urgenciaDe, venceTexto, diasActivo, nowIso,
   nextNum, sinId, buildSeed,
 });
