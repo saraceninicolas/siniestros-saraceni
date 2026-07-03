@@ -63,6 +63,42 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
     if (filesReady) { try { await window.DB.files.remove(a.path); } catch (err) { console.error(err); } }
   };
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
+  // ---- autocompletar desde denuncia (PDF) ----
+  const [leyendo, setLeyendo] = React.useState(false);
+  const [denunciaMsg, setDenunciaMsg] = React.useState("");
+  const applyDenuncia = (parsed) => {
+    const cur = f; const filled = []; const patch = {};
+    const fillIf = (k, v, label) => { if (v && (!cur[k] || cur[k] === "")) { patch[k] = v; filled.push(label); } };
+    fillIf("cliente", parsed.cliente, "cliente");
+    fillIf("cia", parsed.cia, "compañía");
+    if (parsed.ramo && mode !== "edit" && parsed.ramo !== cur.ramo) {
+      patch.ramo = parsed.ramo;
+      patch.cobertura = esRamoAuto(parsed.ramo) ? COBERTURAS_AUTO[0] : "";
+      filled.push("ramo");
+    }
+    fillIf("poliza", parsed.poliza, "póliza");
+    fillIf("nroSiniestro", parsed.nroSiniestro, "N° siniestro");
+    fillIf("fechaOcurrido", parsed.fechaOcurrido, "fecha ocurrido");
+    fillIf("fechaDenuncia", parsed.fechaDenuncia, "fecha denuncia");
+    if (parsed._patente && !((cur.obs || "").includes(parsed._patente))) {
+      patch.obs = (cur.obs ? cur.obs + " · " : "") + "Dominio: " + parsed._patente; filled.push("dominio");
+    }
+    setF((p) => ({ ...p, ...patch }));
+    setDenunciaMsg(filled.length
+      ? "Autocompletado: " + filled.join(", ") + ". Revisá y completá lo que falte."
+      : "No se detectaron datos automáticamente — cargalos a mano.");
+  };
+  const onPickDenuncia = async (e) => {
+    const file = (e.target.files || [])[0]; e.target.value = "";
+    if (!file) return;
+    setLeyendo(true); setDenunciaMsg("");
+    try {
+      if (window.parseDenunciaPDF) { const parsed = await window.parseDenunciaPDF(file); applyDenuncia(parsed); }
+      else setDenunciaMsg("El lector de PDF no está disponible.");
+    } catch (err) { console.error(err); setDenunciaMsg("No se pudo leer el PDF (puede ser un escaneo sin texto)."); }
+    if (filesReady) { try { const a = await window.DB.files.upload(file); setF((p) => ({ ...p, adjuntos: [...(p.adjuntos || []), a] })); } catch (err) { console.error(err); } }
+    setLeyendo(false);
+  };
   // Al cambiar el ramo ajustamos la cobertura (AUTO usa lista fija; el resto, texto libre)
   const setRamo = (ramo) => setF((p) => ({
     ...p, ramo,
@@ -111,6 +147,18 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
           </div>
         </>
       }>
+      <div className="denuncia-box">
+        <div className="denuncia-txt">
+          <Ico name="doc" size={18} />
+          <div><b>¿Tenés la denuncia en PDF?</b><span>La adjuntamos y autocompletamos los datos que detectemos.</span></div>
+        </div>
+        <label className={"btn-ghost" + (leyendo ? " is-disabled" : "")}>
+          <Ico name={leyendo ? "clock" : "download"} size={15} />{leyendo ? "Leyendo…" : "Adjuntar denuncia y autocompletar"}
+          <input type="file" accept="application/pdf" style={{ display: "none" }} onChange={onPickDenuncia} disabled={leyendo} />
+        </label>
+      </div>
+      {denunciaMsg && <div className="denuncia-msg">{denunciaMsg}</div>}
+
       <FormSection label="Datos del siniestro" />
       <div className="form-grid">
         <Field label="Cliente" required full>
