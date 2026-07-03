@@ -6,9 +6,65 @@ function InfoRow({ k, v, mono }) {
   );
 }
 
+// Exporta el historial de gestiones a PDF (abre vista imprimible → Guardar como PDF)
+function exportGestionesPDF(item) {
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  const gs = [...(item.gestiones || [])].sort((a, b) => (a.fecha || "").localeCompare(b.fecha || ""));
+  const rows = gs.length
+    ? gs.map((g) => `<tr><td class="d">${esc(fmtDate(g.fecha))}</td><td>${esc(g.texto)}</td><td class="pc">${esc(g.pc || "")}</td></tr>`).join("")
+    : `<tr><td colspan="3" class="empty">Sin gestiones registradas.</td></tr>`;
+  const w = window.open("", "_blank");
+  if (!w) { alert("Permití las ventanas emergentes para exportar el PDF."); return; }
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Gestiones ${esc(item.id)}</title>
+  <style>
+    *{font-family:Arial,Helvetica,sans-serif;box-sizing:border-box}
+    body{margin:32px;color:#191C22}
+    .brand{color:#DD0909;font-weight:800;letter-spacing:.14em;font-size:12px}
+    h1{font-size:20px;margin:6px 0 2px}
+    .sub{color:#5A6271;font-size:12px;margin-bottom:16px}
+    .meta{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:#5A6271;border:1px solid #E7E9ED;border-radius:8px;padding:10px 14px;margin-bottom:16px}
+    .meta b{color:#191C22}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    th{text-align:left;background:#F5F6F8;border-bottom:1px solid #E7E9ED;padding:8px 10px;text-transform:uppercase;font-size:10px;letter-spacing:.05em;color:#8B93A1}
+    td{padding:8px 10px;border-bottom:1px solid #EFF1F4;vertical-align:top}
+    td.d{white-space:nowrap;font-weight:600;width:110px}
+    td.pc{white-space:nowrap;color:#8B93A1;width:120px}
+    td.empty{text-align:center;color:#8B93A1}
+    .foot{margin-top:18px;font-size:10px;color:#8B93A1}
+    @media print{body{margin:14mm}}
+  </style></head><body>
+    <div class="brand">SARACENI · BROKER DE SEGUROS</div>
+    <h1>Historial de gestiones</h1>
+    <div class="sub">${esc(item.cliente)} · N° ${esc(item.nroSiniestro)} · ${esc(item.id)}</div>
+    <div class="meta">
+      <span>Compañía: <b>${esc(ciaLabel(item.cia))}</b></span>
+      <span>Ramo: <b>${esc(RAMO_LABEL[item.ramo] || item.ramo)}</b></span>
+      <span>Estado: <b>${esc(item.estado)}</b></span>
+      <span>Póliza: <b>${esc(item.poliza || "—")}</b></span>
+      ${item.gestionAR ? `<span>Próxima gestión: <b>${esc(item.gestionAR)}</b></span>` : ""}
+    </div>
+    <table><thead><tr><th>Fecha</th><th>Gestión realizada</th><th>Puesto</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="foot">Generado el ${new Date().toLocaleString("es-AR")} desde el Portal de Siniestros de Saraceni.</div>
+  </body></html>`);
+  w.document.close(); w.focus();
+  setTimeout(() => { try { w.print(); } catch (e) { /* noop */ } }, 350);
+}
+
 function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs }) {
   const inspeccion = item.fechaInspeccion ? fmtDate(item.fechaInspeccion) : "Pendiente";
   const abierto = item.estado === "Abierto";
+  const adjuntos = item.adjuntos || [];
+  const [adjUrls, setAdjUrls] = React.useState({});
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      if (!window.DB || !window.DB.files || !adjuntos.length) return;
+      const map = {};
+      for (const a of adjuntos) { try { map[a.path] = await window.DB.files.signedUrl(a.path, 3600); } catch (e) { /* noop */ } }
+      if (alive) setAdjUrls(map);
+    })();
+    return () => { alive = false; };
+  }, [item.id]);
 
   return (
     <div className="ds">
@@ -110,7 +166,10 @@ function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs }) {
         </section>
 
         <section className="ds-card ds-card-wide">
-          <div className="ds-card-title"><Ico name="check" size={15} />Historial de gestiones realizadas</div>
+          <div className="ds-card-title" style={{ justifyContent: "space-between" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><Ico name="check" size={15} />Historial de gestiones realizadas</span>
+            <button className="btn-ghost sm" onClick={() => exportGestionesPDF(item)} title="Exportar a PDF"><Ico name="download" size={14} />Exportar PDF</button>
+          </div>
           {(item.gestiones && item.gestiones.length) ? (
             <ul className="hist-tl">
               {[...item.gestiones].sort((a, b) => (a.fecha || "").localeCompare(b.fecha || "")).map((g, i) => (
@@ -127,6 +186,27 @@ function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs }) {
             <p className="ds-obs">Sin gestiones registradas todavía.</p>
           )}
         </section>
+
+        {adjuntos.length > 0 && (
+          <section className="ds-card ds-card-wide">
+            <div className="ds-card-title"><Ico name="doc" size={15} />Adjuntos <span className="ds-adj-count">{adjuntos.length}</span></div>
+            <div className="adj-grid">
+              {adjuntos.map((a, i) => {
+                const url = adjUrls[a.path];
+                const isImg = a.tipo && a.tipo.indexOf("image") >= 0;
+                return (
+                  <a className="adj-card" key={a.path || i} href={url || "#"} target="_blank" rel="noreferrer"
+                    onClick={(e) => { if (!url) e.preventDefault(); }}>
+                    {isImg && url
+                      ? <img className="adj-thumb" src={url} alt={a.name} />
+                      : <span className="adj-thumb adj-thumb-file"><Ico name="doc" size={24} /></span>}
+                    <span className="adj-card-name" title={a.name}>{a.name}</span>
+                  </a>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </div>
 
       <div className="ds-stamp">

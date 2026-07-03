@@ -130,7 +130,7 @@ function buildSeed() {
       fechaOcurrido: ocurrido, fechaDenuncia: denuncia, fechaLimite: limite,
       fechaInspeccion: inspeccion,
       gestionAR, gestionReal, gestiones, gestor, gestorEmail, obs, ticket,
-      franquiciaPct: "", franquiciaMonto: "",
+      franquiciaPct: "", franquiciaMonto: "", adjuntos: [],
       enCalendario: !!calendar,
       ultimaModPor: STATIONS[n % 2], ultimaModFecha: recentIso(modAgo, 9 + (n % 7), (n * 11) % 60),
       eliminado: false,

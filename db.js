@@ -56,6 +56,7 @@
       franquiciaPct: r.franquicia_pct || "",
       franquiciaMonto: r.franquicia_monto || "",
       gestiones: Array.isArray(r.gestiones) ? r.gestiones : [],
+      adjuntos: Array.isArray(r.adjuntos) ? r.adjuntos : [],
       enCalendario: !!r.en_calendario,
       ultimaModPor: r.ultima_mod_por || "",
       ultimaModFecha: r.ultima_mod_fecha || new Date().toISOString(),
@@ -90,6 +91,7 @@
       franquicia_pct: orNull(it.franquiciaPct),
       franquicia_monto: orNull(it.franquiciaMonto),
       gestiones: Array.isArray(it.gestiones) ? it.gestiones : [],
+      adjuntos: Array.isArray(it.adjuntos) ? it.adjuntos : [],
       en_calendario: !!it.enCalendario,
       ultima_mod_por: orNull(it.ultimaModPor),
       ultima_mod_fecha: it.ultimaModFecha || new Date().toISOString(),
@@ -280,6 +282,28 @@ async function dbMaxN() {
     return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
   }
 
+  // ============================ ARCHIVOS (Storage) ============================
+  const BUCKET = "adjuntos";
+  async function fileUpload(file) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const safe = (file.name || "archivo").replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${safe}`;
+    const { error } = await c.storage.from(BUCKET).upload(path, file, { upsert: false, contentType: file.type || undefined });
+    if (error) throw error;
+    return { name: file.name || safe, path, tipo: file.type || "", size: file.size || 0 };
+  }
+  async function fileSignedUrl(path, secs) {
+    const c = client(); if (!c) return null;
+    const { data, error } = await c.storage.from(BUCKET).createSignedUrl(path, secs || 3600);
+    if (error) { console.error(error); return null; }
+    return data ? data.signedUrl : null;
+  }
+  async function fileRemove(path) {
+    const c = client(); if (!c) return;
+    const { error } = await c.storage.from(BUCKET).remove([path]);
+    if (error) console.error(error);
+  }
+
   window.DB = { maxN: dbMaxN,
     configured: dbConfigured,
     list: dbList,
@@ -297,5 +321,6 @@ async function dbMaxN() {
       list: factList, create: factCreate, update: factUpdate,
       remove: factRemove, maxN: factMaxN, subscribe: factSubscribe,
     },
+    files: { upload: fileUpload, signedUrl: fileSignedUrl, remove: fileRemove },
   };
 })();

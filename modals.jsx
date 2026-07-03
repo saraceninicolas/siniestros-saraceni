@@ -38,14 +38,30 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
     estado: "Abierto", cliente: "", cia: CIAS[0], ramo: "AUTO", hecho: HECHOS[0], cobertura: COBERTURAS_AUTO[0],
     poliza: "", nroSiniestro: "", fechaOcurrido: "", fechaDenuncia: "", fechaLimite: "", fechaInspeccion: "",
     gestionAR: "", gestionReal: "", gestiones: [], gestor: "", gestorEmail: "", obs: "", ticket: "",
-    franquiciaPct: "", franquiciaMonto: "", enCalendario: false,
+    franquiciaPct: "", franquiciaMonto: "", adjuntos: [], enCalendario: false,
   };
   const [f, setF] = React.useState(() => {
     const base = initial ? { ...blank, ...initial } : blank;
-    return { ...base, gestiones: [...(base.gestiones || [])].sort(byFecha) };
+    return { ...base, gestiones: [...(base.gestiones || [])].sort(byFecha), adjuntos: base.adjuntos || [] };
   });
   const [touched, setTouched] = React.useState(false);
   const [newGest, setNewGest] = React.useState({ fecha: todayISO(), texto: "" });
+  const [subiendo, setSubiendo] = React.useState(false);
+  const filesReady = !!(window.DB && window.DB.configured() && window.DB.files);
+  const onPickFiles = async (e) => {
+    const files = Array.from(e.target.files || []); e.target.value = "";
+    if (!files.length || !filesReady) return;
+    setSubiendo(true);
+    for (const file of files) {
+      try { const a = await window.DB.files.upload(file); setF((p) => ({ ...p, adjuntos: [...(p.adjuntos || []), a] })); }
+      catch (err) { console.error(err); }
+    }
+    setSubiendo(false);
+  };
+  const removeAdjunto = async (a) => {
+    setF((p) => ({ ...p, adjuntos: (p.adjuntos || []).filter((x) => x.path !== a.path) }));
+    if (filesReady) { try { await window.DB.files.remove(a.path); } catch (err) { console.error(err); } }
+  };
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   // Al cambiar el ramo ajustamos la cobertura (AUTO usa lista fija; el resto, texto libre)
   const setRamo = (ramo) => setF((p) => ({
@@ -216,6 +232,28 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
           <input type="checkbox" checked={f.enCalendario} onChange={(e) => set("enCalendario", e.target.checked)} />
           <span>Agendado en calendario (recordatorio activo)</span>
         </label>
+      </div>
+
+      <FormSection label="Adjuntos (fotos y PDF)" />
+      <div className="adj-box">
+        {(f.adjuntos || []).length > 0 && (
+          <ul className="adj-list">
+            {f.adjuntos.map((a, i) => (
+              <li className="adj-item" key={a.path || i}>
+                <Ico name={a.tipo && a.tipo.indexOf("pdf") >= 0 ? "doc" : "doc"} size={15} />
+                <span className="adj-name" title={a.name}>{a.name}</span>
+                <span className="adj-size">{a.size ? Math.max(1, Math.round(a.size / 1024)) + " KB" : ""}</span>
+                <button type="button" className="hist-del" title="Quitar" onClick={() => removeAdjunto(a)}><Ico name="close" size={13} /></button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <label className={"btn-ghost adj-add" + (subiendo || !filesReady ? " is-disabled" : "")}>
+          <Ico name={subiendo ? "clock" : "plus"} size={15} />{subiendo ? "Subiendo…" : "Agregar fotos o PDF"}
+          <input type="file" accept="image/*,application/pdf" multiple style={{ display: "none" }}
+            onChange={onPickFiles} disabled={subiendo || !filesReady} />
+        </label>
+        {!filesReady && <span className="adj-note">Los adjuntos requieren Supabase configurado (modo demo no sube archivos).</span>}
       </div>
     </ModalShell>
   );

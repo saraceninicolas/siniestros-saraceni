@@ -72,8 +72,7 @@ function RamoTag({ ramo, hecho }) {
 // ---------- navegación del portal (carpetas) ----------
 const PORTAL_NAV = [
   { key: "siniestros", label: "Siniestros", icon: "shield", children: [
-    { key: "dashboard", label: "Panel de control", icon: "grid" },
-    { key: "siniestros", label: "Listado de siniestros", icon: "folder", count: "abiertos" },
+    { key: "dashboard", label: "Panel de control", icon: "grid", count: "abiertos" },
     { key: "agenda", label: "Agenda de gestiones", icon: "agenda", count: "porVencer" } ] },
   { key: "facturacion", label: "Facturación", icon: "doc", children: [
     { key: "fact-comprobantes", label: "Comprobantes", icon: "doc" },
@@ -88,7 +87,7 @@ const PORTAL_NAV = [
 ];
 const NAV_LOOKUP = {};
 PORTAL_NAV.forEach((g) => g.children.forEach((c) => { NAV_LOOKUP[c.key] = { section: g.label, sectionKey: g.key, title: c.label }; }));
-const SINIESTROS_KEYS = ["dashboard", "siniestros", "agenda"];
+const SINIESTROS_KEYS = ["dashboard", "agenda"];
 const FACTURACION_KEYS = ["fact-comprobantes", "fact-reportes"];
 
 // ---------- sidebar ----------

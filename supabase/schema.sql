@@ -34,6 +34,7 @@ create table if not exists public.siniestros (
   franquicia_pct    text,                            -- franquicia % (solo cobertura TODO RIESGO)
   franquicia_monto  text,                            -- franquicia monto en $ (solo TODO RIESGO)
   gestiones         jsonb not null default '[]'::jsonb,  -- historial: [{fecha, texto, pc}, ...]
+  adjuntos          jsonb not null default '[]'::jsonb,  -- archivos: [{name, path, tipo, size}, ...]
   en_calendario     boolean not null default false,
   ultima_mod_por    text,
   ultima_mod_fecha  timestamptz not null default now(),
