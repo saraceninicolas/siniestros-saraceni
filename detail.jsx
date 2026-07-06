@@ -53,7 +53,7 @@ function exportSiniestroPDF(item) {
     <div class="badges">
       <span class="bdg" style="color:#1D4ED8;background:#E8F0FE">${esc(item.estado)}</span>
       <span class="bdg" style="color:#191C22;background:#F5F6F8">${esc(RAMO_LABEL[item.ramo] || item.ramo)}</span>
-      <span class="bdg" style="color:#C0241D;background:#FBE3E3">${esc(HECHO_LABEL[item.hecho] || item.hecho)}</span>
+      <span class="bdg" style="color:#191C22;background:#F5F6F8">${esc(HECHO_LABEL[item.hecho] || item.hecho)}</span>
       ${dias != null ? `<span class="bdg" style="color:#5A6271;background:#F5F6F8">${dias} días activo</span>` : ""}
     </div>
     <div class="cols">
@@ -67,7 +67,7 @@ function exportSiniestroPDF(item) {
       </div>
     </div>
     <h2>Gestión</h2>
-    ${kv([["Próxima gestión a realizar", item.gestionAR], ["Gestor", item.gestor], ["Contacto", item.gestorEmail]])}
+    ${kv([["Próxima gestión a realizar", item.gestionAR], ["Gestor", item.gestor], ["Contacto", item.gestorEmail], ["Teléfono", item.gestorTel]])}
     <h2>Observaciones</h2>
     <p class="obs">${esc(item.obs || "Sin observaciones.")}</p>
     ${item.ticket ? `<p class="obs">Ticket: ${esc(item.ticket)}</p>` : ""}
@@ -180,7 +180,8 @@ function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs }) {
               <div className="ds-gestor-name">{item.gestor || "—"}</div>
               {item.gestorEmail
                 ? <a className="ds-gestor-mail" href={"mailto:" + item.gestorEmail}><Ico name="mail" size={13} />{item.gestorEmail}</a>
-                : <span className="ds-gestor-nomail">Sin contacto cargado</span>}
+                : (!item.gestorTel && <span className="ds-gestor-nomail">Sin contacto cargado</span>)}
+              {item.gestorTel && <a className="ds-gestor-mail" href={"tel:" + item.gestorTel}><Ico name="phone" size={13} />{item.gestorTel}</a>}
             </div>
           </div>
         </section>

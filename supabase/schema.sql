@@ -29,6 +29,7 @@ create table if not exists public.siniestros (
   gestion_real      text,                            -- última gestión realizada
   gestor            text,                            -- gestor de la compañía
   gestor_email      text,
+  gestor_tel        text,
   obs               text,
   ticket            text,
   franquicia_pct    text,                            -- franquicia % (solo cobertura TODO RIESGO)

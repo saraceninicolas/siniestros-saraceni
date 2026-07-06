@@ -34,7 +34,7 @@ const hechoColor = (h) => HECHO_COLOR[h] || { fg: "#475569", bg: "#EEF1F4" };
 
 // Coberturas: solo el ramo AUTO usa este desplegable fijo.
 // Para el resto de los ramos la cobertura es texto libre.
-const COBERTURAS_AUTO = ["TERCEROS COMPLETOS", "TODO RIESGO", "B"];
+const COBERTURAS_AUTO = ["TERCEROS COMPLETOS", "TODO RIESGO", "RESPONSABILIDAD CIVIL"];
 // Sugerencias (datalist) para ramos no-auto:
 const COBERTURAS = ["M PLUS", "TR 2%", "TR 4%", "TR PORTATIL", "TC", "CRISTAL"];
 
@@ -149,7 +149,7 @@ function buildSeed() {
       poliza, nroSiniestro,
       fechaOcurrido: ocurrido, fechaDenuncia: denuncia, fechaLimite: limite,
       fechaInspeccion: inspeccion,
-      gestionAR, gestionReal, gestiones, gestor, gestorEmail, obs, ticket,
+      gestionAR, gestionReal, gestiones, gestor, gestorEmail, gestorTel: "", obs, ticket,
       franquiciaPct: "", franquiciaMonto: "", adjuntos: [],
       enCalendario: !!calendar,
       ultimaModPor: STATIONS[n % 2], ultimaModFecha: recentIso(modAgo, 9 + (n % 7), (n * 11) % 60),

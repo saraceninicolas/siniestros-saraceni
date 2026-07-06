@@ -37,7 +37,7 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
   const blank = {
     estado: "Abierto", cliente: "", cia: CIAS[0], ramo: "AUTO", hecho: HECHOS[0], cobertura: COBERTURAS_AUTO[0],
     poliza: "", nroSiniestro: "", fechaOcurrido: "", fechaDenuncia: "", fechaLimite: "", fechaInspeccion: "",
-    gestionAR: "", gestionReal: "", gestiones: [], gestor: "", gestorEmail: "", obs: "", ticket: "",
+    gestionAR: "", gestionReal: "", gestiones: [], gestor: "", gestorEmail: "", gestorTel: "", obs: "", ticket: "",
     franquiciaPct: "", franquiciaMonto: "", adjuntos: [], enCalendario: false,
   };
   const [f, setF] = React.useState(() => {
@@ -213,6 +213,7 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
         </div>
         <Field label="Gestor (compañía)"><input className="input" value={f.gestor} onChange={(e) => set("gestor", e.target.value)} placeholder="Apellido, Nombre" /></Field>
         <Field label="Contacto del gestor"><input className="input" value={f.gestorEmail} onChange={(e) => set("gestorEmail", e.target.value)} placeholder="email@compañia.com" /></Field>
+        <Field label="Teléfono del gestor"><input className="input" type="tel" value={f.gestorTel} onChange={(e) => set("gestorTel", e.target.value)} placeholder="Ej: 11 5555-5555" /></Field>
         <Field label="Estado">
           <div className="estado-pills">
             {ESTADO_LIST.map((s) => (

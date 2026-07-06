@@ -38,6 +38,7 @@ const Icons = {
   refresh:["M4 11a8 8 0 0 1 13.7-5.3L21 9", "M21 4v5h-5", "M20 13a8 8 0 0 1-13.7 5.3L3 15", "M3 20v-5h5"],
   card:   ["M3 6h18v12H3z", "M3 10h18", "M7 15h4"],
   target: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M12 16.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9z", "M12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"],
+  phone:  ["M4 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L14 18l5 2v4a2 2 0 0 1-2 2A18 18 0 0 1 2 8a2 2 0 0 1 2-2z"],
 };
 const Ico = ({ name, ...rest }) => <Icon d={Icons[name]} {...rest} />;
 
@@ -62,13 +63,12 @@ function UrgBadge({ item }) {
   );
 }
 function RamoTag({ ramo, hecho }) {
-  const hc = hechoColor(hecho);
   return (
     <span className="ramo">
       <Ico name={RAMO_ICON[ramo] || "doc"} size={14} />
       <span className="ramo-body">
         <span className="ramo-name">{RAMO_LABEL[ramo] || ramo}</span>
-        {hecho && <span className="hecho-badge" style={{ color: hc.fg, background: hc.bg }}>{HECHO_LABEL[hecho] || hecho}</span>}
+        {hecho && <span className="hecho-badge">{HECHO_LABEL[hecho] || hecho}</span>}
       </span>
     </span>
   );
