@@ -53,12 +53,16 @@ function App() {
   React.useEffect(() => {
     if (!window.DB || !window.DB.configured()) { setAuthChecked(true); return; }
     let alive = true;
+    // Solo cambia la sesión si cambia el usuario (login/logout).
+    // El refresco de token (mismo usuario, p.ej. al volver de otra pestaña) se ignora
+    // para no recargar y no desmontar un formulario abierto.
+    const uid = (s) => (s && s.user ? s.user.id : null);
     (async () => {
-      try { const s = await window.DB.auth.session(); if (alive) setSession(s); }
+      try { const s = await window.DB.auth.session(); if (alive) setSession((prev) => (uid(prev) === uid(s) ? prev : s)); }
       catch (e) { console.error("Auth:", e); }
       if (alive) setAuthChecked(true);
     })();
-    const unsub = window.DB.auth.onChange((s) => { if (alive) setSession(s); });
+    const unsub = window.DB.auth.onChange((s) => { if (alive) setSession((prev) => (uid(prev) === uid(s) ? prev : s)); });
     return () => { alive = false; if (unsub) unsub(); };
   }, []);
 
