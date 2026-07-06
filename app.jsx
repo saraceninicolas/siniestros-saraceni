@@ -1,22 +1,6 @@
 // app.jsx — Saraceni Seguros · Portal de Siniestros (modelo real + Supabase)
 
-const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "brand": "#DD0909",
-  "density": "regular",
-  "fontScale": 100,
-  "sidebar": "charcoal"
-}/*EDITMODE-END*/;
-
-function darken(hex, amt = 0.12) {
-  const n = parseInt(hex.slice(1), 16);
-  let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
-  r = Math.round(r * (1 - amt)); g = Math.round(g * (1 - amt)); b = Math.round(b * (1 - amt));
-  return "#" + [r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("");
-}
-
 function App() {
-  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
-
   const [station, setStation] = React.useState(STATIONS[0]);
   const [siniestros, setSiniestros] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
@@ -39,15 +23,6 @@ function App() {
     clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 2600);
   }, []);
-
-  React.useEffect(() => {
-    const r = document.documentElement;
-    r.style.setProperty("--brand", t.brand);
-    r.style.setProperty("--brand-d", darken(t.brand, 0.14));
-    r.style.setProperty("--font-scale", (t.fontScale / 100).toString());
-    r.dataset.density = t.density;
-    r.dataset.sidebar = t.sidebar;
-  }, [t.brand, t.fontScale, t.density, t.sidebar]);
 
   // ---- sesión: ¿hay alguien logueado? ----
   React.useEffect(() => {
@@ -152,6 +127,8 @@ function App() {
   }, [activos, query]);
 
   const selected = activos.find((s) => s.id === selectedId) || null;
+  const userEmail = session && session.user ? session.user.email : null;
+  const quien = userEmail || station;
 
   const handleCreate = async (data) => {
   let n;
@@ -161,7 +138,7 @@ function App() {
   } else {
     n = siniestros.reduce((m, s) => Math.max(m, s.n || 0), 0) + 1;
   }
-  let item = { ...data, id: sinId(n), n, ultimaModPor: station, ultimaModFecha: nowIso(), eliminado: false };
+  let item = { ...data, id: sinId(n), n, ultimaModPor: quien, ultimaModFecha: nowIso(), eliminado: false };
   if (usingDb) {
     try { item = await window.DB.create(item); }
     catch (e) { console.error(e); flash("Error al guardar en Supabase"); return; }
@@ -171,7 +148,7 @@ function App() {
   flash(`Siniestro ${data.nroSiniestro} registrado`);
 };
   const handleUpdate = async (data) => {
-    let updated = { ...data, ultimaModPor: station, ultimaModFecha: nowIso() };
+    let updated = { ...data, ultimaModPor: quien, ultimaModFecha: nowIso() };
     if (usingDb) {
       try { updated = await window.DB.update(updated); }
       catch (e) { console.error(e); flash("Error al actualizar en Supabase"); return; }
@@ -252,11 +229,11 @@ function App() {
 
   return (
     <div className="app">
-      <Sidebar active={active} onNav={(k) => { setActive(k); setDetailId(null); }} station={station}
+      <Sidebar active={active} onNav={(k) => { setActive(k); setDetailId(null); }} station={quien}
         counts={{ abiertos: abiertos.length, porVencer }} />
 
       <main className="main">
-        <Topbar active={active} query={query} onQuery={setQuery} station={station}
+        <Topbar active={active} query={query} onQuery={setQuery} station={quien}
           onSwitchStation={switchStation} onNew={() => setModal({ type: "new" })}
           onOpenSync={() => setModal({ type: "sync" })} onLogout={configured ? logout : undefined}
           isSiniestros={isSiniestros} />
@@ -264,7 +241,7 @@ function App() {
         {!isSiniestros ? (
           <div className="content">
             {FACTURACION_KEYS.includes(active)
-              ? <FacturacionModule active={active} station={station} query={query} />
+              ? <FacturacionModule active={active} station={quien} query={query} />
               : <ModuleScreen info={NAV_LOOKUP[active]} />}
           </div>
         ) : detailItem ? (
@@ -295,26 +272,12 @@ function App() {
         )}
       </main>
 
-      {modal?.type === "new" && <ClaimFormModal mode="new" station={station} onClose={() => setModal(null)} onSubmit={handleCreate} />}
-      {modal?.type === "edit" && <ClaimFormModal mode="edit" initial={modal.item} station={station} onClose={() => setModal(null)} onSubmit={handleUpdate} />}
-      {modal?.type === "delete" && <ConfirmDelete item={modal.item} station={station} onClose={() => setModal(null)} onConfirm={handleDelete} />}
+      {modal?.type === "new" && <ClaimFormModal mode="new" station={quien} onClose={() => setModal(null)} onSubmit={handleCreate} />}
+      {modal?.type === "edit" && <ClaimFormModal mode="edit" initial={modal.item} station={quien} onClose={() => setModal(null)} onSubmit={handleUpdate} />}
+      {modal?.type === "delete" && <ConfirmDelete item={modal.item} station={quien} onClose={() => setModal(null)} onConfirm={handleDelete} />}
       {modal?.type === "sync" && <CalendarSync data={activos} onClose={() => setModal(null)} onAgendar={marcarAgendado} />}
 
       <Toast toast={toast} />
-
-      <TweaksPanel>
-        <TweakSection label="Marca" />
-        <TweakColor label="Color de marca" value={t.brand}
-          options={["#DD0909", "#B91C1C", "#1D4ED8", "#0F766E", "#C2410C"]}
-          onChange={(v) => setTweak("brand", v)} />
-        <TweakRadio label="Sidebar" value={t.sidebar} options={["charcoal", "rojo", "claro"]}
-          onChange={(v) => setTweak("sidebar", v)} />
-        <TweakSection label="Densidad y texto" />
-        <TweakRadio label="Densidad tabla" value={t.density} options={["compact", "regular", "comfy"]}
-          onChange={(v) => setTweak("density", v)} />
-        <TweakSlider label="Escala de texto" value={t.fontScale} min={90} max={115} step={5} unit="%"
-          onChange={(v) => setTweak("fontScale", v)} />
-      </TweaksPanel>
     </div>
   );
 }

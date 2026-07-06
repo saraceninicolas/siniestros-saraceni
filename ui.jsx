@@ -137,10 +137,10 @@ function Sidebar({ active, onNav, station, counts }) {
       </nav>
       <div className="sb-station">
         <div className="sb-station-row">
-          <span className="sb-station-led" /><span className="sb-station-label">Puesto activo</span><Ico name="monitor" size={14} />
+          <span className="sb-station-led" /><span className="sb-station-label">Usuario</span><Ico name="user" size={14} />
         </div>
-        <div className="sb-station-name">{station}</div>
-        <div className="sb-station-note">Sin inicio de sesión · puesto compartido</div>
+        <div className="sb-station-name" title={station} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{station}</div>
+        <div className="sb-station-note">Sesión activa</div>
       </div>
       <div className="sb-foot">
         <span className="sb-foot-mark">SARACENI</span>
@@ -170,9 +170,9 @@ function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpe
         <div className="tb-date"><Ico name="clock" size={14} /><span style={{ textTransform: "capitalize" }}>{HOY}</span></div>
         <div className="tb-sep" />
         {isSiniestros && <button className="btn-ghost tb-icon" title="Sincronizar con Google Calendar" onClick={onOpenSync}><Ico name="agenda" size={18} /></button>}
-        <button className="tb-station-chip" onClick={onSwitchStation} title="Cambiar de puesto (demo)">
-          <span className="sb-station-led" /><Ico name="monitor" size={14} />{station}
-        </button>
+        <span className="tb-station-chip" title="Usuario conectado">
+          <span className="sb-station-led" /><Ico name="user" size={14} />{station}
+        </span>
         {isSiniestros && <button className="btn-primary" onClick={onNew}><Ico name="plus" size={17} />Registrar siniestro</button>}
         {onLogout && <button className="btn-ghost tb-icon" title="Cerrar sesión" onClick={onLogout}><Ico name="logout" size={18} /></button>}
       </div>
