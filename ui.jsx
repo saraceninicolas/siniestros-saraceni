@@ -93,6 +93,7 @@ const NAV_LOOKUP = {};
 PORTAL_NAV.forEach((g) => g.children.forEach((c) => { NAV_LOOKUP[c.key] = { section: g.label, sectionKey: g.key, title: c.label }; }));
 const SINIESTROS_KEYS = ["dashboard", "agenda"];
 const FACTURACION_KEYS = ["fact-comprobantes", "fact-reportes"];
+const RENOVACION_KEYS = ["renov-proximas", "renov-historial"];
 
 // ---------- sidebar ----------
 function Sidebar({ active, onNav, station, counts }) {
@@ -410,5 +411,5 @@ function ModuleScreen({ info }) {
 
 Object.assign(window, {
   Ico, Icons, Badge, UrgBadge, RamoTag, Sidebar, Topbar, Kpis, Toolbar, ClaimsTable, Agenda,
-  ModuleScreen, PORTAL_NAV, NAV_LOOKUP, SINIESTROS_KEYS, FACTURACION_KEYS,
+  ModuleScreen, PORTAL_NAV, NAV_LOOKUP, SINIESTROS_KEYS, FACTURACION_KEYS, RENOVACION_KEYS,
 });

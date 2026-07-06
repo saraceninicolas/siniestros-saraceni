@@ -246,6 +246,8 @@ function App() {
           <div className="content">
             {FACTURACION_KEYS.includes(active)
               ? <FacturacionModule active={active} station={quien} query={query} />
+              : RENOVACION_KEYS.includes(active)
+              ? <RenovacionesModule active={active} station={quien} query={query} />
               : <ModuleScreen info={NAV_LOOKUP[active]} />}
           </div>
         ) : detailItem ? (
