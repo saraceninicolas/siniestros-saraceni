@@ -6,45 +6,74 @@ function InfoRow({ k, v, mono }) {
   );
 }
 
-// Exporta el historial de gestiones a PDF (abre vista imprimible → Guardar como PDF)
-function exportGestionesPDF(item) {
+// Exporta la FICHA COMPLETA del siniestro a PDF (datos + historial de gestiones)
+function exportSiniestroPDF(item) {
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  const fd = (iso) => (iso ? esc(fmtDate(iso)) : "—");
+  const kv = (pairs) => `<table class="kv">${pairs.map(([k, v]) => `<tr><td class="k">${esc(k)}</td><td class="v">${v == null || v === "" ? "—" : esc(v)}</td></tr>`).join("")}</table>`;
+  const dias = diasActivo(item);
+  const inspeccion = item.fechaInspeccion ? fmtDate(item.fechaInspeccion) : "Pendiente";
+  const franq = item.cobertura === "TODO RIESGO"
+    ? [["Franquicia %", item.franquiciaPct ? item.franquiciaPct + "%" : "—"], ["Franquicia $", item.franquiciaMonto || "—"]] : [];
   const gs = [...(item.gestiones || [])].sort((a, b) => (a.fecha || "").localeCompare(b.fecha || ""));
   const rows = gs.length
     ? gs.map((g) => `<tr><td class="d">${esc(fmtDate(g.fecha))}</td><td>${esc(g.texto)}</td><td class="pc">${esc(g.pc || "")}</td></tr>`).join("")
     : `<tr><td colspan="3" class="empty">Sin gestiones registradas.</td></tr>`;
   const w = window.open("", "_blank");
   if (!w) { alert("Permití las ventanas emergentes para exportar el PDF."); return; }
-  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Gestiones ${esc(item.id)}</title>
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Siniestro ${esc(item.id)}</title>
   <style>
     *{font-family:Arial,Helvetica,sans-serif;box-sizing:border-box}
-    body{margin:32px;color:#191C22}
+    body{margin:30px;color:#191C22}
     .brand{color:#DD0909;font-weight:800;letter-spacing:.14em;font-size:12px}
-    h1{font-size:20px;margin:6px 0 2px}
-    .sub{color:#5A6271;font-size:12px;margin-bottom:16px}
-    .meta{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:#5A6271;border:1px solid #E7E9ED;border-radius:8px;padding:10px 14px;margin-bottom:16px}
-    .meta b{color:#191C22}
-    table{width:100%;border-collapse:collapse;font-size:12px}
-    th{text-align:left;background:#F5F6F8;border-bottom:1px solid #E7E9ED;padding:8px 10px;text-transform:uppercase;font-size:10px;letter-spacing:.05em;color:#8B93A1}
-    td{padding:8px 10px;border-bottom:1px solid #EFF1F4;vertical-align:top}
-    td.d{white-space:nowrap;font-weight:600;width:110px}
-    td.pc{white-space:nowrap;color:#8B93A1;width:120px}
-    td.empty{text-align:center;color:#8B93A1}
-    .foot{margin-top:18px;font-size:10px;color:#8B93A1}
+    h1{font-size:21px;margin:6px 0 2px}
+    .sub{color:#5A6271;font-size:12px;margin-bottom:14px}
+    .badges{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+    .bdg{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;border-radius:99px;padding:3px 10px;border:1px solid #E7E9ED}
+    h2{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#8B93A1;margin:16px 0 6px;border-bottom:1px solid #EFF1F4;padding-bottom:4px}
+    .cols{display:flex;gap:24px}
+    .cols>div{flex:1}
+    table.kv{width:100%;border-collapse:collapse;font-size:12px}
+    table.kv td{padding:5px 0;border-bottom:1px solid #F1F3F5;vertical-align:top}
+    table.kv td.k{color:#8B93A1;width:42%}
+    table.kv td.v{font-weight:600;text-align:right}
+    p.obs{font-size:12px;color:#5A6271;line-height:1.5;margin:4px 0}
+    table.hist{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
+    table.hist th{text-align:left;background:#F5F6F8;border-bottom:1px solid #E7E9ED;padding:8px 10px;text-transform:uppercase;font-size:10px;letter-spacing:.05em;color:#8B93A1}
+    table.hist td{padding:8px 10px;border-bottom:1px solid #EFF1F4;vertical-align:top}
+    table.hist td.d{white-space:nowrap;font-weight:600;width:110px}
+    table.hist td.pc{white-space:nowrap;color:#8B93A1;width:120px}
+    table.hist td.empty{text-align:center;color:#8B93A1}
+    .foot{margin-top:20px;font-size:10px;color:#8B93A1}
     @media print{body{margin:14mm}}
   </style></head><body>
     <div class="brand">SARACENI · BROKER DE SEGUROS</div>
-    <h1>Historial de gestiones</h1>
-    <div class="sub">${esc(item.cliente)} · N° ${esc(item.nroSiniestro)} · ${esc(item.id)}</div>
-    <div class="meta">
-      <span>Compañía: <b>${esc(ciaLabel(item.cia))}</b></span>
-      <span>Ramo: <b>${esc(RAMO_LABEL[item.ramo] || item.ramo)}</b></span>
-      <span>Estado: <b>${esc(item.estado)}</b></span>
-      <span>Póliza: <b>${esc(item.poliza || "—")}</b></span>
-      ${item.gestionAR ? `<span>Próxima gestión: <b>${esc(item.gestionAR)}</b></span>` : ""}
+    <h1>Ficha de siniestro — ${esc(item.cliente)}</h1>
+    <div class="sub">N° ${esc(item.nroSiniestro)} · ${esc(item.id)}</div>
+    <div class="badges">
+      <span class="bdg" style="color:#1D4ED8;background:#E8F0FE">${esc(item.estado)}</span>
+      <span class="bdg" style="color:#191C22;background:#F5F6F8">${esc(RAMO_LABEL[item.ramo] || item.ramo)}</span>
+      <span class="bdg" style="color:#C0241D;background:#FBE3E3">${esc(HECHO_LABEL[item.hecho] || item.hecho)}</span>
+      ${dias != null ? `<span class="bdg" style="color:#5A6271;background:#F5F6F8">${dias} días activo</span>` : ""}
     </div>
-    <table><thead><tr><th>Fecha</th><th>Gestión realizada</th><th>Puesto</th></tr></thead><tbody>${rows}</tbody></table>
-    <div class="foot">Generado el ${new Date().toLocaleString("es-AR")} desde el Portal de Siniestros de Saraceni.</div>
+    <div class="cols">
+      <div>
+        <h2>Póliza y cobertura</h2>
+        ${kv([["Compañía", ciaLabel(item.cia)], ["Ramo", RAMO_LABEL[item.ramo] || item.ramo], ["Hecho", HECHO_LABEL[item.hecho] || item.hecho], ["Cobertura", item.cobertura], ...franq, ["N° póliza", item.poliza], ["N° siniestro", item.nroSiniestro]])}
+      </div>
+      <div>
+        <h2>Fechas</h2>
+        ${kv([["Ocurrido", fd(item.fechaOcurrido)], ["Denuncia", fd(item.fechaDenuncia)], ["Límite respuesta", item.fechaLimite ? fmtDate(item.fechaLimite) : "—"], ["Inspección", inspeccion], ["Días activo", dias != null ? dias + " días" : "—"]])}
+      </div>
+    </div>
+    <h2>Gestión</h2>
+    ${kv([["Próxima gestión a realizar", item.gestionAR], ["Gestor", item.gestor], ["Contacto", item.gestorEmail]])}
+    <h2>Observaciones</h2>
+    <p class="obs">${esc(item.obs || "Sin observaciones.")}</p>
+    ${item.ticket ? `<p class="obs">Ticket: ${esc(item.ticket)}</p>` : ""}
+    <h2>Historial de gestiones realizadas</h2>
+    <table class="hist"><thead><tr><th>Fecha</th><th>Gestión realizada</th><th>Puesto</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="foot">Generado el ${new Date().toLocaleString("es-AR")} desde el Portal de Siniestros de Saraceni · Última modificación por ${esc(item.ultimaModPor || "—")}.</div>
   </body></html>`);
   w.document.close(); w.focus();
   setTimeout(() => { try { w.print(); } catch (e) { /* noop */ } }, 350);
@@ -169,7 +198,7 @@ function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs }) {
         <section className="ds-card ds-card-wide">
           <div className="ds-card-title" style={{ justifyContent: "space-between" }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><Ico name="check" size={15} />Historial de gestiones realizadas</span>
-            <button className="btn-ghost sm" onClick={() => exportGestionesPDF(item)} title="Exportar a PDF"><Ico name="download" size={14} />Exportar PDF</button>
+            <button className="btn-ghost sm" onClick={() => exportSiniestroPDF(item)} title="Exportar ficha completa a PDF"><Ico name="download" size={14} />Exportar ficha (PDF)</button>
           </div>
           {(item.gestiones && item.gestiones.length) ? (
             <ul className="hist-tl">

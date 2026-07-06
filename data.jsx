@@ -21,6 +21,16 @@ const RAMO_ICON = { AUTO: "car", HOGAR: "home", ICO: "store", INT_CONSORCIO: "st
 
 const HECHOS = ["DAÑO PARCIAL", "ROBO TOTAL", "CRISTAL", "INCENDIO", "GRANIZO", "RC"];
 const HECHO_LABEL = { "DAÑO PARCIAL": "Daño parcial", "ROBO TOTAL": "Robo total", "CRISTAL": "Cristal", "INCENDIO": "Incendio", "GRANIZO": "Granizo", "RC": "Resp. civil" };
+// Color del motivo (para que se note de un vistazo, ej. Robo total en rojo)
+const HECHO_COLOR = {
+  "ROBO TOTAL":   { fg: "#C0241D", bg: "#FBE3E3" },
+  "DAÑO PARCIAL": { fg: "#B45309", bg: "#FEF3E2" },
+  "CRISTAL":      { fg: "#1D4ED8", bg: "#E8F0FE" },
+  "INCENDIO":     { fg: "#C2410C", bg: "#FEECDC" },
+  "GRANIZO":      { fg: "#0E7490", bg: "#E0F2FE" },
+  "RC":           { fg: "#475569", bg: "#EEF1F4" },
+};
+const hechoColor = (h) => HECHO_COLOR[h] || { fg: "#475569", bg: "#EEF1F4" };
 
 // Coberturas: solo el ramo AUTO usa este desplegable fijo.
 // Para el resto de los ramos la cobertura es texto libre.
@@ -91,10 +101,11 @@ function fmtTimeAgo(iso) {
   return `hace ${Math.round(h / 24)} d`;
 }
 
-// Días transcurridos desde que el siniestro se cargó (para ver cuántos lleva activo)
+// Días que lleva activo el siniestro: desde la denuncia (o el hecho / la carga)
 function diasActivo(item) {
-  const base = item.creado || item.ultimaModFecha;
+  let base = item.fechaDenuncia || item.fechaOcurrido || item.creado || item.ultimaModFecha;
   if (!base) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(base)) base = base + "T00:00:00";
   const d = new Date(base);
   if (isNaN(d)) return null;
   return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
@@ -149,7 +160,7 @@ function buildSeed() {
 }
 
 Object.assign(window, {
-  CIA_FULL, CIAS, ciaLabel, RAMOS, RAMO_LABEL, RAMO_ICON, HECHOS, HECHO_LABEL,
+  CIA_FULL, CIAS, ciaLabel, RAMOS, RAMO_LABEL, RAMO_ICON, HECHOS, HECHO_LABEL, HECHO_COLOR, hechoColor,
   COBERTURAS, COBERTURAS_AUTO, esRamoAuto, coberturasDe, aplicaFranquicia,
   STATIONS, ESTADOS, ESTADO_LIST, URGENCIA,
   fmtDate, fmtDateShort, fmtTimeAgo, daysUntil, urgenciaDe, venceTexto, diasActivo, nowIso,

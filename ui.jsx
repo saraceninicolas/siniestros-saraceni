@@ -62,10 +62,14 @@ function UrgBadge({ item }) {
   );
 }
 function RamoTag({ ramo, hecho }) {
+  const hc = hechoColor(hecho);
   return (
     <span className="ramo">
       <Ico name={RAMO_ICON[ramo] || "doc"} size={14} />
-      <span>{RAMO_LABEL[ramo] || ramo}{hecho ? <i className="ramo-sub">{HECHO_LABEL[hecho] || hecho}</i> : null}</span>
+      <span className="ramo-body">
+        <span className="ramo-name">{RAMO_LABEL[ramo] || ramo}</span>
+        {hecho && <span className="hecho-badge" style={{ color: hc.fg, background: hc.bg }}>{HECHO_LABEL[hecho] || hecho}</span>}
+      </span>
     </span>
   );
 }
@@ -258,11 +262,11 @@ function ClaimsTable({ rows, selectedId, onSelect, onOpen }) {
           <tr>
             <th style={{ width: 34 }}></th>
             <th>Vence</th>
-            <th>Estado</th>
+            <th>Gestión a realizar</th>
             <th>Cliente</th>
             <th>Compañía</th>
             <th>Ramo / Hecho</th>
-            <th>Gestión a realizar</th>
+            <th>Estado</th>
             <th>N° Siniestro</th>
             <th style={{ width: 44 }}></th>
           </tr>
@@ -280,9 +284,10 @@ function ClaimsTable({ rows, selectedId, onSelect, onOpen }) {
                     ? <span className="urg-none">—</span>
                     : <div className="vence"><span className="vence-date mono">{fmtDateShort(r.fechaLimite)}</span><UrgBadge item={r} /></div>}
                 </td>
-                <td>
-                  <Badge estado={r.estado} />
-                  {dias != null && <div className="cell-sub">{dias === 0 ? "hoy" : dias + " d activo"}</div>}
+                <td className="cell-gestion">
+                  {r.estado === "Terminado"
+                    ? <span className="gestion-done"><Ico name="check" size={13} />Sin pendientes</span>
+                    : <span className="gestion-text" title={r.gestionAR}>{r.gestionAR || "—"}</span>}
                 </td>
                 <td>
                   <div className="cell-strong">{r.cliente}</div>
@@ -290,10 +295,9 @@ function ClaimsTable({ rows, selectedId, onSelect, onOpen }) {
                 </td>
                 <td><span className="cia-pill">{ciaLabel(r.cia)}</span></td>
                 <td><RamoTag ramo={r.ramo} hecho={r.hecho} /></td>
-                <td className="cell-gestion">
-                  {r.estado === "Terminado"
-                    ? <span className="gestion-done"><Ico name="check" size={13} />Sin pendientes</span>
-                    : <span className="gestion-text" title={r.gestionAR}>{r.gestionAR || "—"}</span>}
+                <td>
+                  <Badge estado={r.estado} />
+                  {dias != null && <div className="cell-sub">{dias === 0 ? "hoy" : dias + " d activo"}</div>}
                 </td>
                 <td>
                   <div className="mono cell-id">{r.nroSiniestro}</div>
