@@ -128,7 +128,11 @@ function App() {
 
   const selected = activos.find((s) => s.id === selectedId) || null;
   const userEmail = session && session.user ? session.user.email : null;
-  const quien = userEmail || station;
+  const nombreDe = (email) => {
+    const p = (email || "").split("@")[0].replace(/[._-]+/g, " ").trim();
+    return p ? p.replace(/\b\w/g, (c) => c.toUpperCase()) : email;
+  };
+  const quien = userEmail ? nombreDe(userEmail) : station;
 
   const handleCreate = async (data) => {
   let n;
