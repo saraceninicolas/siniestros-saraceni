@@ -79,10 +79,19 @@ function exportSiniestroPDF(item) {
   setTimeout(() => { try { w.print(); } catch (e) { /* noop */ } }, 350);
 }
 
-function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs }) {
+function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs, onTerminar, onQuickGestion }) {
   const inspeccion = item.fechaInspeccion ? fmtDate(item.fechaInspeccion) : "Pendiente";
   const abierto = item.estado === "Abierto";
   const adjuntos = item.adjuntos || [];
+  // gestión rápida (sin abrir el editor)
+  const hoyISO = () => new Date().toISOString().slice(0, 10);
+  const [qg, setQg] = React.useState({ fecha: hoyISO(), texto: "" });
+  const addQuick = () => {
+    const texto = qg.texto.trim();
+    if (!texto || !onQuickGestion) return;
+    onQuickGestion(item, { fecha: qg.fecha || hoyISO(), texto });
+    setQg({ fecha: hoyISO(), texto: "" });
+  };
   const [adjUrls, setAdjUrls] = React.useState({});
   React.useEffect(() => {
     let alive = true;
@@ -101,6 +110,12 @@ function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs }) {
       <div className="ds-topbar">
         <button className="ds-back" onClick={onBack}><Ico name="chevL" size={17} />Volver al listado</button>
         <div className="ds-top-actions">
+          {abierto && onTerminar && (
+            <button className="btn-ghost" style={{ color: "#15803D", borderColor: "#bfe5cc" }}
+              onClick={() => { if (window.confirm(`¿Marcar el siniestro de ${item.cliente} como Terminado?`)) onTerminar(item); }}>
+              <Ico name="check" size={15} />Marcar terminado
+            </button>
+          )}
           <button className="btn-ghost" onClick={() => onEdit(item)}><Ico name="edit" size={15} />Editar</button>
           <button className="btn-danger" onClick={() => onDelete(item)}><Ico name="trash" size={15} />Eliminar</button>
         </div>
@@ -215,6 +230,19 @@ function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs }) {
             </ul>
           ) : (
             <p className="ds-obs">Sin gestiones registradas todavía.</p>
+          )}
+          {abierto && onQuickGestion && (
+            <div className="hist-add" style={{ marginTop: 14 }}>
+              <input className="input hist-add-date" type="date" value={qg.fecha}
+                onChange={(e) => setQg((p) => ({ ...p, fecha: e.target.value }))} />
+              <input className="input hist-add-text" value={qg.texto}
+                onChange={(e) => setQg((p) => ({ ...p, texto: e.target.value }))}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addQuick(); } }}
+                placeholder="Registrar una gestión ahora…" />
+              <button type="button" className="btn-ghost hist-add-btn" onClick={addQuick} disabled={!qg.texto.trim()}>
+                <Ico name="plus" size={15} />Agregar gestión
+              </button>
+            </div>
           )}
         </section>
 

@@ -86,6 +86,14 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
   const removeGestion = (idx) => setF((p) => {
     const g = [...(p.gestiones || [])]; g.splice(idx, 1); return { ...p, gestiones: g };
   });
+  // Aviso de cambios sin guardar al cerrar (scrim, X, Escape o Cancelar)
+  const snap0 = React.useRef(null);
+  if (snap0.current === null) snap0.current = JSON.stringify(f);
+  const hayCambios = () => JSON.stringify(f) !== snap0.current || !!newGest.texto.trim();
+  const safeClose = () => {
+    if (hayCambios() && !window.confirm("Tenés cambios sin guardar. ¿Cerrar sin guardar?")) return;
+    onClose();
+  };
   const valid = f.cliente.trim() && f.nroSiniestro.trim();
   // La última gestión del historial queda como "gestión realizada" (compatibilidad)
   const submit = () => {
@@ -99,12 +107,12 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
     <ModalShell wide
       title={mode === "edit" ? "Editar siniestro" : "Registrar nuevo siniestro"}
       sub={mode === "edit" ? `${initial.id} · ${initial.cliente}` : "Cargá los datos del siniestro y la gestión"}
-      onClose={onClose}
+      onClose={safeClose}
       footer={
         <>
           <span className="foot-note"><Ico name="monitor" size={14} /> Se registrará como <b>{station}</b></span>
           <div className="foot-btns">
-            <button className="btn-ghost" onClick={onClose}>Cancelar</button>
+            <button className="btn-ghost" onClick={safeClose}>Cancelar</button>
             <button className="btn-primary" onClick={submit} disabled={!valid}>
               <Ico name="check" size={16} />{mode === "edit" ? "Guardar cambios" : "Registrar"}
             </button>
@@ -368,7 +376,12 @@ function ConfirmDelete({ item, station, onClose, onConfirm }) {
 function Toast({ toast }) {
   if (!toast) return null;
   return (
-    <div className="toast"><span className="toast-ico"><Ico name="check" size={15} /></span><span>{toast.msg}</span></div>
+    <div className="toast">
+      <span className="toast-ico" style={toast.err ? { background: "#DC2626" } : null}>
+        <Ico name={toast.err ? "alert" : "check"} size={15} />
+      </span>
+      <span>{toast.msg}</span>
+    </div>
   );
 }
 

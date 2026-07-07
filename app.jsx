@@ -18,10 +18,10 @@ function App() {
   const [toast, setToast] = React.useState(null);
   const toastTimer = React.useRef(null);
 
-  const flash = React.useCallback((msg) => {
-    setToast({ msg, id: Date.now() });
+  const flash = React.useCallback((msg, err) => {
+    setToast({ msg, err: !!err, id: Date.now() });
     clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(null), 2600);
+    toastTimer.current = setTimeout(() => setToast(null), err ? 4000 : 2600);
   }, []);
 
   // ---- sesión: ¿hay alguien logueado? ----
@@ -63,7 +63,7 @@ function App() {
           if (!alive) return;
           setSiniestros(buildSeed());
           setUsingDb(false);
-          flash("No se pudo conectar a Supabase — modo demo");
+          flash("No se pudo conectar a Supabase — modo demo", true);
         }
       } else {
         setSiniestros(buildSeed());
@@ -135,6 +135,10 @@ function App() {
   const quien = userEmail ? nombreDe(userEmail) : station;
 
   const handleCreate = async (data) => {
+  // Aviso si ya existe un siniestro activo con el mismo número
+  const nro = (data.nroSiniestro || "").trim();
+  const dup = nro && activos.find((s) => (s.nroSiniestro || "").trim() === nro);
+  if (dup && !window.confirm(`Ya existe un siniestro con el N° ${nro} (${dup.cliente}). ¿Registrarlo igual?`)) return;
   let n;
   if (usingDb) {
     try { n = (await window.DB.maxN()) + 1; }
@@ -145,7 +149,7 @@ function App() {
   let item = { ...data, id: sinId(n), n, ultimaModPor: quien, ultimaModFecha: nowIso(), eliminado: false };
   if (usingDb) {
     try { item = await window.DB.create(item); }
-    catch (e) { console.error(e); flash("Error al guardar en Supabase"); return; }
+    catch (e) { console.error(e); flash("Error al guardar en Supabase", true); return; }
   }
   setSiniestros((p) => [item, ...p]);
   setModal(null);
@@ -155,16 +159,23 @@ function App() {
     let updated = { ...data, ultimaModPor: quien, ultimaModFecha: nowIso() };
     if (usingDb) {
       try { updated = await window.DB.update(updated); }
-      catch (e) { console.error(e); flash("Error al actualizar en Supabase"); return; }
+      catch (e) { console.error(e); flash("Error al actualizar en Supabase", true); return; }
     }
     setSiniestros((p) => p.map((s) => s.id === data.id ? { ...s, ...updated } : s));
     setModal(null);
     flash(`Siniestro ${data.nroSiniestro} actualizado`);
   };
+  // Acciones rápidas desde la pantalla de detalle
+  const terminarSiniestro = (item) => handleUpdate({ ...item, estado: "Terminado" });
+  const agregarGestionRapida = (item, entry) => {
+    const gs = [...(item.gestiones || []), { ...entry, pc: quien }]
+      .sort((a, b) => (a.fecha || "").localeCompare(b.fecha || ""));
+    handleUpdate({ ...item, gestiones: gs, gestionReal: gs[gs.length - 1].texto });
+  };
   const handleDelete = async (item) => {
     if (usingDb) {
       try { await window.DB.remove(item); }
-      catch (e) { console.error(e); flash("Error al eliminar en Supabase"); return; }
+      catch (e) { console.error(e); flash("Error al eliminar en Supabase", true); return; }
     }
     setSiniestros((p) => p.map((s) => s.id === item.id ? { ...s, eliminado: true } : s));
     if (selectedId === item.id) setSelectedId(null);
@@ -240,6 +251,7 @@ function App() {
         <Topbar active={active} query={query} onQuery={setQuery} station={quien}
           onSwitchStation={switchStation} onNew={() => setModal({ type: "new" })}
           onOpenSync={() => setModal({ type: "sync" })} onLogout={configured ? logout : undefined}
+          onChangePass={configured && session ? () => setModal({ type: "pass" }) : undefined}
           isSiniestros={isSiniestros} />
 
         {!isSiniestros ? (
@@ -253,7 +265,8 @@ function App() {
         ) : detailItem ? (
           <div className="content">
             <DetailScreen item={detailItem} onBack={() => setDetailId(null)}
-              onEdit={openEdit} onDelete={askDelete} onGcal={agendarGcal} onIcs={descargarIcs} />
+              onEdit={openEdit} onDelete={askDelete} onGcal={agendarGcal} onIcs={descargarIcs}
+              onTerminar={terminarSiniestro} onQuickGestion={agregarGestionRapida} />
           </div>
         ) : active === "agenda" ? (
           <div className="content">
@@ -282,6 +295,7 @@ function App() {
       {modal?.type === "edit" && <ClaimFormModal mode="edit" initial={modal.item} station={quien} onClose={() => setModal(null)} onSubmit={handleUpdate} />}
       {modal?.type === "delete" && <ConfirmDelete item={modal.item} station={quien} onClose={() => setModal(null)} onConfirm={handleDelete} />}
       {modal?.type === "sync" && <CalendarSync data={activos} onClose={() => setModal(null)} onAgendar={marcarAgendado} />}
+      {modal?.type === "pass" && <ChangePassModal onClose={() => setModal(null)} onDone={() => { setModal(null); flash("Contraseña actualizada"); }} />}
 
       <Toast toast={toast} />
     </div>

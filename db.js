@@ -191,6 +191,12 @@
     const { data } = c.auth.onAuthStateChange((_event, session) => cb(session));
     return () => { try { data.subscription.unsubscribe(); } catch (e) { /* noop */ } };
   }
+  async function authUpdatePassword(newPassword) {
+    const c = client();
+    if (!c) throw new Error("Supabase no configurado");
+    const { error } = await c.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+  }
 async function dbMaxN() {
   const c = client();
   if (!c) return 0;
@@ -377,6 +383,7 @@ async function dbMaxN() {
       signIn: authSignIn,
       signOut: authSignOut,
       onChange: authOnChange,
+      updatePassword: authUpdatePassword,
     },
     fact: {
       list: factList, create: factCreate, update: factUpdate,

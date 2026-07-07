@@ -261,6 +261,8 @@ html[data-sidebar="claro"] .sb-subitem.is-active{ color:var(--ink); }
 .table{ width:100%; border-collapse:collapse; }
 .table th{ text-align:left; font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase;
   letter-spacing:.05em; padding:11px 14px; border-bottom:1px solid var(--line); white-space:nowrap; background:var(--surface-2); }
+.table th.th-sort{ cursor:pointer; user-select:none; transition:color .13s; }
+.table th.th-sort:hover{ color:var(--ink); }
 .table td{ padding:var(--row-pad) 14px; border-bottom:1px solid var(--line-2); font-size:13px; vertical-align:middle; }
 .table tbody tr{ cursor:pointer; transition:background .12s; }
 .table tbody tr:hover{ background:#fbfafa; }

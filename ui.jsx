@@ -157,7 +157,7 @@ function Sidebar({ active, onNav, station, counts }) {
 
 // ---------- topbar ----------
 const HOY = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpenSync, onLogout, isSiniestros }) {
+function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpenSync, onLogout, onChangePass, isSiniestros }) {
   const info = NAV_LOOKUP[active] || { section: "Siniestros", title: "Panel de control" };
   return (
     <header className="tb">
@@ -179,6 +179,7 @@ function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpe
           <span className="sb-station-led" /><Ico name="user" size={14} />{station}
         </span>
         {isSiniestros && <button className="btn-primary" onClick={onNew}><Ico name="plus" size={17} />Registrar siniestro</button>}
+        {onChangePass && <button className="btn-ghost tb-icon" title="Cambiar contraseña" onClick={onChangePass}><Ico name="shield" size={17} /></button>}
         {onLogout && <button className="btn-ghost tb-icon" title="Cerrar sesión" onClick={onLogout}><Ico name="logout" size={18} /></button>}
       </div>
     </header>
@@ -246,6 +247,31 @@ function Toolbar({ title, count, estadoFilter, onEstado, ramoFilter, onRamo, cia
 
 // ---------- claims table ----------
 function ClaimsTable({ rows, selectedId, onSelect, onOpen }) {
+  // Orden por columna: 1er clic asc, 2do desc, 3ro vuelve al orden por defecto
+  const [sort, setSort] = React.useState(null);
+  const sorted = React.useMemo(() => {
+    if (!sort) return rows;
+    const val = (r) => {
+      switch (sort.key) {
+        case "vence": return r.estado === "Terminado" ? "9999-12-31" : (r.fechaLimite || "9999-12-30");
+        case "cliente": return (r.cliente || "").toLowerCase();
+        case "cia": return ciaLabel(r.cia).toLowerCase();
+        case "ramo": return ((RAMO_LABEL[r.ramo] || r.ramo || "") + " " + (r.hecho || "")).toLowerCase();
+        case "estado": return r.estado + "-" + String(999999 - (diasActivo(r) || 0)).padStart(6, "0");
+        case "nro": return r.nroSiniestro || "";
+        default: return "";
+      }
+    };
+    const arr = [...rows].sort((a, b) => { const x = val(a), y = val(b); return x < y ? -1 : x > y ? 1 : 0; });
+    if (sort.dir === "desc") arr.reverse();
+    return arr;
+  }, [rows, sort]);
+  const Th = ({ k, children }) => (
+    <th className="th-sort" title="Clic para ordenar"
+      onClick={() => setSort((s) => (s && s.key === k ? (s.dir === "asc" ? { key: k, dir: "desc" } : null) : { key: k, dir: "asc" }))}>
+      {children}{sort && sort.key === k ? (sort.dir === "asc" ? " ▲" : " ▼") : ""}
+    </th>
+  );
   if (!rows.length) {
     return (
       <div className="empty">
@@ -261,18 +287,18 @@ function ClaimsTable({ rows, selectedId, onSelect, onOpen }) {
         <thead>
           <tr>
             <th style={{ width: 34 }}></th>
-            <th>Vence</th>
+            <Th k="vence">Vence</Th>
             <th>Gestión a realizar</th>
-            <th>Cliente</th>
-            <th>Compañía</th>
-            <th>Ramo / Hecho</th>
-            <th>Estado</th>
-            <th>N° Siniestro</th>
+            <Th k="cliente">Cliente</Th>
+            <Th k="cia">Compañía</Th>
+            <Th k="ramo">Ramo / Hecho</Th>
+            <Th k="estado">Estado</Th>
+            <Th k="nro">N° Siniestro</Th>
             <th style={{ width: 44 }}></th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => {
+          {sorted.map((r) => {
             const dias = diasActivo(r);
             return (
               <tr key={r.id} className={selectedId === r.id ? "is-selected" : ""} onClick={() => onOpen(r.id)}>
