@@ -35,7 +35,7 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
   const todayISO = () => new Date().toISOString().slice(0, 10);
   const byFecha = (a, b) => (a.fecha || "").localeCompare(b.fecha || "");
   const blank = {
-    estado: "Abierto", cliente: "", cia: CIAS[0], ramo: "AUTO", hecho: HECHOS[0], cobertura: COBERTURAS_AUTO[0],
+    estado: "Abierto", cliente: "", dominio: "", referencia: "", cia: CIAS[0], ramo: "AUTO", hecho: HECHOS[0], cobertura: COBERTURAS_AUTO[0],
     poliza: "", nroSiniestro: "", fechaOcurrido: "", fechaDenuncia: "", fechaLimite: "", fechaInspeccion: "",
     gestionAR: "", gestionReal: "", gestiones: [], gestor: "", gestorEmail: "", gestorTel: "", obs: "", ticket: "",
     franquiciaPct: "", franquiciaMonto: "", adjuntos: [], enCalendario: false,
@@ -124,6 +124,14 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
         <Field label="Cliente" required full>
           <input className={"input" + (touched && !f.cliente.trim() ? " err" : "")} value={f.cliente}
             onChange={(e) => set("cliente", e.target.value)} placeholder="Nombre / razón social" />
+        </Field>
+        <Field label="Dominio / bien afectado">
+          <input className="input mono" value={f.dominio} onChange={(e) => set("dominio", e.target.value.toUpperCase())}
+            placeholder="Ej: AB123CD o Notebook Lenovo" />
+        </Field>
+        <Field label="Referencia del caso">
+          <input className="input" value={f.referencia} onChange={(e) => set("referencia", e.target.value)}
+            placeholder="Ej: Choque capó, Espejo lateral…" />
         </Field>
         <Field label="Compañía">
           <select className="input" value={f.cia} onChange={(e) => set("cia", e.target.value)}>

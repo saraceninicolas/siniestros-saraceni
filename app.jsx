@@ -104,7 +104,7 @@ function App() {
       if (ramoFilter !== "Todos" && s.ramo !== ramoFilter) return false;
       if (ciaFilter !== "Todos" && s.cia !== ciaFilter) return false;
       if (q) {
-        const hay = [s.cliente, s.poliza, s.nroSiniestro, s.id, s.cia, s.gestor, s.gestionAR].join(" ").toLowerCase();
+        const hay = [s.cliente, s.poliza, s.nroSiniestro, s.id, s.cia, s.gestor, s.gestionAR, s.dominio, s.referencia].join(" ").toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -123,8 +123,15 @@ function App() {
   const agendaData = React.useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return activos;
-    return activos.filter((s) => [s.cliente, s.gestor, s.gestionAR, s.cia].join(" ").toLowerCase().includes(q));
+    return activos.filter((s) => [s.cliente, s.gestor, s.gestionAR, s.cia, s.dominio, s.referencia].join(" ").toLowerCase().includes(q));
   }, [activos, query]);
+
+  // Cantidad de siniestros abiertos por cliente (para el chip ×N)
+  const clientesMulti = React.useMemo(() => {
+    const m = {};
+    abiertos.forEach((s) => { m[s.cliente] = (m[s.cliente] || 0) + 1; });
+    return m;
+  }, [abiertos]);
 
   const selected = activos.find((s) => s.id === selectedId) || null;
   const userEmail = session && session.user ? session.user.email : null;
@@ -285,7 +292,8 @@ function App() {
                 selected={selected}
                 onEdit={() => selected && openEdit(selected)}
                 onDelete={() => selected && askDelete(selected)} />
-              <ClaimsTable rows={rows} selectedId={selectedId} onSelect={setSelectedId} onOpen={openDetail} />
+              <ClaimsTable rows={rows} selectedId={selectedId} onSelect={setSelectedId} onOpen={openDetail}
+                multi={clientesMulti} onClientFilter={(cliente) => { setQuery(cliente); setEstadoFilter("Todos"); }} />
             </div>
           </div>
         )}

@@ -149,6 +149,7 @@ function buildSeed() {
       poliza, nroSiniestro,
       fechaOcurrido: ocurrido, fechaDenuncia: denuncia, fechaLimite: limite,
       fechaInspeccion: inspeccion,
+      dominio: "", referencia: "",
       gestionAR, gestionReal, gestiones, gestor, gestorEmail, gestorTel: "", obs, ticket,
       franquiciaPct: "", franquiciaMonto: "", adjuntos: [],
       enCalendario: !!calendar,

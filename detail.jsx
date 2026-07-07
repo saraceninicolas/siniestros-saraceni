@@ -59,7 +59,7 @@ function exportSiniestroPDF(item) {
     <div class="cols">
       <div>
         <h2>Póliza y cobertura</h2>
-        ${kv([["Compañía", ciaLabel(item.cia)], ["Ramo", RAMO_LABEL[item.ramo] || item.ramo], ["Hecho", HECHO_LABEL[item.hecho] || item.hecho], ["Cobertura", item.cobertura], ...franq, ["N° póliza", item.poliza], ["N° siniestro", item.nroSiniestro]])}
+        ${kv([["Compañía", ciaLabel(item.cia)], ["Ramo", RAMO_LABEL[item.ramo] || item.ramo], ["Hecho", HECHO_LABEL[item.hecho] || item.hecho], ["Dominio / bien", item.dominio], ["Referencia", item.referencia], ["Cobertura", item.cobertura], ...franq, ["N° póliza", item.poliza], ["N° siniestro", item.nroSiniestro]])}
       </div>
       <div>
         <h2>Fechas</h2>
@@ -125,9 +125,13 @@ function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs, onTermina
       <div className="ds-hero">
         <div className="ds-hero-left">
           <div className="ds-crumb mono">{item.nroSiniestro} · {item.id}</div>
-          <h1 className="ds-client">{item.cliente}</h1>
+          <h1 className="ds-client">
+            {item.cliente}
+            {item.referencia && <span className="ds-ref"> — {item.referencia}</span>}
+          </h1>
           <div className="ds-badges">
             <Badge estado={item.estado} />
+            {item.dominio && <span className="dt-cal mono" style={{ fontWeight: 700 }}><Ico name="car" size={13} />{item.dominio}</span>}
             <RamoTag ramo={item.ramo} hecho={item.hecho} />
             {abierto && <UrgBadge item={item} />}
             {diasActivo(item) != null && <span className="dt-cal"><Ico name="clock" size={13} />{diasActivo(item)} días activo</span>}

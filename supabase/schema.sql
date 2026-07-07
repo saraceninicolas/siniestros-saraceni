@@ -15,6 +15,8 @@ create table if not exists public.siniestros (
   n                 integer not null,                -- orden / numerador
   estado            text not null default 'Abierto', -- Abierto | Terminado
   cliente           text not null,
+  dominio           text,                            -- patente / bien afectado
+  referencia        text,                            -- etiqueta corta del caso (ej: "Choque capó")
   cia               text,                            -- compañía (LMA, PROVINCIA, ALLIANZ, ...)
   ramo              text,                            -- AUTO | HOGAR | ICO | COMERCIO | VIDA
   hecho             text,

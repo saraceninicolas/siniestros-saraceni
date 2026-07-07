@@ -246,7 +246,7 @@ function Toolbar({ title, count, estadoFilter, onEstado, ramoFilter, onRamo, cia
 }
 
 // ---------- claims table ----------
-function ClaimsTable({ rows, selectedId, onSelect, onOpen }) {
+function ClaimsTable({ rows, selectedId, onSelect, onOpen, multi, onClientFilter }) {
   // Orden por columna: 1er clic asc, 2do desc, 3ro vuelve al orden por defecto
   const [sort, setSort] = React.useState(null);
   const sorted = React.useMemo(() => {
@@ -316,8 +316,21 @@ function ClaimsTable({ rows, selectedId, onSelect, onOpen }) {
                     : <span className="gestion-text" title={r.gestionAR}>{r.gestionAR || "—"}</span>}
                 </td>
                 <td>
-                  <div className="cell-strong">{r.cliente}</div>
+                  <div className="cell-strong">
+                    {r.cliente}
+                    {multi && multi[r.cliente] > 1 && (
+                      <button className="multi-chip" title={"Este cliente tiene " + multi[r.cliente] + " siniestros activos — clic para verlos juntos"}
+                        onClick={(e) => { e.stopPropagation(); onClientFilter && onClientFilter(r.cliente); }}>×{multi[r.cliente]}</button>
+                    )}
+                  </div>
                   <div className="cell-sub mono">{r.poliza}</div>
+                  {(r.dominio || r.referencia) && (
+                    <div className="cell-sub">
+                      {r.dominio && <span className="mono" style={{ fontWeight: 700, color: "var(--ink-2)" }}>{r.dominio}</span>}
+                      {r.dominio && r.referencia && " · "}
+                      {r.referencia}
+                    </div>
+                  )}
                 </td>
                 <td><span className="cia-pill">{ciaLabel(r.cia)}</span></td>
                 <td><RamoTag ramo={r.ramo} hecho={r.hecho} /></td>
@@ -377,6 +390,7 @@ function Agenda({ data, onOpen, onSync, onGcal }) {
                 <div className="ag-card-main">
                   <div className="ag-card-top">
                     <span className="ag-client">{d.cliente}</span>
+                    {(d.dominio || d.referencia) && <span className="cia-pill sm mono">{d.dominio || d.referencia}</span>}
                     <UrgBadge item={d} />
                     {d.enCalendario && <span className="sync-done"><Ico name="check" size={12} />Agendado</span>}
                   </div>
