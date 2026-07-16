@@ -30,7 +30,7 @@ html[data-density="comfy"]{ --row-pad:18px; }
 html,body{ margin:0; height:100%; }
 body{
   font-family:"Public Sans",system-ui,sans-serif;
-  font-size:calc(15px * var(--font-scale));
+  font-size:calc(16px * var(--font-scale));
   background:var(--bg); color:var(--ink);
   -webkit-font-smoothing:antialiased;
 }
@@ -561,6 +561,57 @@ html[data-sidebar="claro"] .sb-subitem.is-active{ color:var(--ink); }
 .sync-row-date{ font-size:13px; font-weight:700; color:var(--ink-2); padding:0 14px; }
 .sync-row-actions{ display:flex; align-items:center; gap:7px; padding:0 12px 0 0; }
 .dt-cal-actions{ display:flex; align-items:center; gap:9px; margin-top:12px; }
+
+/* ---------- tipografía ampliada (portal un poco más grande) ---------- */
+.table td{ font-size:13.5px; }
+.cell-sub{ font-size:12px; }
+.cell-id{ font-size:13px; }
+.gestion-text{ font-size:13.5px; }
+.cia-pill{ font-size:12.5px; }
+.cia-pill.sm{ font-size:11.5px; }
+.btn-primary,.btn-ghost,.btn-danger{ font-size:14px; }
+.input{ font-size:14.5px; }
+.field-label{ font-size:12.5px; }
+.select{ font-size:13px; }
+.seg-btn{ font-size:13px; }
+.sb-item{ font-size:14px; }
+.sb-subitem{ font-size:13.5px; }
+.sb-folder-head{ font-size:12.5px; }
+.tb-search input{ font-size:14px; }
+.tb-titles h1{ font-size:20px; }
+.toolbar-title{ font-size:15px; }
+.ag-client{ font-size:14.5px; }
+.ag-gestion{ font-size:13.5px; }
+.ag-gestor{ font-size:12px; }
+.ramo{ font-size:13px; }
+.ramo-sub{ font-size:11.5px; }
+.hecho-badge{ font-size:11.5px; }
+.vence-date{ font-size:12.5px; }
+.kpi-label{ font-size:13px; }
+.kpi-hint{ font-size:12px; }
+.ds-k{ font-size:13px; }
+.ds-v{ font-size:14px; }
+.ds-gestion-text{ font-size:14.5px; }
+.ds-obs{ font-size:14px; }
+.hist-tl-text{ font-size:14px; }
+.hist-tl-date{ font-size:12.5px; }
+.hist-text{ font-size:13.5px; }
+.hist-date{ font-size:12.5px; }
+.dt-k{ font-size:12.5px; }
+.dt-v{ font-size:13.5px; }
+.dt-obs{ font-size:13.5px; }
+.modal-head h2{ font-size:18px; }
+.epill{ font-size:12.5px; }
+.login-title{ font-size:20px; }
+
+/* historial: orden y edición inline */
+.hist-sort{ margin-left:auto; border:none; background:none; color:var(--brand); font-size:12px; font-weight:700;
+  padding:2px 4px; border-radius:6px; }
+.hist-sort:hover{ background:#fdf2f2; }
+.hist-item-edit{ gap:8px; }
+.hist-item-edit .hist-add-date{ width:140px; flex:0 0 auto; }
+.hist-item-edit .hist-add-text{ flex:1; min-width:120px; }
+.hist-edit-btn{ padding:7px 9px; flex:0 0 auto; }
 
 /* ---------- toast ---------- */
 .toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:80;

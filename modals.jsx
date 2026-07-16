@@ -86,6 +86,22 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
   const removeGestion = (idx) => setF((p) => {
     const g = [...(p.gestiones || [])]; g.splice(idx, 1); return { ...p, gestiones: g };
   });
+  // edición de una gestión existente
+  const [editIdx, setEditIdx] = React.useState(null);
+  const [editGest, setEditGest] = React.useState({ fecha: "", texto: "" });
+  const startEdit = (i) => { const g = f.gestiones[i]; setEditIdx(i); setEditGest({ fecha: g.fecha || todayISO(), texto: g.texto || "" }); };
+  const saveEdit = () => {
+    const texto = (editGest.texto || "").trim();
+    if (!texto) return;
+    setF((p) => {
+      const gs = [...(p.gestiones || [])];
+      gs[editIdx] = { ...gs[editIdx], fecha: editGest.fecha || todayISO(), texto };
+      return { ...p, gestiones: gs.sort(byFecha) };
+    });
+    setEditIdx(null);
+  };
+  // orden de visualización del historial (asc = más vieja primero)
+  const [histDesc, setHistDesc] = React.useState(false);
   // Aviso de cambios sin guardar al cerrar (scrim, X, Escape o Cancelar)
   const snap0 = React.useRef(null);
   if (snap0.current === null) snap0.current = JSON.stringify(f);
@@ -199,17 +215,37 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
           <div className="hist-head">
             <span className="field-label">Historial de gestiones realizadas</span>
             <span className="hist-count">{(f.gestiones || []).length}</span>
+            {(f.gestiones || []).length > 1 && (
+              <button type="button" className="hist-sort" onClick={() => setHistDesc((v) => !v)} title="Cambiar orden">
+                {histDesc ? "↓ Más nueva primero" : "↑ Más vieja primero"}
+              </button>
+            )}
           </div>
           {(f.gestiones || []).length > 0 ? (
             <ul className="hist-list">
-              {f.gestiones.map((g, i) => (
-                <li className="hist-item" key={i}>
-                  <span className="hist-date mono">{fmtDateShort(g.fecha)}</span>
-                  <span className="hist-text">{g.texto}</span>
-                  <button type="button" className="hist-del" title="Quitar" onClick={() => removeGestion(i)}>
-                    <Ico name="close" size={13} />
-                  </button>
-                </li>
+              {(histDesc ? f.gestiones.map((g, i) => ({ g, i })).reverse() : f.gestiones.map((g, i) => ({ g, i }))).map(({ g, i }) => (
+                editIdx === i ? (
+                  <li className="hist-item hist-item-edit" key={"e" + i}>
+                    <input className="input hist-add-date" type="date" value={editGest.fecha}
+                      onChange={(e) => setEditGest((p) => ({ ...p, fecha: e.target.value }))} />
+                    <input className="input hist-add-text" value={editGest.texto} autoFocus
+                      onChange={(e) => setEditGest((p) => ({ ...p, texto: e.target.value }))}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); saveEdit(); } if (e.key === "Escape") { e.stopPropagation(); setEditIdx(null); } }} />
+                    <button type="button" className="btn-primary hist-edit-btn" onClick={saveEdit} disabled={!editGest.texto.trim()} title="Guardar"><Ico name="check" size={14} /></button>
+                    <button type="button" className="btn-ghost hist-edit-btn" onClick={() => setEditIdx(null)} title="Cancelar"><Ico name="close" size={14} /></button>
+                  </li>
+                ) : (
+                  <li className="hist-item" key={i}>
+                    <span className="hist-date mono">{fmtDateShort(g.fecha)}</span>
+                    <span className="hist-text">{g.texto}</span>
+                    <button type="button" className="hist-del" title="Editar" onClick={() => startEdit(i)}>
+                      <Ico name="edit" size={13} />
+                    </button>
+                    <button type="button" className="hist-del" title="Quitar" onClick={() => removeGestion(i)}>
+                      <Ico name="close" size={13} />
+                    </button>
+                  </li>
+                )
               ))}
             </ul>
           ) : (

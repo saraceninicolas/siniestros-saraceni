@@ -32,15 +32,14 @@ function _eventDetails(item) {
   return lines.filter((l) => l !== "").join("\n");
 }
 
-// (1) Google Calendar "quick add" URL — evento de día completo en la fecha límite
+// (1) Google Calendar "quick add" URL — evento de 10 a 11 hs el día de la fecha límite
 function gcalUrl(item) {
   if (!item.fechaLimite) return null;
-  const start = _icsDate(item.fechaLimite);
-  const end = _icsDate(_addDaysISO(item.fechaLimite, 1)); // fin exclusivo
+  const d = _icsDate(item.fechaLimite);
   const p = new URLSearchParams({
     action: "TEMPLATE",
     text: _eventTitle(item),
-    dates: `${start}/${end}`,
+    dates: `${d}T100000/${d}T110000`,
     details: _eventDetails(item),
   });
   return "https://calendar.google.com/calendar/render?" + p.toString();
@@ -59,13 +58,12 @@ function buildICS(items, leadDays = 1) {
   items.forEach((item) => {
     if (!item.fechaLimite) return;
     const start = _icsDate(item.fechaLimite);
-    const end = _icsDate(_addDaysISO(item.fechaLimite, 1));
     out.push(
       "BEGIN:VEVENT",
       `UID:${item.id}-${start}@saraceni`,
       `DTSTAMP:${stamp}`,
-      `DTSTART;VALUE=DATE:${start}`,
-      `DTEND;VALUE=DATE:${end}`,
+      `DTSTART:${start}T100000`,
+      `DTEND:${start}T110000`,
       `SUMMARY:${_escICS(_eventTitle(item))}`,
       `DESCRIPTION:${_escICS(_eventDetails(item))}`,
       "BEGIN:VALARM",

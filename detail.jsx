@@ -86,6 +86,7 @@ function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs, onTermina
   // gestión rápida (sin abrir el editor)
   const hoyISO = () => new Date().toISOString().slice(0, 10);
   const [qg, setQg] = React.useState({ fecha: hoyISO(), texto: "" });
+  const [histDesc, setHistDesc] = React.useState(false);
   const addQuick = () => {
     const texto = qg.texto.trim();
     if (!texto || !onQuickGestion) return;
@@ -218,11 +219,21 @@ function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs, onTermina
         <section className="ds-card ds-card-wide">
           <div className="ds-card-title" style={{ justifyContent: "space-between" }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><Ico name="check" size={15} />Historial de gestiones realizadas</span>
-            <button className="btn-ghost sm" onClick={() => exportSiniestroPDF(item)} title="Exportar ficha completa a PDF"><Ico name="download" size={14} />Exportar ficha (PDF)</button>
+            <span style={{ display: "inline-flex", gap: 8 }}>
+              {(item.gestiones || []).length > 1 && (
+                <button className="btn-ghost sm" onClick={() => setHistDesc((v) => !v)} title="Cambiar orden">
+                  {histDesc ? "↓ Más nueva primero" : "↑ Más vieja primero"}
+                </button>
+              )}
+              <button className="btn-ghost sm" onClick={() => exportSiniestroPDF(item)} title="Exportar ficha completa a PDF"><Ico name="download" size={14} />Exportar ficha (PDF)</button>
+            </span>
           </div>
           {(item.gestiones && item.gestiones.length) ? (
             <ul className="hist-tl">
-              {[...item.gestiones].sort((a, b) => (a.fecha || "").localeCompare(b.fecha || "")).map((g, i) => (
+              {(histDesc
+                ? [...item.gestiones].sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""))
+                : [...item.gestiones].sort((a, b) => (a.fecha || "").localeCompare(b.fecha || ""))
+              ).map((g, i) => (
                 <li className="hist-tl-item" key={i}>
                   <span className="hist-tl-dot" />
                   <div className="hist-tl-body">
