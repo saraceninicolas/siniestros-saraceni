@@ -267,6 +267,10 @@ function App() {
               ? <FacturacionModule active={active} station={quien} query={query} />
               : RENOVACION_KEYS.includes(active)
               ? <RenovacionesModule active={active} station={quien} query={query} />
+              : PENDIENTES_KEYS.includes(active)
+              ? <PendientesModule active={active} station={quien} query={query} />
+              : OBJETIVOS_KEYS.includes(active)
+              ? <ObjetivosModule active={active} station={quien} query={query} />
               : <ModuleScreen info={NAV_LOOKUP[active]} />}
           </div>
         ) : detailItem ? (

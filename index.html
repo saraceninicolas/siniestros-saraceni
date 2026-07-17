@@ -30,7 +30,7 @@ html[data-density="comfy"]{ --row-pad:18px; }
 html,body{ margin:0; height:100%; }
 body{
   font-family:"Public Sans",system-ui,sans-serif;
-  font-size:calc(16px * var(--font-scale));
+  font-size:calc(17px * var(--font-scale));
   background:var(--bg); color:var(--ink);
   -webkit-font-smoothing:antialiased;
 }
@@ -562,47 +562,77 @@ html[data-sidebar="claro"] .sb-subitem.is-active{ color:var(--ink); }
 .sync-row-actions{ display:flex; align-items:center; gap:7px; padding:0 12px 0 0; }
 .dt-cal-actions{ display:flex; align-items:center; gap:9px; margin-top:12px; }
 
-/* ---------- tipografía ampliada (portal un poco más grande) ---------- */
-.table td{ font-size:13.5px; }
-.cell-sub{ font-size:12px; }
-.cell-id{ font-size:13px; }
-.gestion-text{ font-size:13.5px; }
-.cia-pill{ font-size:12.5px; }
-.cia-pill.sm{ font-size:11.5px; }
-.btn-primary,.btn-ghost,.btn-danger{ font-size:14px; }
-.input{ font-size:14.5px; }
-.field-label{ font-size:12.5px; }
-.select{ font-size:13px; }
-.seg-btn{ font-size:13px; }
-.sb-item{ font-size:14px; }
-.sb-subitem{ font-size:13.5px; }
-.sb-folder-head{ font-size:12.5px; }
-.tb-search input{ font-size:14px; }
-.tb-titles h1{ font-size:20px; }
-.toolbar-title{ font-size:15px; }
-.ag-client{ font-size:14.5px; }
-.ag-gestion{ font-size:13.5px; }
-.ag-gestor{ font-size:12px; }
-.ramo{ font-size:13px; }
-.ramo-sub{ font-size:11.5px; }
-.hecho-badge{ font-size:11.5px; }
-.vence-date{ font-size:12.5px; }
-.kpi-label{ font-size:13px; }
-.kpi-hint{ font-size:12px; }
-.ds-k{ font-size:13px; }
-.ds-v{ font-size:14px; }
-.ds-gestion-text{ font-size:14.5px; }
-.ds-obs{ font-size:14px; }
-.hist-tl-text{ font-size:14px; }
-.hist-tl-date{ font-size:12.5px; }
-.hist-text{ font-size:13.5px; }
-.hist-date{ font-size:12.5px; }
-.dt-k{ font-size:12.5px; }
-.dt-v{ font-size:13.5px; }
-.dt-obs{ font-size:13.5px; }
-.modal-head h2{ font-size:18px; }
-.epill{ font-size:12.5px; }
-.login-title{ font-size:20px; }
+/* ---------- tipografía ampliada (base 17px en todo el portal) ---------- */
+.table td{ font-size:14.5px; }
+.cell-sub{ font-size:13px; }
+.cell-id{ font-size:14px; }
+.gestion-text{ font-size:14.5px; }
+.cia-pill{ font-size:13.5px; }
+.cia-pill.sm{ font-size:12.5px; }
+.btn-primary,.btn-ghost,.btn-danger{ font-size:15px; }
+.input{ font-size:15.5px; }
+.field-label{ font-size:13.5px; }
+.select{ font-size:14px; }
+.seg-btn{ font-size:14px; }
+.sb-item{ font-size:15px; }
+.sb-subitem{ font-size:14.5px; }
+.sb-folder-head{ font-size:13.5px; }
+.sb-station-name{ font-size:14.5px; }
+.tb-search input{ font-size:15px; }
+.tb-titles h1{ font-size:22px; }
+.tb-crumb{ font-size:12.5px; }
+.tb-date{ font-size:13px; }
+.toolbar-title{ font-size:16px; }
+.toolbar-count{ font-size:13px; }
+.ag-client{ font-size:15.5px; }
+.ag-gestion{ font-size:14.5px; }
+.ag-gestor{ font-size:12.5px; }
+.ag-vence-date{ font-size:17px; }
+.ag-banner-title{ font-size:15.5px; }
+.ag-banner-sub{ font-size:13.5px; }
+.ramo{ font-size:14px; }
+.ramo-sub{ font-size:12.5px; }
+.hecho-badge{ font-size:12.5px; }
+.vence-date{ font-size:13.5px; }
+.kpi-label{ font-size:14px; }
+.kpi-hint{ font-size:13px; }
+.kpi-value{ font-size:32px; }
+.ds-k{ font-size:14px; }
+.ds-v{ font-size:15px; }
+.ds-client{ font-size:27px; }
+.ds-gestion-text{ font-size:15.5px; }
+.ds-obs{ font-size:15px; }
+.ds-card-title{ font-size:13.5px; }
+.hist-tl-text{ font-size:15px; }
+.hist-tl-date{ font-size:13.5px; }
+.hist-text{ font-size:14.5px; }
+.hist-date{ font-size:13.5px; }
+.dt-k{ font-size:13.5px; }
+.dt-v{ font-size:14.5px; }
+.dt-obs{ font-size:14.5px; }
+.modal-head h2{ font-size:19px; }
+.modal-head p{ font-size:13.5px; }
+.epill{ font-size:13.5px; }
+.login-title{ font-size:22px; }
+.empty-title{ font-size:16px; }
+.empty-sub{ font-size:14px; }
+
+/* ---------- objetivos ---------- */
+.obj-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:16px; }
+.obj-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  box-shadow:var(--shadow-sm); padding:18px 20px; transition:.15s; }
+.obj-card:hover{ box-shadow:var(--shadow-md); transform:translateY(-1px); }
+.obj-top{ display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+.obj-title{ font-size:16px; font-weight:800; }
+.obj-periodo{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+.obj-actions{ display:flex; align-items:center; gap:4px; flex-shrink:0; }
+.obj-nums{ display:flex; align-items:baseline; gap:9px; margin-top:14px; flex-wrap:wrap; }
+.obj-actual{ font-size:23px; font-weight:800; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+.obj-meta{ font-size:13px; color:var(--muted); }
+.obj-bar{ height:8px; border-radius:99px; background:var(--line-2); overflow:hidden; margin-top:10px; }
+.obj-bar span{ display:block; height:100%; border-radius:99px; background:var(--brand); transition:width .4s ease; }
+.obj-bar.done span{ background:#16A34A; }
+.obj-pct{ font-size:12.5px; font-weight:600; margin-top:7px; color:var(--ink-2); }
 
 /* historial: orden y edición inline */
 .hist-sort{ margin-left:auto; border:none; background:none; color:var(--brand); font-size:12px; font-weight:700;
@@ -659,6 +689,8 @@ html[data-sidebar="claro"] .sb-subitem.is-active{ color:var(--ink); }
 <script type="text/babel" src="detail.jsx"></script>
 <script type="text/babel" src="facturas.jsx"></script>
 <script type="text/babel" src="renovaciones.jsx"></script>
+<script type="text/babel" src="pendientes.jsx"></script>
+<script type="text/babel" src="objetivos.jsx"></script>
 <script type="text/babel" src="calendar.jsx"></script>
 <script type="text/babel" src="app.jsx"></script>
 </body>

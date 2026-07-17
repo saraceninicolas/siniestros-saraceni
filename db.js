@@ -353,6 +353,124 @@ async function dbMaxN() {
     return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
   }
 
+  // ============================ PENDIENTES ============================
+  function fromRowP(r) {
+    return {
+      _dbId: r.id, id: r.codigo, n: r.n,
+      titulo: r.titulo || "", descripcion: r.descripcion || "",
+      cliente: r.cliente || "", categoria: r.categoria || "Otro",
+      prioridad: r.prioridad || "Media", fechaLimite: r.fecha_limite || "",
+      estado: r.estado || "Pendiente", asignado: r.asignado || "",
+      ultimaModPor: r.ultima_mod_por || "",
+      ultimaModFecha: r.ultima_mod_fecha || new Date().toISOString(),
+      creado: r.created_at || null, eliminado: !!r.eliminado,
+    };
+  }
+  function toRowP(it) {
+    return {
+      codigo: it.id, n: it.n,
+      titulo: it.titulo, descripcion: orNull(it.descripcion),
+      cliente: orNull(it.cliente), categoria: orNull(it.categoria),
+      prioridad: orNull(it.prioridad), fecha_limite: orNull(it.fechaLimite),
+      estado: orNull(it.estado) || "Pendiente", asignado: orNull(it.asignado),
+      ultima_mod_por: orNull(it.ultimaModPor),
+      ultima_mod_fecha: it.ultimaModFecha || new Date().toISOString(),
+      eliminado: !!it.eliminado,
+    };
+  }
+  async function pendList() {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("pendientes").select("*").eq("eliminado", false).order("n", { ascending: true });
+    if (error) throw error; return (data || []).map(fromRowP);
+  }
+  async function pendCreate(item) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("pendientes").insert(toRowP(item)).select().single();
+    if (error) throw error; return fromRowP(data);
+  }
+  async function pendUpdate(item) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("pendientes").update(toRowP(item)).eq("id", item._dbId).select().single();
+    if (error) throw error; return fromRowP(data);
+  }
+  async function pendRemove(item) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { error } = await c.from("pendientes").update({ eliminado: true, ultima_mod_por: orNull(item.ultimaModPor), ultima_mod_fecha: new Date().toISOString() }).eq("id", item._dbId);
+    if (error) throw error;
+  }
+  async function pendMaxN() {
+    const c = client(); if (!c) return 0;
+    const { data, error } = await c.from("pendientes").select("n").order("n", { ascending: false }).limit(1);
+    if (error) throw error; return data && data.length ? data[0].n : 0;
+  }
+  function pendSubscribe(onChange) {
+    const c = client(); if (!c) return null;
+    const ch = c.channel("pendientes-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "pendientes" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
+      .subscribe();
+    return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
+  }
+
+  // ============================ OBJETIVOS ============================
+  function fromRowO(r) {
+    return {
+      _dbId: r.id, id: r.codigo, n: r.n,
+      titulo: r.titulo || "", tipo: r.tipo || "manual",
+      mes: r.mes, anio: r.anio,
+      meta: r.meta, valorActual: r.valor_actual,
+      unidad: r.unidad || "$", notas: r.notas || "",
+      ultimaModPor: r.ultima_mod_por || "",
+      ultimaModFecha: r.ultima_mod_fecha || new Date().toISOString(),
+      eliminado: !!r.eliminado,
+    };
+  }
+  function toRowO(it) {
+    return {
+      codigo: it.id, n: it.n,
+      titulo: it.titulo, tipo: it.tipo || "manual",
+      mes: it.mes === "" || it.mes == null ? null : Number(it.mes),
+      anio: Number(it.anio),
+      meta: numOrNull(it.meta) || 0,
+      valor_actual: numOrNull(it.valorActual),
+      unidad: orNull(it.unidad) || "$", notas: orNull(it.notas),
+      ultima_mod_por: orNull(it.ultimaModPor),
+      ultima_mod_fecha: it.ultimaModFecha || new Date().toISOString(),
+      eliminado: !!it.eliminado,
+    };
+  }
+  async function objList() {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("objetivos").select("*").eq("eliminado", false).order("n", { ascending: true });
+    if (error) throw error; return (data || []).map(fromRowO);
+  }
+  async function objCreate(item) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("objetivos").insert(toRowO(item)).select().single();
+    if (error) throw error; return fromRowO(data);
+  }
+  async function objUpdate(item) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("objetivos").update(toRowO(item)).eq("id", item._dbId).select().single();
+    if (error) throw error; return fromRowO(data);
+  }
+  async function objRemove(item) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { error } = await c.from("objetivos").update({ eliminado: true, ultima_mod_por: orNull(item.ultimaModPor), ultima_mod_fecha: new Date().toISOString() }).eq("id", item._dbId);
+    if (error) throw error;
+  }
+  async function objMaxN() {
+    const c = client(); if (!c) return 0;
+    const { data, error } = await c.from("objetivos").select("n").order("n", { ascending: false }).limit(1);
+    if (error) throw error; return data && data.length ? data[0].n : 0;
+  }
+  function objSubscribe(onChange) {
+    const c = client(); if (!c) return null;
+    const ch = c.channel("objetivos-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "objetivos" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
+      .subscribe();
+    return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
+  }
+
   // ============================ ARCHIVOS (Storage) ============================
   const BUCKET = "adjuntos";
   async function fileUpload(file) {
@@ -396,6 +514,14 @@ async function dbMaxN() {
     renov: {
       list: renovList, create: renovCreate, update: renovUpdate,
       remove: renovRemove, maxN: renovMaxN, subscribe: renovSubscribe,
+    },
+    pend: {
+      list: pendList, create: pendCreate, update: pendUpdate,
+      remove: pendRemove, maxN: pendMaxN, subscribe: pendSubscribe,
+    },
+    obj: {
+      list: objList, create: objCreate, update: objUpdate,
+      remove: objRemove, maxN: objMaxN, subscribe: objSubscribe,
     },
     files: { upload: fileUpload, signedUrl: fileSignedUrl, remove: fileRemove },
   };
