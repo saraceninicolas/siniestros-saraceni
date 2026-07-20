@@ -39,6 +39,7 @@ const Icons = {
   card:   ["M3 6h18v12H3z", "M3 10h18", "M7 15h4"],
   target: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M12 16.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9z", "M12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"],
   phone:  ["M4 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L14 18l5 2v4a2 2 0 0 1-2 2A18 18 0 0 1 2 8a2 2 0 0 1 2-2z"],
+  menu:   ["M4 7h16", "M4 12h16", "M4 17h16"],
 };
 const Ico = ({ name, ...rest }) => <Icon d={Icons[name]} {...rest} />;
 
@@ -98,12 +99,12 @@ const PENDIENTES_KEYS = ["pend-panel", "pend-agenda"];
 const OBJETIVOS_KEYS = ["obj-panel", "obj-metas"];
 
 // ---------- sidebar ----------
-function Sidebar({ active, onNav, station, counts }) {
+function Sidebar({ active, onNav, station, counts, open: drawerOpen }) {
   const sectionOf = (k) => (PORTAL_NAV.find((g) => g.children.some((c) => c.key === k)) || {}).key;
   const [open, setOpen] = React.useState(() => ({ [sectionOf(active) || "siniestros"]: true }));
   const toggle = (k) => setOpen((o) => ({ ...o, [k]: !o[k] }));
   return (
-    <aside className="sb">
+    <aside className={"sb" + (drawerOpen ? " is-open" : "")}>
       <div className="sb-brand">
         <div className="sb-logo"><img src="assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></div>
         <div className="sb-sub"><span className="sb-sub-dot" />Portal de gestiones</div>
@@ -155,10 +156,11 @@ function Sidebar({ active, onNav, station, counts }) {
 
 // ---------- topbar ----------
 const HOY = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpenSync, onLogout, onChangePass, isSiniestros }) {
+function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpenSync, onLogout, onChangePass, onMenu, isSiniestros }) {
   const info = NAV_LOOKUP[active] || { section: "Siniestros", title: "Panel de control" };
   return (
     <header className="tb">
+      {onMenu && <button className="btn-ghost tb-icon tb-menu" title="Menú" onClick={onMenu}><Ico name="menu" size={20} /></button>}
       <div className="tb-titles">
         <div className="tb-crumb"><span>{info.section}</span><Ico name="chevR" size={13} /><b>{info.title}</b></div>
         <h1>{info.title}</h1>
@@ -176,7 +178,7 @@ function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpe
         <span className="tb-station-chip" title="Usuario conectado">
           <span className="sb-station-led" /><Ico name="user" size={14} />{station}
         </span>
-        {isSiniestros && <button className="btn-primary" onClick={onNew}><Ico name="plus" size={17} />Registrar siniestro</button>}
+        {isSiniestros && <button className="btn-primary" onClick={onNew}><Ico name="plus" size={17} /><span className="btn-label">Registrar siniestro</span></button>}
         {onChangePass && <button className="btn-ghost tb-icon" title="Cambiar contraseña" onClick={onChangePass}><Ico name="shield" size={17} /></button>}
         {onLogout && <button className="btn-ghost tb-icon" title="Cerrar sesión" onClick={onLogout}><Ico name="logout" size={18} /></button>}
       </div>

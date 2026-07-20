@@ -16,6 +16,7 @@ function App() {
   const [solicitudes, setSolicitudes] = React.useState([]);
   const [modal, setModal] = React.useState(null);
   const [active, setActive] = React.useState("dashboard");
+  const [navOpen, setNavOpen] = React.useState(false);
   const [toast, setToast] = React.useState(null);
   const toastTimer = React.useRef(null);
 
@@ -329,15 +330,16 @@ function App() {
 
   return (
     <div className="app">
-      <Sidebar active={active} onNav={(k) => { setActive(k); setDetailId(null); }} station={quien}
-        counts={{ abiertos: abiertos.length, porVencer, solicitudes: solNuevas }} />
+      <Sidebar active={active} onNav={(k) => { setActive(k); setDetailId(null); setNavOpen(false); }} station={quien}
+        counts={{ abiertos: abiertos.length, porVencer, solicitudes: solNuevas }} open={navOpen} />
+      {navOpen && <div className="sb-scrim" onClick={() => setNavOpen(false)} />}
 
       <main className="main">
         <Topbar active={active} query={query} onQuery={setQuery} station={quien}
           onSwitchStation={switchStation} onNew={() => setModal({ type: "new" })}
           onOpenSync={() => setModal({ type: "sync" })} onLogout={configured ? logout : undefined}
           onChangePass={configured && session ? () => setModal({ type: "pass" }) : undefined}
-          isSiniestros={isSiniestros} />
+          onMenu={() => setNavOpen(true)} isSiniestros={isSiniestros} />
 
         {!isSiniestros ? (
           <div className="content">
