@@ -194,17 +194,31 @@ function App() {
     const ciaMap = [["MERCANTIL", "LMA"], ["PROVINCIA", "PROVINCIA"], ["ALLIANZ", "ALLIANZ"], ["SANCOR", "SANCOR"], ["FEDERA", "FEDERACION"], ["CRISTOBAL", "SAN CRISTOBAL"], ["CRISTÓBAL", "SAN CRISTOBAL"], ["ZURICH", "ZURICH"]];
     let cia = null; const cs = up(s.cia);
     for (const [k, v] of ciaMap) { if (cs.includes(k)) { cia = v; break; } }
-    const contacto = [
-      `Solicitud web ${s.id} (ref ${s.ref})`,
+    const lineas = [];
+    if (s.relato) { lineas.push(s.relato); lineas.push(""); }
+    lineas.push(`— Denuncia web ${s.id} (ref ${s.ref})`);
+    const lugar = [s.ubicacion, s.localidad].filter(Boolean).join(", ");
+    if (s.horaHecho) lineas.push("Hora del hecho: " + s.horaHecho);
+    if (lugar) lineas.push("Lugar: " + lugar);
+    const contactoAseg = [
       s.telefono ? "Tel: " + s.telefono : null,
       s.email ? "Email: " + s.email : null,
       s.dniCuit ? "DNI/CUIT: " + s.dniCuit : null,
       !cia && s.cia ? "Cía declarada: " + s.cia : null,
     ].filter(Boolean).join(" · ");
+    if (contactoAseg) lineas.push("Asegurado: " + contactoAseg);
+    const terc = [
+      s.terceroNombre || null,
+      s.terceroDominio ? "Dominio " + s.terceroDominio : null,
+      s.terceroCia ? "Cía " + s.terceroCia : null,
+      s.terceroPoliza ? "Póliza " + s.terceroPoliza : null,
+      s.terceroDni ? "DNI/CUIT " + s.terceroDni : null,
+    ].filter(Boolean).join(" · ");
+    if (terc) { lineas.push(""); lineas.push("TERCERO: " + terc); }
     const prefill = {
       cliente: up(s.nombre), dominio: up(s.dominio), poliza: s.poliza || "",
       fechaOcurrido: s.fechaHecho || "", fechaDenuncia: new Date().toISOString().slice(0, 10),
-      obs: (s.relato ? s.relato + "\n" : "") + contacto,
+      obs: lineas.join("\n"),
       adjuntos: (s.adjuntos || []).map((a) => ({ ...a, bucket: "solicitudes" })),
       referencia: "Denuncia web",
       ...(cia ? { cia } : {}),

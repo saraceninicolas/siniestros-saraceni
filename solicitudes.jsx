@@ -40,14 +40,35 @@ function SolCard({ s, onConvertir, onDescartar, onReabrir }) {
         </div>
       </div>
 
+      <div className="sol-sub">Asegurado</div>
       <div className="sol-grid-datos">
+        <D k="DNI / CUIT" v={s.dniCuit} mono />
+        <D k="Patente" v={s.dominio} mono />
+        <D k="Compañía" v={s.cia} />
+        <D k="N° de póliza" v={s.poliza} mono />
         <D k="Teléfono" v={s.telefono} mono />
         <D k="Email" v={s.email} />
-        <D k="DNI / CUIT" v={s.dniCuit} mono />
-        <D k="Compañía declarada" v={s.cia} />
-        <D k="N° de póliza" v={s.poliza} mono />
-        <D k="Dominio / bien" v={s.dominio} mono />
-        <D k="Fecha del hecho" v={s.fechaHecho ? fmtDate(s.fechaHecho) : ""} />
+      </div>
+
+      {(s.terceroNombre || s.terceroDni || s.terceroDominio || s.terceroCia || s.terceroPoliza) && (
+        <>
+          <div className="sol-sub">Tercero</div>
+          <div className="sol-grid-datos">
+            <D k="Nombre" v={s.terceroNombre} />
+            <D k="DNI / CUIT" v={s.terceroDni} mono />
+            <D k="Patente" v={s.terceroDominio} mono />
+            <D k="Compañía" v={s.terceroCia} />
+            <D k="N° de póliza" v={s.terceroPoliza} mono />
+          </div>
+        </>
+      )}
+
+      <div className="sol-sub">Siniestro</div>
+      <div className="sol-grid-datos">
+        <D k="Fecha" v={s.fechaHecho ? fmtDate(s.fechaHecho) : ""} />
+        <D k="Hora" v={s.horaHecho} mono />
+        <D k="Ubicación" v={s.ubicacion} />
+        <D k="Localidad" v={s.localidad} />
       </div>
 
       {s.relato && <div className="sol-relato">{s.relato}</div>}

@@ -15,8 +15,16 @@ create table if not exists public.solicitudes (
   email            text,
   cia              text,                             -- compañía declarada por el asegurado
   poliza           text,
-  dominio          text,
+  dominio          text,                             -- patente / bien del asegurado
+  tercero_nombre   text,                             -- datos del tercero (si corresponde)
+  tercero_dni      text,
+  tercero_dominio  text,
+  tercero_cia      text,
+  tercero_poliza   text,
   fecha_hecho      date,
+  hora_hecho       text,
+  ubicacion        text,
+  localidad        text,
   relato           text,
   adjuntos         jsonb not null default '[]'::jsonb, -- [{name, path, tipo, size}]
   estado           text not null default 'nueva',    -- nueva | procesada | descartada
