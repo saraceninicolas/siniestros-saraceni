@@ -265,8 +265,6 @@ function App() {
           <div className="content">
             {FACTURACION_KEYS.includes(active)
               ? <FacturacionModule active={active} station={quien} query={query} />
-              : RENOVACION_KEYS.includes(active)
-              ? <RenovacionesModule active={active} station={quien} query={query} />
               : PENDIENTES_KEYS.includes(active)
               ? <PendientesModule active={active} station={quien} query={query} />
               : OBJETIVOS_KEYS.includes(active)
