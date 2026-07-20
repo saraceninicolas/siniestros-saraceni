@@ -413,6 +413,39 @@ async function dbMaxN() {
     return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
   }
 
+  // ============================ SOLICITUDES (buzón público) ============================
+  function fromRowS(r) {
+    return {
+      _dbId: r.id, id: "SOL-" + String(r.id).padStart(4, "0"),
+      ref: r.ref || "", nombre: r.nombre || "",
+      dniCuit: r.dni_cuit || "", telefono: r.telefono || "", email: r.email || "",
+      cia: r.cia || "", poliza: r.poliza || "", dominio: r.dominio || "",
+      fechaHecho: r.fecha_hecho || "", relato: r.relato || "",
+      adjuntos: Array.isArray(r.adjuntos) ? r.adjuntos : [],
+      estado: r.estado || "nueva", siniestroCodigo: r.siniestro_codigo || "",
+      creado: r.created_at || null,
+    };
+  }
+  async function solList() {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("solicitudes").select("*").order("id", { ascending: false });
+    if (error) throw error; return (data || []).map(fromRowS);
+  }
+  async function solUpdate(it) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("solicitudes")
+      .update({ estado: it.estado, siniestro_codigo: orNull(it.siniestroCodigo), procesada_por: orNull(it.procesadaPor) })
+      .eq("id", it._dbId).select().single();
+    if (error) throw error; return fromRowS(data);
+  }
+  function solSubscribe(onChange) {
+    const c = client(); if (!c) return null;
+    const ch = c.channel("solicitudes-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "solicitudes" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
+      .subscribe();
+    return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
+  }
+
   // ============================ ARCHIVOS (Storage) ============================
   const BUCKET = "adjuntos";
   async function fileUpload(file) {
@@ -423,15 +456,15 @@ async function dbMaxN() {
     if (error) throw error;
     return { name: file.name || safe, path, tipo: file.type || "", size: file.size || 0 };
   }
-  async function fileSignedUrl(path, secs) {
+  async function fileSignedUrl(path, secs, bucket) {
     const c = client(); if (!c) return null;
-    const { data, error } = await c.storage.from(BUCKET).createSignedUrl(path, secs || 3600);
+    const { data, error } = await c.storage.from(bucket || BUCKET).createSignedUrl(path, secs || 3600);
     if (error) { console.error(error); return null; }
     return data ? data.signedUrl : null;
   }
-  async function fileRemove(path) {
+  async function fileRemove(path, bucket) {
     const c = client(); if (!c) return;
-    const { error } = await c.storage.from(BUCKET).remove([path]);
+    const { error } = await c.storage.from(bucket || BUCKET).remove([path]);
     if (error) console.error(error);
   }
 
@@ -461,6 +494,7 @@ async function dbMaxN() {
       list: objList, create: objCreate, update: objUpdate,
       remove: objRemove, maxN: objMaxN, subscribe: objSubscribe,
     },
+    sol: { list: solList, update: solUpdate, subscribe: solSubscribe },
     files: { upload: fileUpload, signedUrl: fileSignedUrl, remove: fileRemove },
   };
 })();

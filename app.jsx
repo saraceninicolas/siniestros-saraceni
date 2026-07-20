@@ -13,6 +13,7 @@ function App() {
   const [ciaFilter, setCiaFilter] = React.useState("Todos");
   const [selectedId, setSelectedId] = React.useState(null);
   const [detailId, setDetailId] = React.useState(null);
+  const [solicitudes, setSolicitudes] = React.useState([]);
   const [modal, setModal] = React.useState(null);
   const [active, setActive] = React.useState("dashboard");
   const [toast, setToast] = React.useState(null);
@@ -93,6 +94,22 @@ function App() {
     return () => { alive = false; clearTimeout(timer); if (unsub) unsub(); };
   }, [usingDb]);
 
+  // ---- solicitudes públicas (denuncias online de asegurados) ----
+  React.useEffect(() => {
+    if (!usingDb || !window.DB.sol) return;
+    let alive = true, timer = null;
+    const load = async () => {
+      try { const items = await window.DB.sol.list(); if (alive) setSolicitudes(items); }
+      catch (e) { console.error("Solicitudes:", e); }
+    };
+    load();
+    const unsub = window.DB.sol.subscribe((payload) => {
+      if (payload && payload.eventType === "INSERT") flash("Nueva solicitud de siniestro recibida — mirá Solicitudes recibidas");
+      clearTimeout(timer); timer = setTimeout(load, 400);
+    });
+    return () => { alive = false; clearTimeout(timer); if (unsub) unsub(); };
+  }, [usingDb, flash]);
+
   const activos = siniestros.filter((s) => !s.eliminado);
   const abiertos = activos.filter((s) => s.estado === "Abierto");
   const porVencer = abiertos.filter((s) => ["vencido", "hoy", "proximo"].includes(urgenciaDe(s))).length;
@@ -126,6 +143,8 @@ function App() {
     return activos.filter((s) => [s.cliente, s.gestor, s.gestionAR, s.cia, s.dominio, s.referencia].join(" ").toLowerCase().includes(q));
   }, [activos, query]);
 
+  const solNuevas = solicitudes.filter((s) => s.estado === "nueva").length;
+
   // Cantidad de siniestros abiertos por cliente (para el chip ×N)
   const clientesMulti = React.useMemo(() => {
     const m = {};
@@ -158,10 +177,55 @@ function App() {
     try { item = await window.DB.create(item); }
     catch (e) { console.error(e); flash("Error al guardar en Supabase", true); return; }
   }
+  // Si vino de una solicitud pública, marcarla como procesada
+  if (modal && modal.solicitudId && usingDb && window.DB.sol) {
+    try {
+      await window.DB.sol.update({ _dbId: modal.solicitudId, estado: "procesada", siniestroCodigo: item.id, procesadaPor: quien });
+      setSolicitudes((p) => p.map((x) => x._dbId === modal.solicitudId ? { ...x, estado: "procesada", siniestroCodigo: item.id } : x));
+    } catch (e) { console.error(e); }
+  }
   setSiniestros((p) => [item, ...p]);
   setModal(null);
   flash(`Siniestro ${data.nroSiniestro} registrado`);
 };
+  // ---- convertir / gestionar solicitudes públicas ----
+  const convertirSolicitud = (s) => {
+    const up = (t) => (t || "").toUpperCase();
+    const ciaMap = [["MERCANTIL", "LMA"], ["PROVINCIA", "PROVINCIA"], ["ALLIANZ", "ALLIANZ"], ["SANCOR", "SANCOR"], ["FEDERA", "FEDERACION"], ["CRISTOBAL", "SAN CRISTOBAL"], ["CRISTÓBAL", "SAN CRISTOBAL"], ["ZURICH", "ZURICH"]];
+    let cia = null; const cs = up(s.cia);
+    for (const [k, v] of ciaMap) { if (cs.includes(k)) { cia = v; break; } }
+    const contacto = [
+      `Solicitud web ${s.id} (ref ${s.ref})`,
+      s.telefono ? "Tel: " + s.telefono : null,
+      s.email ? "Email: " + s.email : null,
+      s.dniCuit ? "DNI/CUIT: " + s.dniCuit : null,
+      !cia && s.cia ? "Cía declarada: " + s.cia : null,
+    ].filter(Boolean).join(" · ");
+    const prefill = {
+      cliente: up(s.nombre), dominio: up(s.dominio), poliza: s.poliza || "",
+      fechaOcurrido: s.fechaHecho || "", fechaDenuncia: new Date().toISOString().slice(0, 10),
+      obs: (s.relato ? s.relato + "\n" : "") + contacto,
+      adjuntos: (s.adjuntos || []).map((a) => ({ ...a, bucket: "solicitudes" })),
+      referencia: "Denuncia web",
+      ...(cia ? { cia } : {}),
+    };
+    setModal({ type: "new", prefill, solicitudId: s._dbId });
+  };
+  const descartarSolicitud = async (s) => {
+    if (!window.confirm(`¿Descartar la solicitud de ${s.nombre}?`)) return;
+    try {
+      await window.DB.sol.update({ _dbId: s._dbId, estado: "descartada", procesadaPor: quien });
+      setSolicitudes((p) => p.map((x) => x._dbId === s._dbId ? { ...x, estado: "descartada" } : x));
+      flash("Solicitud descartada");
+    } catch (e) { console.error(e); flash("Error al descartar", true); }
+  };
+  const reabrirSolicitud = async (s) => {
+    try {
+      await window.DB.sol.update({ _dbId: s._dbId, estado: "nueva", procesadaPor: quien });
+      setSolicitudes((p) => p.map((x) => x._dbId === s._dbId ? { ...x, estado: "nueva" } : x));
+      flash("Solicitud reabierta");
+    } catch (e) { console.error(e); flash("Error al reabrir", true); }
+  };
   const handleUpdate = async (data) => {
     let updated = { ...data, ultimaModPor: quien, ultimaModFecha: nowIso() };
     if (usingDb) {
@@ -252,7 +316,7 @@ function App() {
   return (
     <div className="app">
       <Sidebar active={active} onNav={(k) => { setActive(k); setDetailId(null); }} station={quien}
-        counts={{ abiertos: abiertos.length, porVencer }} />
+        counts={{ abiertos: abiertos.length, porVencer, solicitudes: solNuevas }} />
 
       <main className="main">
         <Topbar active={active} query={query} onQuery={setQuery} station={quien}
@@ -276,6 +340,11 @@ function App() {
             <DetailScreen item={detailItem} onBack={() => setDetailId(null)}
               onEdit={openEdit} onDelete={askDelete} onGcal={agendarGcal} onIcs={descargarIcs}
               onTerminar={terminarSiniestro} onQuickGestion={agregarGestionRapida} />
+          </div>
+        ) : active === "solicitudes" ? (
+          <div className="content">
+            <SolicitudesView solicitudes={solicitudes} onConvertir={convertirSolicitud}
+              onDescartar={descartarSolicitud} onReabrir={reabrirSolicitud} />
           </div>
         ) : active === "agenda" ? (
           <div className="content">
@@ -301,7 +370,7 @@ function App() {
         )}
       </main>
 
-      {modal?.type === "new" && <ClaimFormModal mode="new" station={quien} onClose={() => setModal(null)} onSubmit={handleCreate} />}
+      {modal?.type === "new" && <ClaimFormModal mode="new" initial={modal.prefill} station={quien} onClose={() => setModal(null)} onSubmit={handleCreate} />}
       {modal?.type === "edit" && <ClaimFormModal mode="edit" initial={modal.item} station={quien} onClose={() => setModal(null)} onSubmit={handleUpdate} />}
       {modal?.type === "delete" && <ConfirmDelete item={modal.item} station={quien} onClose={() => setModal(null)} onConfirm={handleDelete} />}
       {modal?.type === "sync" && <CalendarSync data={activos} onClose={() => setModal(null)} onAgendar={marcarAgendado} />}

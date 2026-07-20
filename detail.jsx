@@ -99,7 +99,7 @@ function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs, onTermina
     (async () => {
       if (!window.DB || !window.DB.files || !adjuntos.length) return;
       const map = {};
-      for (const a of adjuntos) { try { map[a.path] = await window.DB.files.signedUrl(a.path, 3600); } catch (e) { /* noop */ } }
+      for (const a of adjuntos) { try { map[a.path] = await window.DB.files.signedUrl(a.path, 3600, a.bucket); } catch (e) { /* noop */ } }
       if (alive) setAdjUrls(map);
     })();
     return () => { alive = false; };

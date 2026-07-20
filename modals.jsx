@@ -60,7 +60,7 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
   };
   const removeAdjunto = async (a) => {
     setF((p) => ({ ...p, adjuntos: (p.adjuntos || []).filter((x) => x.path !== a.path) }));
-    if (filesReady) { try { await window.DB.files.remove(a.path); } catch (err) { console.error(err); } }
+    if (filesReady) { try { await window.DB.files.remove(a.path, a.bucket); } catch (err) { console.error(err); } }
   };
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   // Al cambiar el ramo ajustamos la cobertura (AUTO usa lista fija; el resto, texto libre)

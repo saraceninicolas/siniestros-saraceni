@@ -1,0 +1,55 @@
+-- ============================================================================
+-- Saraceni Seguros · Denuncias online de asegurados (buzón público)
+-- ----------------------------------------------------------------------------
+-- Página pública: /denuncia (denuncia.html) — sin login.
+-- Seguridad: el rol público (anon) SOLO puede INSERTAR solicitudes y SUBIR
+-- archivos al bucket 'solicitudes'. No puede leer nada (ni sus propias filas).
+-- El portal (usuarios autenticados) lee, procesa y convierte en siniestros.
+-- ============================================================================
+create table if not exists public.solicitudes (
+  id               bigint generated always as identity primary key,
+  ref              text not null default upper(substr(md5(random()::text),1,6)),
+  nombre           text not null,
+  dni_cuit         text,
+  telefono         text,
+  email            text,
+  cia              text,                             -- compañía declarada por el asegurado
+  poliza           text,
+  dominio          text,
+  fecha_hecho      date,
+  relato           text,
+  adjuntos         jsonb not null default '[]'::jsonb, -- [{name, path, tipo, size}]
+  estado           text not null default 'nueva',    -- nueva | procesada | descartada
+  siniestro_codigo text,                             -- STR-xx al convertirla
+  procesada_por    text,
+  created_at       timestamptz not null default now()
+);
+
+alter table public.solicitudes enable row level security;
+drop policy if exists "solicitudes_anon_insert" on public.solicitudes;
+create policy "solicitudes_anon_insert" on public.solicitudes
+  for insert to anon with check (true);
+drop policy if exists "solicitudes_auth_all" on public.solicitudes;
+create policy "solicitudes_auth_all" on public.solicitudes
+  for all to authenticated using (true) with check (true);
+
+-- Bucket para la documentación (10MB por archivo, fotos y PDF)
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('solicitudes', 'solicitudes', false, 10485760,
+        array['image/jpeg','image/png','image/webp','image/heic','image/heif','application/pdf'])
+on conflict (id) do nothing;
+
+drop policy if exists "solicitudes_files_anon_insert" on storage.objects;
+create policy "solicitudes_files_anon_insert" on storage.objects
+  for insert to anon with check (bucket_id = 'solicitudes');
+drop policy if exists "solicitudes_files_auth_all" on storage.objects;
+create policy "solicitudes_files_auth_all" on storage.objects
+  for all to authenticated using (bucket_id = 'solicitudes') with check (bucket_id = 'solicitudes');
+
+-- Tiempo real (notificación en el portal)
+do $$
+begin
+  if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='solicitudes') then
+    alter publication supabase_realtime add table public.solicitudes;
+  end if;
+end $$;

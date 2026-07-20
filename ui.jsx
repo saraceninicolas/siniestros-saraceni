@@ -78,7 +78,8 @@ function RamoTag({ ramo, hecho }) {
 const PORTAL_NAV = [
   { key: "siniestros", label: "Siniestros", icon: "shield", children: [
     { key: "dashboard", label: "Panel de control", icon: "grid", count: "abiertos" },
-    { key: "agenda", label: "Agenda de gestiones", icon: "agenda", count: "porVencer" } ] },
+    { key: "agenda", label: "Agenda de gestiones", icon: "agenda", count: "porVencer" },
+    { key: "solicitudes", label: "Solicitudes recibidas", icon: "mail", count: "solicitudes" } ] },
   { key: "facturacion", label: "Facturación", icon: "doc", children: [
     { key: "fact-comprobantes", label: "Comprobantes", icon: "doc" },
     { key: "fact-reportes", label: "Reportes", icon: "grid" } ] },
@@ -91,7 +92,7 @@ const PORTAL_NAV = [
 ];
 const NAV_LOOKUP = {};
 PORTAL_NAV.forEach((g) => g.children.forEach((c) => { NAV_LOOKUP[c.key] = { section: g.label, sectionKey: g.key, title: c.label }; }));
-const SINIESTROS_KEYS = ["dashboard", "agenda"];
+const SINIESTROS_KEYS = ["dashboard", "agenda", "solicitudes"];
 const FACTURACION_KEYS = ["fact-comprobantes", "fact-reportes"];
 const PENDIENTES_KEYS = ["pend-panel", "pend-agenda"];
 const OBJETIVOS_KEYS = ["obj-panel", "obj-metas"];
