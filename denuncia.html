@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Denunciar un siniestro · Saraceni Seguros</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+:root{ --brand:#DD0909; --brand-d:#bb0707; --bg:#F5F6F8; --surface:#fff; --surface-2:#FBFBFC;
+  --ink:#191C22; --ink-2:#5A6271; --muted:#8B93A1; --line:#E7E9ED; --line-2:#EFF1F4; }
+*{ box-sizing:border-box; }
+body{ margin:0; font-family:"Public Sans",system-ui,sans-serif; font-size:17px; background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; }
+.wrap{ max-width:640px; margin:0 auto; padding:28px 18px 60px; }
+.card{ background:var(--surface); border:1px solid var(--line); border-radius:16px; overflow:hidden;
+  box-shadow:0 4px 16px rgba(16,20,28,.08); }
+.card::before{ content:""; display:block; height:5px; background:var(--brand); }
+.head{ padding:26px 28px 6px; text-align:center; }
+.logo{ display:inline-block; background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 18px; }
+.logo img{ display:block; max-width:220px; height:auto; }
+h1{ font-size:23px; margin:18px 0 6px; letter-spacing:-.01em; }
+.sub{ color:var(--ink-2); font-size:14.5px; margin:0 auto 8px; max-width:460px; line-height:1.5; }
+form{ padding:16px 28px 28px; }
+.sect{ font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--brand);
+  margin:22px 0 12px; padding-bottom:6px; border-bottom:1px solid var(--line-2); }
+.sect .opt{ color:var(--muted); font-weight:600; text-transform:none; letter-spacing:0; font-size:12.5px; }
+.grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px 16px; }
+.full{ grid-column:1/-1; }
+label{ display:flex; flex-direction:column; gap:6px; }
+label span{ font-size:13.5px; font-weight:600; color:var(--ink-2); }
+label span i{ color:var(--brand); font-style:normal; }
+input,select,textarea{ border:1px solid var(--line); border-radius:10px; padding:11px 13px; font-size:16px;
+  font-family:inherit; color:var(--ink); background:#fff; outline:none; width:100%; transition:.15s; }
+input:focus,select:focus,textarea:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(221,9,9,.09); }
+textarea{ resize:vertical; min-height:110px; }
+.hp{ position:absolute; left:-9999px; top:-9999px; height:1px; width:1px; overflow:hidden; }
+.files-note{ font-size:13px; color:var(--muted); margin:4px 0 10px; line-height:1.5; }
+.file-btn{ display:inline-flex; align-items:center; gap:8px; border:1.5px dashed var(--line); background:var(--surface-2);
+  color:var(--ink-2); border-radius:10px; padding:12px 16px; font-size:14.5px; font-weight:600; cursor:pointer; width:100%;
+  justify-content:center; transition:.15s; }
+.file-btn:hover{ border-color:var(--brand); color:var(--brand); }
+.flist{ list-style:none; margin:10px 0 0; padding:0; display:flex; flex-direction:column; gap:6px; }
+.flist li{ display:flex; align-items:center; gap:9px; background:var(--surface-2); border:1px solid var(--line);
+  border-radius:9px; padding:8px 11px; font-size:13.5px; }
+.flist .nm{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.flist .sz{ color:var(--muted); font-size:12px; flex-shrink:0; }
+.flist button{ border:none; background:none; color:var(--muted); cursor:pointer; padding:2px 4px; font-size:15px; }
+.flist button:hover{ color:var(--brand); }
+.send{ display:flex; align-items:center; justify-content:center; gap:9px; width:100%; margin-top:22px;
+  background:var(--brand); color:#fff; border:none; border-radius:11px; padding:15px; font-size:16.5px;
+  font-weight:700; font-family:inherit; cursor:pointer; transition:.15s; }
+.send:hover{ background:var(--brand-d); }
+.send:disabled{ opacity:.55; cursor:not-allowed; }
+.err{ display:none; background:#FBE3E3; color:#B91C1C; border:1px solid #f3c0c0; border-radius:10px;
+  padding:11px 14px; font-size:14px; margin-top:14px; line-height:1.5; }
+.ok{ display:none; padding:44px 30px 50px; text-align:center; }
+.ok .tick{ width:64px; height:64px; border-radius:99px; background:#E6F4EA; color:#15803D; display:grid;
+  place-items:center; margin:0 auto 18px; font-size:30px; }
+.ok h2{ font-size:22px; margin:0 0 10px; }
+.ok p{ color:var(--ink-2); font-size:15px; line-height:1.6; margin:0 auto 8px; max-width:420px; }
+.ok .ref{ display:inline-block; margin-top:14px; background:var(--surface-2); border:1px solid var(--line);
+  border-radius:10px; padding:10px 22px; font-size:22px; font-weight:800; letter-spacing:.18em; font-family:ui-monospace,monospace; }
+.foot{ text-align:center; font-size:12px; font-weight:700; letter-spacing:.14em; color:var(--muted); margin-top:22px; }
+@media (max-width:560px){ .grid{ grid-template-columns:1fr; } form{ padding:14px 18px 24px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="head">
+      <span class="logo"><img src="assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></span>
+      <h1>Denunciar un siniestro</h1>
+      <p class="sub">Completá tus datos y adjuntá la documentación. Nuestro equipo recibe la solicitud al instante y gestiona la denuncia ante la compañía.</p>
+    </div>
+
+    <form id="form" novalidate>
+      <div class="sect">Tus datos</div>
+      <div class="grid">
+        <label class="full"><span>Nombre y apellido / Razón social <i>*</i></span>
+          <input id="nombre" required placeholder="Como figura en la póliza" /></label>
+        <label><span>DNI / CUIT</span><input id="dni" inputmode="numeric" placeholder="Sin puntos" /></label>
+        <label><span>Patente</span><input id="dominio" placeholder="Ej: AB123CD" style="text-transform:uppercase" /></label>
+        <label><span>Compañía</span>
+          <input id="cia" list="cias" placeholder="Tu aseguradora" />
+          <datalist id="cias">
+            <option value="La Mercantil Andina" /><option value="Allianz" /><option value="Provincia Seguros" />
+            <option value="Sancor Seguros" /><option value="Federación Patronal" /><option value="San Cristóbal" />
+            <option value="Zurich" /><option value="SMG" />
+          </datalist></label>
+        <label><span>N° de póliza</span><input id="poliza" placeholder="Si lo tenés a mano" /></label>
+      </div>
+
+      <div class="sect">Datos del tercero <span class="opt">(si corresponde)</span></div>
+      <div class="grid">
+        <label class="full"><span>Nombre y apellido / Razón social</span>
+          <input id="t_nombre" placeholder="Del otro involucrado" /></label>
+        <label><span>DNI / CUIT</span><input id="t_dni" inputmode="numeric" placeholder="Sin puntos" /></label>
+        <label><span>Patente</span><input id="t_dominio" placeholder="Ej: CD456EF" style="text-transform:uppercase" /></label>
+        <label><span>Compañía</span><input id="t_cia" placeholder="Aseguradora del tercero" /></label>
+        <label><span>N° de póliza</span><input id="t_poliza" placeholder="Si lo tenés" /></label>
+      </div>
+
+      <div class="sect">Datos del siniestro</div>
+      <div class="grid">
+        <label><span>Fecha del hecho <i>*</i></span><input id="fecha" type="date" required /></label>
+        <label><span>Hora</span><input id="hora" type="time" /></label>
+        <label><span>Ubicación</span><input id="ubicacion" placeholder="Calle y altura / lugar del hecho" /></label>
+        <label><span>Localidad</span><input id="localidad" placeholder="Ciudad / partido" /></label>
+        <label class="full"><span>Relato del hecho <i>*</i></span>
+          <textarea id="relato" required placeholder="Contanos cómo, dónde y qué pasó: daños, si hubo terceros o heridos…"></textarea></label>
+      </div>
+
+      <div class="sect">Documentación</div>
+      <p class="files-note">Adjuntá fotos de los daños, DNI, cédula/documentación del bien y la denuncia policial si la hubiera. Fotos o PDF, hasta 10&nbsp;MB por archivo.</p>
+      <label class="file-btn">＋ Agregar fotos o PDF
+        <input id="files" type="file" accept="image/*,application/pdf" multiple style="display:none" /></label>
+      <ul class="flist" id="flist"></ul>
+
+      <label class="hp"><span>Sitio web</span><input id="website" tabindex="-1" autocomplete="off" /></label>
+
+      <button class="send" id="send" type="submit">Enviar solicitud</button>
+      <div class="err" id="err"></div>
+    </form>
+
+    <div class="ok" id="ok">
+      <div class="tick">✓</div>
+      <h2>¡Solicitud enviada!</h2>
+      <p>Recibimos tu denuncia y la documentación. Nuestro equipo la va a revisar y se comunica con vos a la brevedad para avanzar con la gestión ante la compañía.</p>
+      <p>Guardá tu código de referencia:</p>
+      <span class="ref" id="refcode"></span>
+    </div>
+  </div>
+  <div class="foot">SARACENI · BROKER DE SEGUROS</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+(function () {
+  var sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+  var files = [];
+  var $ = function (id) { return document.getElementById(id); };
+  function todayISO() {
+    var t = new Date();
+    return t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0");
+  }
+  $("fecha").max = todayISO(); // la fecha del hecho no puede ser futura
+
+  $("files").addEventListener("change", function (e) {
+    var picked = Array.prototype.slice.call(e.target.files || []);
+    e.target.value = "";
+    picked.forEach(function (f) {
+      if (files.length >= 10) return;
+      if (f.size > 10 * 1024 * 1024) { showErr("El archivo \"" + f.name + "\" supera los 10 MB."); return; }
+      files.push(f);
+    });
+    renderFiles();
+  });
+  function renderFiles() {
+    var ul = $("flist"); ul.innerHTML = "";
+    files.forEach(function (f, i) {
+      var li = document.createElement("li");
+      var nm = document.createElement("span"); nm.className = "nm"; nm.textContent = f.name;
+      var sz = document.createElement("span"); sz.className = "sz"; sz.textContent = Math.max(1, Math.round(f.size / 1024)) + " KB";
+      var rm = document.createElement("button"); rm.type = "button"; rm.textContent = "✕";
+      rm.addEventListener("click", function () { files.splice(i, 1); renderFiles(); });
+      li.appendChild(nm); li.appendChild(sz); li.appendChild(rm); ul.appendChild(li);
+    });
+  }
+  function showErr(msg) { var e = $("err"); e.textContent = msg; e.style.display = "block"; }
+  function hideErr() { $("err").style.display = "none"; }
+  function refCode() {
+    var chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789", out = "";
+    for (var i = 0; i < 6; i++) out += chars.charAt(Math.floor(Math.random() * chars.length));
+    return out;
+  }
+  function showOk(ref) {
+    $("form").style.display = "none";
+    $("refcode").textContent = ref;
+    $("ok").style.display = "block";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  $("form").addEventListener("submit", async function (ev) {
+    ev.preventDefault(); hideErr();
+    var ref = refCode();
+    if ($("website").value) { showOk(ref); return; } // honeypot anti-bots
+    var nombre = $("nombre").value.trim(), fecha = $("fecha").value, relato = $("relato").value.trim();
+    if (!nombre || !fecha || !relato) { showErr("Completá los campos obligatorios: nombre, fecha del hecho y el relato."); return; }
+    if (fecha > todayISO()) { showErr("La fecha del hecho no puede ser posterior al día de hoy."); return; }
+    var btn = $("send"); btn.disabled = true; btn.textContent = "Enviando…";
+    try {
+      var adjuntos = [];
+      for (var i = 0; i < files.length; i++) {
+        var f = files[i];
+        var safe = (f.name || "archivo").replace(/[^a-zA-Z0-9._-]/g, "_");
+        var path = Date.now() + "_" + Math.random().toString(36).slice(2, 8) + "_" + safe;
+        btn.textContent = "Subiendo archivo " + (i + 1) + " de " + files.length + "…";
+        var up = await sb.storage.from("solicitudes").upload(path, f, { contentType: f.type || undefined });
+        if (up.error) throw up.error;
+        adjuntos.push({ name: f.name, path: path, tipo: f.type || "", size: f.size || 0 });
+      }
+      btn.textContent = "Enviando…";
+      var ins = await sb.from("solicitudes").insert({
+        ref: ref,
+        nombre: nombre,
+        dni_cuit: $("dni").value.trim() || null,
+        cia: $("cia").value.trim() || null,
+        poliza: $("poliza").value.trim() || null,
+        dominio: $("dominio").value.trim().toUpperCase() || null,
+        tercero_nombre: $("t_nombre").value.trim() || null,
+        tercero_dni: $("t_dni").value.trim() || null,
+        tercero_dominio: $("t_dominio").value.trim().toUpperCase() || null,
+        tercero_cia: $("t_cia").value.trim() || null,
+        tercero_poliza: $("t_poliza").value.trim() || null,
+        fecha_hecho: fecha || null,
+        hora_hecho: $("hora").value || null,
+        ubicacion: $("ubicacion").value.trim() || null,
+        localidad: $("localidad").value.trim() || null,
+        relato: relato,
+        adjuntos: adjuntos
+      });
+      if (ins.error) throw ins.error;
+      showOk(ref);
+    } catch (e) {
+      console.error(e);
+      showErr("No pudimos enviar la solicitud. Revisá tu conexión e intentá de nuevo, o comunicate por teléfono con la oficina.");
+      btn.disabled = false; btn.textContent = "Enviar solicitud";
+    }
+  });
+})();
+</script>
+</body>
+</html>

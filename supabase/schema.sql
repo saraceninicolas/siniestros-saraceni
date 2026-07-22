@@ -15,6 +15,8 @@ create table if not exists public.siniestros (
   n                 integer not null,                -- orden / numerador
   estado            text not null default 'Abierto', -- Abierto | Terminado
   cliente           text not null,
+  dominio           text,                            -- patente / bien afectado
+  referencia        text,                            -- etiqueta corta del caso (ej: "Choque capó")
   cia               text,                            -- compañía (LMA, PROVINCIA, ALLIANZ, ...)
   ramo              text,                            -- AUTO | HOGAR | ICO | COMERCIO | VIDA
   hecho             text,
@@ -29,11 +31,13 @@ create table if not exists public.siniestros (
   gestion_real      text,                            -- última gestión realizada
   gestor            text,                            -- gestor de la compañía
   gestor_email      text,
+  gestor_tel        text,
   obs               text,
   ticket            text,
   franquicia_pct    text,                            -- franquicia % (solo cobertura TODO RIESGO)
   franquicia_monto  text,                            -- franquicia monto en $ (solo TODO RIESGO)
   gestiones         jsonb not null default '[]'::jsonb,  -- historial: [{fecha, texto, pc}, ...]
+  adjuntos          jsonb not null default '[]'::jsonb,  -- archivos: [{name, path, tipo, size}, ...]
   en_calendario     boolean not null default false,
   ultima_mod_por    text,
   ultima_mod_fecha  timestamptz not null default now(),

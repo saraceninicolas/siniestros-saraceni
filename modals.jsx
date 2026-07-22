@@ -35,17 +35,33 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
   const todayISO = () => new Date().toISOString().slice(0, 10);
   const byFecha = (a, b) => (a.fecha || "").localeCompare(b.fecha || "");
   const blank = {
-    estado: "Abierto", cliente: "", cia: CIAS[0], ramo: "AUTO", hecho: HECHOS[0], cobertura: COBERTURAS_AUTO[0],
+    estado: "Abierto", cliente: "", dominio: "", referencia: "", cia: CIAS[0], ramo: "AUTO", hecho: HECHOS[0], cobertura: COBERTURAS_AUTO[0],
     poliza: "", nroSiniestro: "", fechaOcurrido: "", fechaDenuncia: "", fechaLimite: "", fechaInspeccion: "",
-    gestionAR: "", gestionReal: "", gestiones: [], gestor: "", gestorEmail: "", obs: "", ticket: "",
-    franquiciaPct: "", franquiciaMonto: "", enCalendario: false,
+    gestionAR: "", gestionReal: "", gestiones: [], gestor: "", gestorEmail: "", gestorTel: "", obs: "", ticket: "",
+    franquiciaPct: "", franquiciaMonto: "", adjuntos: [], enCalendario: false,
   };
   const [f, setF] = React.useState(() => {
     const base = initial ? { ...blank, ...initial } : blank;
-    return { ...base, gestiones: [...(base.gestiones || [])].sort(byFecha) };
+    return { ...base, gestiones: [...(base.gestiones || [])].sort(byFecha), adjuntos: base.adjuntos || [] };
   });
   const [touched, setTouched] = React.useState(false);
   const [newGest, setNewGest] = React.useState({ fecha: todayISO(), texto: "" });
+  const [subiendo, setSubiendo] = React.useState(false);
+  const filesReady = !!(window.DB && window.DB.configured() && window.DB.files);
+  const onPickFiles = async (e) => {
+    const files = Array.from(e.target.files || []); e.target.value = "";
+    if (!files.length || !filesReady) return;
+    setSubiendo(true);
+    for (const file of files) {
+      try { const a = await window.DB.files.upload(file); setF((p) => ({ ...p, adjuntos: [...(p.adjuntos || []), a] })); }
+      catch (err) { console.error(err); }
+    }
+    setSubiendo(false);
+  };
+  const removeAdjunto = async (a) => {
+    setF((p) => ({ ...p, adjuntos: (p.adjuntos || []).filter((x) => x.path !== a.path) }));
+    if (filesReady) { try { await window.DB.files.remove(a.path, a.bucket); } catch (err) { console.error(err); } }
+  };
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   // Al cambiar el ramo ajustamos la cobertura (AUTO usa lista fija; el resto, texto libre)
   const setRamo = (ramo) => setF((p) => ({
@@ -70,6 +86,30 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
   const removeGestion = (idx) => setF((p) => {
     const g = [...(p.gestiones || [])]; g.splice(idx, 1); return { ...p, gestiones: g };
   });
+  // edición de una gestión existente
+  const [editIdx, setEditIdx] = React.useState(null);
+  const [editGest, setEditGest] = React.useState({ fecha: "", texto: "" });
+  const startEdit = (i) => { const g = f.gestiones[i]; setEditIdx(i); setEditGest({ fecha: g.fecha || todayISO(), texto: g.texto || "" }); };
+  const saveEdit = () => {
+    const texto = (editGest.texto || "").trim();
+    if (!texto) return;
+    setF((p) => {
+      const gs = [...(p.gestiones || [])];
+      gs[editIdx] = { ...gs[editIdx], fecha: editGest.fecha || todayISO(), texto };
+      return { ...p, gestiones: gs.sort(byFecha) };
+    });
+    setEditIdx(null);
+  };
+  // orden de visualización del historial (asc = más vieja primero)
+  const [histDesc, setHistDesc] = React.useState(false);
+  // Aviso de cambios sin guardar al cerrar (scrim, X, Escape o Cancelar)
+  const snap0 = React.useRef(null);
+  if (snap0.current === null) snap0.current = JSON.stringify(f);
+  const hayCambios = () => JSON.stringify(f) !== snap0.current || !!newGest.texto.trim();
+  const safeClose = () => {
+    if (hayCambios() && !window.confirm("Tenés cambios sin guardar. ¿Cerrar sin guardar?")) return;
+    onClose();
+  };
   const valid = f.cliente.trim() && f.nroSiniestro.trim();
   // La última gestión del historial queda como "gestión realizada" (compatibilidad)
   const submit = () => {
@@ -83,12 +123,12 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
     <ModalShell wide
       title={mode === "edit" ? "Editar siniestro" : "Registrar nuevo siniestro"}
       sub={mode === "edit" ? `${initial.id} · ${initial.cliente}` : "Cargá los datos del siniestro y la gestión"}
-      onClose={onClose}
+      onClose={safeClose}
       footer={
         <>
           <span className="foot-note"><Ico name="monitor" size={14} /> Se registrará como <b>{station}</b></span>
           <div className="foot-btns">
-            <button className="btn-ghost" onClick={onClose}>Cancelar</button>
+            <button className="btn-ghost" onClick={safeClose}>Cancelar</button>
             <button className="btn-primary" onClick={submit} disabled={!valid}>
               <Ico name="check" size={16} />{mode === "edit" ? "Guardar cambios" : "Registrar"}
             </button>
@@ -100,6 +140,14 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
         <Field label="Cliente" required full>
           <input className={"input" + (touched && !f.cliente.trim() ? " err" : "")} value={f.cliente}
             onChange={(e) => set("cliente", e.target.value)} placeholder="Nombre / razón social" />
+        </Field>
+        <Field label="Dominio / bien afectado">
+          <input className="input mono" value={f.dominio} onChange={(e) => set("dominio", e.target.value.toUpperCase())}
+            placeholder="Ej: AB123CD o Notebook Lenovo" />
+        </Field>
+        <Field label="Referencia del caso">
+          <input className="input" value={f.referencia} onChange={(e) => set("referencia", e.target.value)}
+            placeholder="Ej: Choque capó, Espejo lateral…" />
         </Field>
         <Field label="Compañía">
           <select className="input" value={f.cia} onChange={(e) => set("cia", e.target.value)}>
@@ -167,17 +215,37 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
           <div className="hist-head">
             <span className="field-label">Historial de gestiones realizadas</span>
             <span className="hist-count">{(f.gestiones || []).length}</span>
+            {(f.gestiones || []).length > 1 && (
+              <button type="button" className="hist-sort" onClick={() => setHistDesc((v) => !v)} title="Cambiar orden">
+                {histDesc ? "↓ Más nueva primero" : "↑ Más vieja primero"}
+              </button>
+            )}
           </div>
           {(f.gestiones || []).length > 0 ? (
             <ul className="hist-list">
-              {f.gestiones.map((g, i) => (
-                <li className="hist-item" key={i}>
-                  <span className="hist-date mono">{fmtDateShort(g.fecha)}</span>
-                  <span className="hist-text">{g.texto}</span>
-                  <button type="button" className="hist-del" title="Quitar" onClick={() => removeGestion(i)}>
-                    <Ico name="close" size={13} />
-                  </button>
-                </li>
+              {(histDesc ? f.gestiones.map((g, i) => ({ g, i })).reverse() : f.gestiones.map((g, i) => ({ g, i }))).map(({ g, i }) => (
+                editIdx === i ? (
+                  <li className="hist-item hist-item-edit" key={"e" + i}>
+                    <input className="input hist-add-date" type="date" value={editGest.fecha}
+                      onChange={(e) => setEditGest((p) => ({ ...p, fecha: e.target.value }))} />
+                    <input className="input hist-add-text" value={editGest.texto} autoFocus
+                      onChange={(e) => setEditGest((p) => ({ ...p, texto: e.target.value }))}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); saveEdit(); } if (e.key === "Escape") { e.stopPropagation(); setEditIdx(null); } }} />
+                    <button type="button" className="btn-primary hist-edit-btn" onClick={saveEdit} disabled={!editGest.texto.trim()} title="Guardar"><Ico name="check" size={14} /></button>
+                    <button type="button" className="btn-ghost hist-edit-btn" onClick={() => setEditIdx(null)} title="Cancelar"><Ico name="close" size={14} /></button>
+                  </li>
+                ) : (
+                  <li className="hist-item" key={i}>
+                    <span className="hist-date mono">{fmtDateShort(g.fecha)}</span>
+                    <span className="hist-text">{g.texto}</span>
+                    <button type="button" className="hist-del" title="Editar" onClick={() => startEdit(i)}>
+                      <Ico name="edit" size={13} />
+                    </button>
+                    <button type="button" className="hist-del" title="Quitar" onClick={() => removeGestion(i)}>
+                      <Ico name="close" size={13} />
+                    </button>
+                  </li>
+                )
               ))}
             </ul>
           ) : (
@@ -197,6 +265,7 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
         </div>
         <Field label="Gestor (compañía)"><input className="input" value={f.gestor} onChange={(e) => set("gestor", e.target.value)} placeholder="Apellido, Nombre" /></Field>
         <Field label="Contacto del gestor"><input className="input" value={f.gestorEmail} onChange={(e) => set("gestorEmail", e.target.value)} placeholder="email@compañia.com" /></Field>
+        <Field label="Teléfono del gestor"><input className="input" type="tel" value={f.gestorTel} onChange={(e) => set("gestorTel", e.target.value)} placeholder="Ej: 11 5555-5555" /></Field>
         <Field label="Estado">
           <div className="estado-pills">
             {ESTADO_LIST.map((s) => (
@@ -216,6 +285,28 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
           <input type="checkbox" checked={f.enCalendario} onChange={(e) => set("enCalendario", e.target.checked)} />
           <span>Agendado en calendario (recordatorio activo)</span>
         </label>
+      </div>
+
+      <FormSection label="Adjuntos (fotos y PDF)" />
+      <div className="adj-box">
+        {(f.adjuntos || []).length > 0 && (
+          <ul className="adj-list">
+            {f.adjuntos.map((a, i) => (
+              <li className="adj-item" key={a.path || i}>
+                <Ico name={a.tipo && a.tipo.indexOf("pdf") >= 0 ? "doc" : "doc"} size={15} />
+                <span className="adj-name" title={a.name}>{a.name}</span>
+                <span className="adj-size">{a.size ? Math.max(1, Math.round(a.size / 1024)) + " KB" : ""}</span>
+                <button type="button" className="hist-del" title="Quitar" onClick={() => removeAdjunto(a)}><Ico name="close" size={13} /></button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <label className={"btn-ghost adj-add" + (subiendo || !filesReady ? " is-disabled" : "")}>
+          <Ico name={subiendo ? "clock" : "plus"} size={15} />{subiendo ? "Subiendo…" : "Agregar fotos o PDF"}
+          <input type="file" accept="image/*,application/pdf" multiple style={{ display: "none" }}
+            onChange={onPickFiles} disabled={subiendo || !filesReady} />
+        </label>
+        {!filesReady && <span className="adj-note">Los adjuntos requieren Supabase configurado (modo demo no sube archivos).</span>}
       </div>
     </ModalShell>
   );
@@ -329,7 +420,12 @@ function ConfirmDelete({ item, station, onClose, onConfirm }) {
 function Toast({ toast }) {
   if (!toast) return null;
   return (
-    <div className="toast"><span className="toast-ico"><Ico name="check" size={15} /></span><span>{toast.msg}</span></div>
+    <div className="toast">
+      <span className="toast-ico" style={toast.err ? { background: "#DC2626" } : null}>
+        <Ico name={toast.err ? "alert" : "check"} size={15} />
+      </span>
+      <span>{toast.msg}</span>
+    </div>
   );
 }
 

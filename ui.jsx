@@ -35,6 +35,11 @@ const Icons = {
   download:["M12 3v12", "M8 11l4 4 4-4", "M5 21h14"],
   info:   ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M12 11v5", "M12 8h.01"],
   logout: ["M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", "M16 17l5-5-5-5", "M21 12H9"],
+  refresh:["M4 11a8 8 0 0 1 13.7-5.3L21 9", "M21 4v5h-5", "M20 13a8 8 0 0 1-13.7 5.3L3 15", "M3 20v-5h5"],
+  card:   ["M3 6h18v12H3z", "M3 10h18", "M7 15h4"],
+  target: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M12 16.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9z", "M12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"],
+  phone:  ["M4 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L14 18l5 2v4a2 2 0 0 1-2 2A18 18 0 0 1 2 8a2 2 0 0 1 2-2z"],
+  menu:   ["M4 7h16", "M4 12h16", "M4 17h16"],
 };
 const Ico = ({ name, ...rest }) => <Icon d={Icons[name]} {...rest} />;
 
@@ -62,40 +67,84 @@ function RamoTag({ ramo, hecho }) {
   return (
     <span className="ramo">
       <Ico name={RAMO_ICON[ramo] || "doc"} size={14} />
-      <span>{RAMO_LABEL[ramo] || ramo}{hecho ? <i className="ramo-sub">{HECHO_LABEL[hecho] || hecho}</i> : null}</span>
+      <span className="ramo-body">
+        <span className="ramo-name">{RAMO_LABEL[ramo] || ramo}</span>
+        {hecho && <span className="hecho-badge">{HECHO_LABEL[hecho] || hecho}</span>}
+      </span>
     </span>
   );
 }
 
+// ---------- navegación del portal (carpetas) ----------
+const PORTAL_NAV = [
+  { key: "siniestros", label: "Siniestros", icon: "shield", children: [
+    { key: "dashboard", label: "Panel de control", icon: "grid", count: "abiertos" },
+    { key: "agenda", label: "Agenda de gestiones", icon: "agenda", count: "porVencer" },
+    { key: "solicitudes", label: "Solicitudes recibidas", icon: "mail", count: "solicitudes" } ] },
+  { key: "facturacion", label: "Facturación", icon: "doc", children: [
+    { key: "fact-comprobantes", label: "Comprobantes", icon: "doc" },
+    { key: "fact-reportes", label: "Reportes", icon: "grid" } ] },
+  { key: "pendientes", label: "Pendientes", icon: "flag", children: [
+    { key: "pend-panel", label: "Panel de control", icon: "grid" },
+    { key: "pend-agenda", label: "Agenda por vencimiento", icon: "agenda" } ] },
+  { key: "objetivos", label: "Objetivos", icon: "target", children: [
+    { key: "obj-panel", label: "Panel de control", icon: "grid" },
+    { key: "obj-metas", label: "Metas y seguimiento", icon: "check" } ] },
+];
+const NAV_LOOKUP = {};
+PORTAL_NAV.forEach((g) => g.children.forEach((c) => { NAV_LOOKUP[c.key] = { section: g.label, sectionKey: g.key, title: c.label }; }));
+const SINIESTROS_KEYS = ["dashboard", "agenda", "solicitudes"];
+const FACTURACION_KEYS = ["fact-comprobantes", "fact-reportes"];
+const PENDIENTES_KEYS = ["pend-panel", "pend-agenda"];
+const OBJETIVOS_KEYS = ["obj-panel", "obj-metas"];
+
 // ---------- sidebar ----------
-function Sidebar({ active, onNav, station, counts }) {
-  const items = [
-    { key: "dashboard", label: "Panel de control", icon: "grid" },
-    { key: "siniestros", label: "Siniestros", icon: "folder", badge: counts.abiertos },
-    { key: "agenda", label: "Agenda de gestiones", icon: "agenda", badge: counts.porVencer || null },
-  ];
+function Sidebar({ active, onNav, station, counts, open: drawerOpen }) {
+  const sectionOf = (k) => (PORTAL_NAV.find((g) => g.children.some((c) => c.key === k)) || {}).key;
+  const [open, setOpen] = React.useState(() => ({ [sectionOf(active) || "siniestros"]: true }));
+  const toggle = (k) => setOpen((o) => ({ ...o, [k]: !o[k] }));
   return (
-    <aside className="sb">
+    <aside className={"sb" + (drawerOpen ? " is-open" : "")}>
       <div className="sb-brand">
         <div className="sb-logo"><img src="assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></div>
-        <div className="sb-sub"><span className="sb-sub-dot" />Portal de Siniestros</div>
+        <div className="sb-sub"><span className="sb-sub-dot" />Portal de gestiones</div>
       </div>
       <nav className="sb-nav">
-        <div className="sb-group-label">Gestión</div>
-        {items.map((it) => (
-          <button key={it.key} className={"sb-item" + (active === it.key ? " is-active" : "")} onClick={() => onNav(it.key)}>
-            <span className="sb-item-ico"><Ico name={it.icon} size={17} /></span>
-            <span className="sb-item-label">{it.label}</span>
-            {it.badge != null && <span className={"sb-count" + (it.key === "agenda" ? " warn" : "")}>{it.badge}</span>}
-          </button>
-        ))}
+        <div className="sb-group-label">Carpetas de gestión</div>
+        {PORTAL_NAV.map((g) => {
+          const isOpen = !!open[g.key];
+          const hasActive = g.children.some((c) => c.key === active);
+          return (
+            <div className={"sb-folder" + (isOpen ? " is-open" : "")} key={g.key}>
+              <button className={"sb-folder-head" + (hasActive ? " has-active" : "")} onClick={() => toggle(g.key)}>
+                <span className="sb-item-ico"><Ico name={g.icon} size={17} /></span>
+                <span className="sb-folder-label">{g.label}</span>
+                <span className="sb-folder-chev"><Ico name="chevR" size={15} /></span>
+              </button>
+              <div className="sb-folder-kids">
+                <div className="sb-folder-kids-inner">
+                  {g.children.map((c) => {
+                    const badge = c.count ? counts[c.count] : null;
+                    return (
+                      <button key={c.key} className={"sb-subitem" + (active === c.key ? " is-active" : "")} onClick={() => onNav(c.key)}>
+                        <span className="sb-subitem-ico"><Ico name={c.icon} size={15} /></span>
+                        <span className="sb-subitem-label">{c.label}</span>
+                        {badge != null && badge > 0 && <span className={"sb-count" + (c.key === "agenda" ? " warn" : "")}>{badge}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </nav>
       <div className="sb-station">
         <div className="sb-station-row">
-          <span className="sb-station-led" /><span className="sb-station-label">Puesto activo</span><Ico name="monitor" size={14} />
+          <span className="sb-station-led" /><span className="sb-station-label">Usuario</span><Ico name="user" size={14} />
         </div>
-        <div className="sb-station-name">{station}</div>
-        <div className="sb-station-note">Sin inicio de sesión · puesto compartido</div>
+        <div className="sb-station-name" title={station} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{station}</div>
+        <div className="sb-station-note">Sesión activa</div>
       </div>
       <div className="sb-foot">
         <span className="sb-foot-mark">SARACENI</span>
@@ -107,18 +156,14 @@ function Sidebar({ active, onNav, station, counts }) {
 
 // ---------- topbar ----------
 const HOY = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-const TITLES = {
-  dashboard: ["Panel de control", "Seguimiento de siniestros"],
-  siniestros: ["Siniestros", "Listado completo"],
-  agenda: ["Agenda de gestiones", "Gestiones pendientes por fecha límite"],
-};
-function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpenSync, onLogout }) {
-  const [title, sub] = TITLES[active] || TITLES.dashboard;
+function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpenSync, onLogout, onChangePass, onMenu, isSiniestros }) {
+  const info = NAV_LOOKUP[active] || { section: "Siniestros", title: "Panel de control" };
   return (
     <header className="tb">
+      {onMenu && <button className="btn-ghost tb-icon tb-menu" title="Menú" onClick={onMenu}><Ico name="menu" size={20} /></button>}
       <div className="tb-titles">
-        <div className="tb-crumb"><span>Siniestros</span><Ico name="chevR" size={13} /><b>{title}</b></div>
-        <h1>{title}</h1>
+        <div className="tb-crumb"><span>{info.section}</span><Ico name="chevR" size={13} /><b>{info.title}</b></div>
+        <h1>{info.title}</h1>
       </div>
       <div className="tb-search">
         <Ico name="search" size={17} style={{ color: "var(--muted)" }} />
@@ -129,11 +174,12 @@ function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpe
       <div className="tb-actions">
         <div className="tb-date"><Ico name="clock" size={14} /><span style={{ textTransform: "capitalize" }}>{HOY}</span></div>
         <div className="tb-sep" />
-        <button className="btn-ghost tb-icon" title="Sincronizar con Google Calendar" onClick={onOpenSync}><Ico name="agenda" size={18} /></button>
-        <button className="tb-station-chip" onClick={onSwitchStation} title="Cambiar de puesto (demo)">
-          <span className="sb-station-led" /><Ico name="monitor" size={14} />{station}
-        </button>
-        <button className="btn-primary" onClick={onNew}><Ico name="plus" size={17} />Registrar siniestro</button>
+        {isSiniestros && <button className="btn-ghost tb-icon" title="Sincronizar con Google Calendar" onClick={onOpenSync}><Ico name="agenda" size={18} /></button>}
+        <span className="tb-station-chip" title="Usuario conectado">
+          <span className="sb-station-led" /><Ico name="user" size={14} />{station}
+        </span>
+        {isSiniestros && <button className="btn-primary" onClick={onNew}><Ico name="plus" size={17} /><span className="btn-label">Registrar siniestro</span></button>}
+        {onChangePass && <button className="btn-ghost tb-icon" title="Cambiar contraseña" onClick={onChangePass}><Ico name="shield" size={17} /></button>}
         {onLogout && <button className="btn-ghost tb-icon" title="Cerrar sesión" onClick={onLogout}><Ico name="logout" size={18} /></button>}
       </div>
     </header>
@@ -200,7 +246,32 @@ function Toolbar({ title, count, estadoFilter, onEstado, ramoFilter, onRamo, cia
 }
 
 // ---------- claims table ----------
-function ClaimsTable({ rows, selectedId, onSelect, onOpen }) {
+function ClaimsTable({ rows, selectedId, onSelect, onOpen, multi, onClientFilter }) {
+  // Orden por columna: 1er clic asc, 2do desc, 3ro vuelve al orden por defecto
+  const [sort, setSort] = React.useState(null);
+  const sorted = React.useMemo(() => {
+    if (!sort) return rows;
+    const val = (r) => {
+      switch (sort.key) {
+        case "vence": return r.estado === "Terminado" ? "9999-12-31" : (r.fechaLimite || "9999-12-30");
+        case "cliente": return (r.cliente || "").toLowerCase();
+        case "cia": return ciaLabel(r.cia).toLowerCase();
+        case "ramo": return ((RAMO_LABEL[r.ramo] || r.ramo || "") + " " + (r.hecho || "")).toLowerCase();
+        case "estado": return r.estado + "-" + String(999999 - (diasActivo(r) || 0)).padStart(6, "0");
+        case "nro": return r.nroSiniestro || "";
+        default: return "";
+      }
+    };
+    const arr = [...rows].sort((a, b) => { const x = val(a), y = val(b); return x < y ? -1 : x > y ? 1 : 0; });
+    if (sort.dir === "desc") arr.reverse();
+    return arr;
+  }, [rows, sort]);
+  const Th = ({ k, children }) => (
+    <th className="th-sort" title="Clic para ordenar"
+      onClick={() => setSort((s) => (s && s.key === k ? (s.dir === "asc" ? { key: k, dir: "desc" } : null) : { key: k, dir: "asc" }))}>
+      {children}{sort && sort.key === k ? (sort.dir === "asc" ? " ▲" : " ▼") : ""}
+    </th>
+  );
   if (!rows.length) {
     return (
       <div className="empty">
@@ -216,48 +287,67 @@ function ClaimsTable({ rows, selectedId, onSelect, onOpen }) {
         <thead>
           <tr>
             <th style={{ width: 34 }}></th>
-            <th>N° Siniestro</th>
-            <th>Cliente</th>
-            <th>Compañía</th>
-            <th>Ramo / Hecho</th>
+            <Th k="vence">Vence</Th>
             <th>Gestión a realizar</th>
-            <th>Vence</th>
-            <th>Estado</th>
+            <Th k="cliente">Cliente</Th>
+            <Th k="cia">Compañía</Th>
+            <Th k="ramo">Ramo / Hecho</Th>
+            <Th k="estado">Estado</Th>
+            <Th k="nro">N° Siniestro</Th>
             <th style={{ width: 44 }}></th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
-            <tr key={r.id} className={selectedId === r.id ? "is-selected" : ""} onClick={() => onOpen(r.id)}>
-              <td onClick={(e) => { e.stopPropagation(); onSelect(selectedId === r.id ? null : r.id); }}>
-                <span className={"radio" + (selectedId === r.id ? " on" : "")} />
-              </td>
-              <td>
-                <div className="mono cell-id">{r.nroSiniestro}</div>
-                <div className="cell-sub">{r.id}</div>
-              </td>
-              <td>
-                <div className="cell-strong">{r.cliente}</div>
-                <div className="cell-sub mono">{r.poliza}</div>
-              </td>
-              <td><span className="cia-pill">{ciaLabel(r.cia)}</span></td>
-              <td><RamoTag ramo={r.ramo} hecho={r.hecho} /></td>
-              <td className="cell-gestion">
-                {r.estado === "Terminado"
-                  ? <span className="gestion-done"><Ico name="check" size={13} />Sin pendientes</span>
-                  : <span className="gestion-text" title={r.gestionAR}>{r.gestionAR || "—"}</span>}
-              </td>
-              <td>
-                {r.estado === "Terminado"
-                  ? <span className="urg-none">—</span>
-                  : <div className="vence"><span className="vence-date mono">{fmtDateShort(r.fechaLimite)}</span><UrgBadge item={r} /></div>}
-              </td>
-              <td><Badge estado={r.estado} /></td>
-              <td onClick={(e) => { e.stopPropagation(); onOpen(r.id); }}>
-                <button className="row-open" title="Ver detalle"><Ico name="chevR" size={16} /></button>
-              </td>
-            </tr>
-          ))}
+          {sorted.map((r) => {
+            const dias = diasActivo(r);
+            return (
+              <tr key={r.id} className={selectedId === r.id ? "is-selected" : ""} onClick={() => onOpen(r.id)}>
+                <td onClick={(e) => { e.stopPropagation(); onSelect(selectedId === r.id ? null : r.id); }}>
+                  <span className={"radio" + (selectedId === r.id ? " on" : "")} />
+                </td>
+                <td>
+                  {r.estado === "Terminado"
+                    ? <span className="urg-none">—</span>
+                    : <div className="vence"><span className="vence-date mono">{fmtDateShort(r.fechaLimite)}</span><UrgBadge item={r} /></div>}
+                </td>
+                <td className="cell-gestion">
+                  {r.estado === "Terminado"
+                    ? <span className="gestion-done"><Ico name="check" size={13} />Sin pendientes</span>
+                    : <span className="gestion-text" title={r.gestionAR}>{r.gestionAR || "—"}</span>}
+                </td>
+                <td>
+                  <div className="cell-strong">
+                    {r.cliente}
+                    {multi && multi[r.cliente] > 1 && (
+                      <button className="multi-chip" title={"Este cliente tiene " + multi[r.cliente] + " siniestros activos — clic para verlos juntos"}
+                        onClick={(e) => { e.stopPropagation(); onClientFilter && onClientFilter(r.cliente); }}>×{multi[r.cliente]}</button>
+                    )}
+                  </div>
+                  <div className="cell-sub mono">{r.poliza}</div>
+                  {(r.dominio || r.referencia) && (
+                    <div className="cell-sub">
+                      {r.dominio && <span className="mono" style={{ fontWeight: 700, color: "var(--ink-2)" }}>{r.dominio}</span>}
+                      {r.dominio && r.referencia && " · "}
+                      {r.referencia}
+                    </div>
+                  )}
+                </td>
+                <td><span className="cia-pill">{ciaLabel(r.cia)}</span></td>
+                <td><RamoTag ramo={r.ramo} hecho={r.hecho} /></td>
+                <td>
+                  <Badge estado={r.estado} />
+                  {dias != null && <div className="cell-sub">{dias === 0 ? "hoy" : dias + " d activo"}</div>}
+                </td>
+                <td>
+                  <div className="mono cell-id">{r.nroSiniestro}</div>
+                  <div className="cell-sub">{r.id}</div>
+                </td>
+                <td onClick={(e) => { e.stopPropagation(); onOpen(r.id); }}>
+                  <button className="row-open" title="Ver detalle"><Ico name="chevR" size={16} /></button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -300,6 +390,7 @@ function Agenda({ data, onOpen, onSync, onGcal }) {
                 <div className="ag-card-main">
                   <div className="ag-card-top">
                     <span className="ag-client">{d.cliente}</span>
+                    {(d.dominio || d.referencia) && <span className="cia-pill sm mono">{d.dominio || d.referencia}</span>}
                     <UrgBadge item={d} />
                     {d.enCalendario && <span className="sync-done"><Ico name="check" size={12} />Agendado</span>}
                   </div>
@@ -349,4 +440,21 @@ function Agenda({ data, onOpen, onSync, onGcal }) {
   );
 }
 
-Object.assign(window, { Ico, Icons, Badge, UrgBadge, RamoTag, Sidebar, Topbar, Kpis, Toolbar, ClaimsTable, Agenda });
+// ---------- módulo en preparación ----------
+function ModuleScreen({ info }) {
+  const i = info || { section: "Portal", title: "Módulo" };
+  return (
+    <div className="placeholder module-ph">
+      <div className="ph-ico"><Ico name="folder" size={26} /></div>
+      <span className="module-ph-tag"><span className="module-ph-dot" />En preparación</span>
+      <h2>{i.title}</h2>
+      <p>Parte del portal de gestiones de Saraceni. Desde acá vas a administrar {i.title.toLowerCase()} dentro de {i.section}, con el mismo seguimiento diario que usás para los siniestros.</p>
+    </div>
+  );
+}
+
+Object.assign(window, {
+  Ico, Icons, Badge, UrgBadge, RamoTag, Sidebar, Topbar, Kpis, Toolbar, ClaimsTable, Agenda,
+  ModuleScreen, PORTAL_NAV, NAV_LOOKUP, SINIESTROS_KEYS, FACTURACION_KEYS,
+  PENDIENTES_KEYS, OBJETIVOS_KEYS,
+});
