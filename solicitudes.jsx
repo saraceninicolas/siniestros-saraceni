@@ -56,6 +56,7 @@ function SolCard({ s, onConvertir, onDescartar, onReabrir }) {
           <div className="sol-grid-datos">
             <D k="Nombre" v={s.terceroNombre} />
             <D k="DNI / CUIT" v={s.terceroDni} mono />
+            <D k="Celular" v={s.terceroCelular} mono />
             <D k="Patente" v={s.terceroDominio} mono />
             <D k="Compañía" v={s.terceroCia} />
             <D k="N° de póliza" v={s.terceroPoliza} mono />
@@ -69,6 +70,14 @@ function SolCard({ s, onConvertir, onDescartar, onReabrir }) {
         <D k="Hora" v={s.horaHecho} mono />
         <D k="Ubicación" v={s.ubicacion} />
         <D k="Localidad" v={s.localidad} />
+        {s.lesionados && (
+          <div>
+            <div className="sol-k">¿Lesionados?</div>
+            <div className="sol-v" style={s.lesionados === "SI" ? { color: "#C0241D", fontWeight: 800 } : null}>
+              {s.lesionados === "SI" ? "⚠ SÍ" : "No"}
+            </div>
+          </div>
+        )}
       </div>
 
       {s.relato && <div className="sol-relato">{s.relato}</div>}

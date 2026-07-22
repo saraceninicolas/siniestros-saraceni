@@ -201,6 +201,7 @@ function App() {
     const lugar = [s.ubicacion, s.localidad].filter(Boolean).join(", ");
     if (s.horaHecho) lineas.push("Hora del hecho: " + s.horaHecho);
     if (lugar) lineas.push("Lugar: " + lugar);
+    if (s.lesionados) lineas.push(s.lesionados === "SI" ? "⚠ HAY LESIONADOS" : "Sin lesionados");
     const contactoAseg = [
       s.telefono ? "Tel: " + s.telefono : null,
       s.email ? "Email: " + s.email : null,
@@ -210,6 +211,7 @@ function App() {
     if (contactoAseg) lineas.push("Asegurado: " + contactoAseg);
     const terc = [
       s.terceroNombre || null,
+      s.terceroCelular ? "Cel " + s.terceroCelular : null,
       s.terceroDominio ? "Dominio " + s.terceroDominio : null,
       s.terceroCia ? "Cía " + s.terceroCia : null,
       s.terceroPoliza ? "Póliza " + s.terceroPoliza : null,
