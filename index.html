@@ -65,6 +65,48 @@ button{ font-family:inherit; cursor:pointer; }
   border-radius:8px; padding:8px 11px; }
 .login-btn{ justify-content:center; margin-top:4px; padding:11px; font-size:14px; }
 .login-foot{ text-align:center; font-size:11px; font-weight:700; letter-spacing:.14em; color:var(--muted); margin-top:6px; }
+.login-info{ font-size:12.5px; color:#15803D; background:#E6F4EA; border:1px solid #b7e0c3;
+  border-radius:8px; padding:8px 11px; }
+.login-tabs{ display:flex; gap:0; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+.login-tab{ flex:1; padding:9px 10px; font-size:13px; font-weight:700; background:#fff; color:var(--muted); transition:.15s; }
+.login-tab.is-on{ background:var(--brand); color:#fff; }
+.login-magic{ font-size:12.5px; color:var(--brand); font-weight:600; text-decoration:underline;
+  background:none; border:none; padding:2px 0; align-self:center; }
+
+/* ---------- notificaciones (campana del topbar) ---------- */
+.notif-wrap{ position:relative; }
+.notif-btn{ position:relative; }
+.notif-badge{ position:absolute; top:-4px; right:-5px; min-width:17px; height:17px; padding:0 4px;
+  border-radius:99px; background:var(--brand); color:#fff; font-size:10.5px; font-weight:800;
+  display:grid; place-items:center; border:2px solid #fff; }
+.notif-panel{ position:absolute; top:calc(100% + 10px); right:0; width:360px; max-width:calc(100vw - 24px);
+  background:var(--surface); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow-md);
+  z-index:80; overflow:hidden; animation:pop .15s ease; }
+.notif-head{ display:flex; align-items:center; justify-content:space-between; padding:12px 14px;
+  border-bottom:1px solid var(--line); font-size:13.5px; font-weight:800; }
+.notif-clear{ font-size:12px; font-weight:600; color:var(--brand); background:none; border:none; text-decoration:underline; }
+.notif-list{ max-height:380px; overflow-y:auto; }
+.notif-empty{ padding:26px 16px; text-align:center; font-size:13px; color:var(--muted); }
+.notif-item{ display:flex; gap:10px; align-items:flex-start; width:100%; text-align:left;
+  padding:11px 14px; border-bottom:1px solid var(--surface-2); background:#fff; transition:.12s; }
+.notif-item:hover{ background:var(--surface-2); }
+.notif-item.unread{ background:#fdf6f6; }
+.notif-item.unread:hover{ background:#fbeeee; }
+.notif-ico{ flex:none; width:30px; height:30px; border-radius:9px; display:grid; place-items:center;
+  background:var(--surface-2); color:var(--ink-2); margin-top:1px; }
+.notif-ico.notif-vencimiento{ background:#FBE3E3; color:#C0241D; }
+.notif-ico.notif-asignacion{ background:#E8F0FE; color:#1D4ED8; }
+.notif-ico.notif-solicitud{ background:#FDF1DC; color:#B45309; }
+.notif-txt{ display:flex; flex-direction:column; gap:2px; min-width:0; flex:1; }
+.notif-title{ font-size:13px; font-weight:700; color:var(--ink); }
+.notif-body{ font-size:12.5px; color:var(--ink-2); overflow:hidden; display:-webkit-box;
+  -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.notif-meta{ font-size:11.5px; color:var(--muted); }
+.notif-dot{ flex:none; width:8px; height:8px; border-radius:99px; background:var(--brand); margin-top:6px; }
+@media (max-width: 460px){ .notif-panel{ position:fixed; top:64px; right:8px; left:8px; width:auto; } }
+
+/* ---------- botones chicos (usuarios) ---------- */
+.btn-primary.sm,.btn-ghost.sm{ padding:6px 10px; font-size:12.5px; }
 
 /* ---------- buttons ---------- */
 .btn-primary,.btn-ghost,.btn-danger{
@@ -749,6 +791,7 @@ html[data-sidebar="claro"] .sb-subitem.is-active{ color:var(--ink); }
 <script type="text/babel" src="modals.jsx"></script>
 <script type="text/babel" src="detail.jsx"></script>
 <script type="text/babel" src="solicitudes.jsx"></script>
+<script type="text/babel" src="usuarios.jsx"></script>
 <script type="text/babel" src="facturas.jsx"></script>
 <script type="text/babel" src="pendientes.jsx"></script>
 <script type="text/babel" src="objetivos.jsx"></script>

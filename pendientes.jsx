@@ -75,8 +75,8 @@ function PModal({ title, sub, onClose, children, footer, wide }) {
 function PField({ label, children, required, full }) {
   return (<label className={"field" + (full ? " field-full" : "")}><span className="field-label">{label}{required && <i> *</i>}</span>{children}</label>);
 }
-function PendFormModal({ mode, initial, station, onClose, onSubmit }) {
-  const blank = { titulo: "", descripcion: "", cliente: "", categoria: "Otro", prioridad: "Media", fechaLimite: "", estado: "Pendiente", asignado: station || "" };
+function PendFormModal({ mode, initial, station, onClose, onSubmit, usuarios }) {
+  const blank = { titulo: "", descripcion: "", cliente: "", categoria: "Otro", prioridad: "Media", fechaLimite: "", estado: "Pendiente", asignado: station || "", asignadoA: null };
   const [f, setF] = React.useState(initial ? { ...blank, ...initial } : blank);
   const [touched, setTouched] = React.useState(false);
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
@@ -112,7 +112,21 @@ function PendFormModal({ mode, initial, station, onClose, onSubmit }) {
         <PField label="Estado">
           <select className="input" value={f.estado} onChange={(e) => set("estado", e.target.value)}>{ESTADOS_PEND.map((s) => <option key={s} value={s}>{s}</option>)}</select>
         </PField>
-        <PField label="Responsable"><input className="input" value={f.asignado} onChange={(e) => set("asignado", e.target.value)} placeholder="Hernan / Nicolas" /></PField>
+        <PField label="Responsable">
+          {(usuarios || []).length > 0 ? (
+            <select className="input" value={f.asignadoA || ""}
+              onChange={(e) => {
+                const id = e.target.value || null;
+                const u = (usuarios || []).find((x) => x.id === id);
+                setF((p) => ({ ...p, asignadoA: id, asignado: u ? (u.nombre || u.email) : "" }));
+              }}>
+              <option value="">Sin asignar</option>
+              {usuarios.map((u) => <option key={u.id} value={u.id}>{u.nombre || u.email}</option>)}
+            </select>
+          ) : (
+            <input className="input" value={f.asignado} onChange={(e) => set("asignado", e.target.value)} placeholder="Hernan / Nicolas" />
+          )}
+        </PField>
       </div>
     </PModal>
   );
@@ -239,7 +253,7 @@ function PendAgenda({ data, onOpen, onToggle, onNew }) {
 }
 
 // ---------- orquestador ----------
-function PendientesModule({ active, station, query }) {
+function PendientesModule({ active, station, query, usuarios }) {
   const [tareas, setTareas] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [usingDb, setUsingDb] = React.useState(false);
@@ -310,8 +324,8 @@ function PendientesModule({ active, station, query }) {
 
   const modals = (
     <>
-      {modal?.type === "new" && <PendFormModal mode="new" station={station} onClose={() => setModal(null)} onSubmit={handleCreate} />}
-      {modal?.type === "edit" && <PendFormModal mode="edit" initial={modal.item} station={station} onClose={() => setModal(null)} onSubmit={handleUpdate} />}
+      {modal?.type === "new" && <PendFormModal mode="new" station={station} usuarios={usuarios} onClose={() => setModal(null)} onSubmit={handleCreate} />}
+      {modal?.type === "edit" && <PendFormModal mode="edit" initial={modal.item} station={station} usuarios={usuarios} onClose={() => setModal(null)} onSubmit={handleUpdate} />}
       {modal?.type === "delete" && <PendConfirmDelete item={modal.item} station={station} onClose={() => setModal(null)} onConfirm={handleDelete} />}
       {toast && <div className="toast"><span className="toast-ico"><Ico name="check" size={15} /></span><span>{toast.msg}</span></div>}
     </>

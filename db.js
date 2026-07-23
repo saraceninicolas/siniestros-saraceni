@@ -61,6 +61,7 @@
       gestiones: Array.isArray(r.gestiones) ? r.gestiones : [],
       adjuntos: Array.isArray(r.adjuntos) ? r.adjuntos : [],
       enCalendario: !!r.en_calendario,
+      asignadoA: r.asignado_a || null,
       ultimaModPor: r.ultima_mod_por || "",
       ultimaModFecha: r.ultima_mod_fecha || new Date().toISOString(),
       creado: r.created_at || null,
@@ -100,6 +101,7 @@
       gestiones: Array.isArray(it.gestiones) ? it.gestiones : [],
       adjuntos: Array.isArray(it.adjuntos) ? it.adjuntos : [],
       en_calendario: !!it.enCalendario,
+      asignado_a: orNull(it.asignadoA),
       ultima_mod_por: orNull(it.ultimaModPor),
       ultima_mod_fecha: it.ultimaModFecha || new Date().toISOString(),
       eliminado: !!it.eliminado,
@@ -199,6 +201,27 @@
     const c = client();
     if (!c) throw new Error("Supabase no configurado");
     const { error } = await c.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+  }
+  // Registro con email real. Si el proyecto exige verificación, data.session
+  // viene null y el usuario debe confirmar desde su casilla.
+  async function authSignUp(email, password, nombre) {
+    const c = client();
+    if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.auth.signUp({
+      email, password,
+      options: { data: { nombre: nombre || "" }, emailRedirectTo: window.location.origin },
+    });
+    if (error) throw error;
+    return data;
+  }
+  // Magic Link: acceso sin contraseña para usuarios ya registrados
+  async function authMagicLink(email) {
+    const c = client();
+    if (!c) throw new Error("Supabase no configurado");
+    const { error } = await c.auth.signInWithOtp({
+      email, options: { shouldCreateUser: false, emailRedirectTo: window.location.origin },
+    });
     if (error) throw error;
   }
 async function dbMaxN() {
@@ -303,6 +326,7 @@ async function dbMaxN() {
       cliente: r.cliente || "", categoria: r.categoria || "Otro",
       prioridad: r.prioridad || "Media", fechaLimite: r.fecha_limite || "",
       estado: r.estado || "Pendiente", asignado: r.asignado || "",
+      asignadoA: r.asignado_a || null,
       ultimaModPor: r.ultima_mod_por || "",
       ultimaModFecha: r.ultima_mod_fecha || new Date().toISOString(),
       creado: r.created_at || null, eliminado: !!r.eliminado,
@@ -315,6 +339,7 @@ async function dbMaxN() {
       cliente: orNull(it.cliente), categoria: orNull(it.categoria),
       prioridad: orNull(it.prioridad), fecha_limite: orNull(it.fechaLimite),
       estado: orNull(it.estado) || "Pendiente", asignado: orNull(it.asignado),
+      asignado_a: orNull(it.asignadoA),
       ultima_mod_por: orNull(it.ultimaModPor),
       ultima_mod_fecha: it.ultimaModFecha || new Date().toISOString(),
       eliminado: !!it.eliminado,
@@ -450,6 +475,80 @@ async function dbMaxN() {
     return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
   }
 
+  // ============================ PERFILES (usuarios y roles) ============================
+  function fromRowU(r) {
+    return {
+      id: r.id, email: r.email || "", nombre: r.nombre || "",
+      rol: r.rol || "empleado", estado: r.estado || "pendiente",
+      creado: r.created_at || null,
+    };
+  }
+  // Perfil del usuario logueado (rol y estado). Null si todavía no existe.
+  async function perfMe() {
+    const c = client(); if (!c) return null;
+    const { data: s } = await c.auth.getSession();
+    const uid = s && s.session && s.session.user ? s.session.user.id : null;
+    if (!uid) return null;
+    const { data, error } = await c.from("perfiles").select("*").eq("id", uid).maybeSingle();
+    if (error) throw error;
+    return data ? fromRowU(data) : null;
+  }
+  async function perfList() {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("perfiles").select("*").order("created_at", { ascending: true });
+    if (error) throw error; return (data || []).map(fromRowU);
+  }
+  async function perfUpdate(id, patch) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const row = {};
+    if (patch.rol) row.rol = patch.rol;
+    if (patch.estado) row.estado = patch.estado;
+    if (patch.nombre !== undefined) row.nombre = patch.nombre;
+    row.updated_at = new Date().toISOString();
+    const { data, error } = await c.from("perfiles").update(row).eq("id", id).select().single();
+    if (error) throw error; return fromRowU(data);
+  }
+  function perfSubscribe(onChange) {
+    const c = client(); if (!c) return null;
+    const ch = c.channel("perfiles-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "perfiles" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
+      .subscribe();
+    return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
+  }
+
+  // ============================ NOTIFICACIONES ============================
+  function fromRowN(r) {
+    return {
+      _dbId: r.id, tipo: r.tipo || "sistema",
+      titulo: r.titulo || "", cuerpo: r.cuerpo || "",
+      modulo: r.modulo || "", referencia: r.referencia || "",
+      leida: !!r.leida, creado: r.created_at || null,
+    };
+  }
+  async function notifList() {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("notificaciones").select("*")
+      .order("id", { ascending: false }).limit(60);
+    if (error) throw error; return (data || []).map(fromRowN);
+  }
+  async function notifMarkRead(id) {
+    const c = client(); if (!c) return;
+    const { error } = await c.from("notificaciones").update({ leida: true }).eq("id", id);
+    if (error) console.error(error);
+  }
+  async function notifMarkAll() {
+    const c = client(); if (!c) return;
+    const { error } = await c.from("notificaciones").update({ leida: true }).eq("leida", false);
+    if (error) console.error(error);
+  }
+  function notifSubscribe(uid, onChange) {
+    const c = client(); if (!c) return null;
+    const ch = c.channel("notif-realtime")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notificaciones", filter: "usuario_id=eq." + uid }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
+      .subscribe();
+    return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
+  }
+
   // ============================ ARCHIVOS (Storage) ============================
   const BUCKET = "adjuntos";
   async function fileUpload(file) {
@@ -485,7 +584,11 @@ async function dbMaxN() {
       signOut: authSignOut,
       onChange: authOnChange,
       updatePassword: authUpdatePassword,
+      signUp: authSignUp,
+      magicLink: authMagicLink,
     },
+    perfiles: { me: perfMe, list: perfList, update: perfUpdate, subscribe: perfSubscribe },
+    notif: { list: notifList, markRead: notifMarkRead, markAll: notifMarkAll, subscribe: notifSubscribe },
     fact: {
       list: factList, create: factCreate, update: factUpdate,
       remove: factRemove, maxN: factMaxN, subscribe: factSubscribe,
