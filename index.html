@@ -127,7 +127,12 @@ button{ font-family:inherit; cursor:pointer; }
 
 /* ---------- sidebar ---------- */
 .sb{ background:var(--sb-bg); display:flex; flex-direction:column; padding:18px 14px 14px; gap:4px;
-  border-right:1px solid rgba(255,255,255,.04); position:relative; }
+  border-right:1px solid rgba(255,255,255,.04); position:relative; overflow-y:auto; scrollbar-width:thin;
+  scrollbar-color:rgba(255,255,255,.18) transparent; }
+.sb::-webkit-scrollbar{ width:8px; }
+.sb::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.16); border:2px solid transparent; background-clip:content-box; }
+html[data-sidebar="claro"] .sb{ scrollbar-color:#d3d7dd transparent; }
+html[data-sidebar="claro"] .sb::-webkit-scrollbar-thumb{ background:#d3d7dd; background-clip:content-box; }
 .sb::after{ content:""; position:absolute; top:0; left:0; width:3px; height:100%; background:var(--brand); opacity:.9; }
 html[data-sidebar="claro"] .sb{ border-right:1px solid var(--line); }
 html[data-sidebar="rojo"] .sb::after{ display:none; }
