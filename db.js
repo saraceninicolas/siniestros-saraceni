@@ -215,15 +215,6 @@
     if (error) throw error;
     return data;
   }
-  // Magic Link: acceso sin contraseña para usuarios ya registrados
-  async function authMagicLink(email) {
-    const c = client();
-    if (!c) throw new Error("Supabase no configurado");
-    const { error } = await c.auth.signInWithOtp({
-      email, options: { shouldCreateUser: false, emailRedirectTo: window.location.origin },
-    });
-    if (error) throw error;
-  }
 async function dbMaxN() {
   const c = client();
   if (!c) return 0;
@@ -585,7 +576,6 @@ async function dbMaxN() {
       onChange: authOnChange,
       updatePassword: authUpdatePassword,
       signUp: authSignUp,
-      magicLink: authMagicLink,
     },
     perfiles: { me: perfMe, list: perfList, update: perfUpdate, subscribe: perfSubscribe },
     notif: { list: notifList, markRead: notifMarkRead, markAll: notifMarkAll, subscribe: notifSubscribe },

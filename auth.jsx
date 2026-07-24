@@ -3,7 +3,7 @@
 // Los registros nuevos quedan PENDIENTES hasta que un organizador los apruebe.
 
 function LoginScreen({ onSignIn }) {
-  const [mode, setMode] = React.useState("login"); // login | signup | magic
+  const [mode, setMode] = React.useState("login"); // login | signup
   const [nombre, setNombre] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [pass, setPass] = React.useState("");
@@ -20,10 +20,6 @@ function LoginScreen({ onSignIn }) {
       if (mode === "login") {
         await onSignIn(email.trim(), pass);
         // App detecta la sesión y reemplaza esta pantalla
-      } else if (mode === "magic") {
-        await window.DB.auth.magicLink(email.trim());
-        setInfo("Listo. Revisá tu casilla: te mandamos un link para entrar sin contraseña.");
-        setBusy(false);
       } else {
         if (pass.length < 8) { setErr("La contraseña debe tener al menos 8 caracteres."); setBusy(false); return; }
         const data = await window.DB.auth.signUp(email.trim(), pass, nombre.trim());
@@ -40,20 +36,19 @@ function LoginScreen({ onSignIn }) {
       if (mode === "login") setErr("Email o contraseña incorrectos.");
       else if (m.includes("already registered")) setErr("Ese email ya tiene una cuenta. Probá ingresar.");
       else if (m.includes("rate limit")) setErr("Demasiados intentos de envío de email. Esperá unos minutos.");
-      else if (mode === "magic") setErr("No se pudo enviar el link. ¿El email está registrado?");
       else setErr("No se pudo crear la cuenta. Revisá el email e intentá de nuevo.");
       setBusy(false);
     }
   };
 
-  const canSubmit = mode === "magic" ? !!email : mode === "signup" ? !!(email && pass && nombre) : !!(email && pass);
+  const canSubmit = mode === "signup" ? !!(email && pass && nombre) : !!(email && pass);
 
   return (
     <div className="login">
       <form className="login-card" onSubmit={submit}>
         <div className="login-logo"><img src="assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></div>
         <h1 className="login-title">Portal de Siniestros</h1>
-        <p className="login-sub">{mode === "signup" ? "Creá tu cuenta con tu email" : mode === "magic" ? "Te mandamos un link de acceso" : "Ingresá para continuar"}</p>
+        <p className="login-sub">{mode === "signup" ? "Creá tu cuenta con tu email" : "Ingresá para continuar"}</p>
 
         <div className="login-tabs">
           <button type="button" className={"login-tab" + (mode === "login" ? " is-on" : "")} onClick={() => switchMode("login")}>Ingresar</button>
@@ -72,31 +67,18 @@ function LoginScreen({ onSignIn }) {
           <input className="input" type="email" autoComplete="username" autoFocus={mode !== "signup"}
             value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@email.com" />
         </label>
-        {mode !== "magic" && (
-          <label className="login-field">
-            <span>Contraseña</span>
-            <input className="input" type="password" autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              value={pass} onChange={(e) => setPass(e.target.value)} placeholder={mode === "signup" ? "Mínimo 8 caracteres" : "••••••••"} />
-          </label>
-        )}
+        <label className="login-field">
+          <span>Contraseña</span>
+          <input className="input" type="password" autoComplete={mode === "signup" ? "new-password" : "current-password"}
+            value={pass} onChange={(e) => setPass(e.target.value)} placeholder={mode === "signup" ? "Mínimo 8 caracteres" : "••••••••"} />
+        </label>
 
         {err && <div className="login-err">{err}</div>}
         {info && <div className="login-info">{info}</div>}
 
         <button className="btn-primary login-btn" type="submit" disabled={busy || !canSubmit}>
-          {busy ? "Un momento…" : mode === "signup" ? "Crear cuenta" : mode === "magic" ? "Enviarme el link" : "Ingresar"}
+          {busy ? "Un momento…" : mode === "signup" ? "Crear cuenta" : "Ingresar"}
         </button>
-
-        {mode === "login" && (
-          <button type="button" className="login-magic" onClick={() => switchMode("magic")}>
-            Entrar sin contraseña (link por email)
-          </button>
-        )}
-        {mode === "magic" && (
-          <button type="button" className="login-magic" onClick={() => switchMode("login")}>
-            Volver a ingresar con contraseña
-          </button>
-        )}
 
         <div className="login-foot">SARACENI · Broker de Seguros</div>
       </form>
