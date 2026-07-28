@@ -16,6 +16,7 @@ create table if not exists public.solicitudes (
   cia              text,                             -- compañía declarada por el asegurado
   poliza           text,
   dominio          text,                             -- patente / bien del asegurado
+  ramo             text,                             -- AUTO | HOGAR | ICO | INT_CONSORCIO | VIDA (para AUTO: patente, ubicacion y localidad son obligatorios en el formulario)
   tercero_nombre   text,                             -- datos del tercero (si corresponde)
   tercero_dni      text,
   tercero_celular  text,

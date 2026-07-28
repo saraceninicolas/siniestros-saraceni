@@ -66,6 +66,7 @@ function SolCard({ s, onConvertir, onDescartar, onReabrir }) {
 
       <div className="sol-sub">Siniestro</div>
       <div className="sol-grid-datos">
+        <D k="Ramo" v={s.ramo ? (RAMO_LABEL[s.ramo] || s.ramo) : ""} />
         <D k="Fecha" v={s.fechaHecho ? fmtDate(s.fechaHecho) : ""} />
         <D k="Hora" v={s.horaHecho} mono />
         <D k="Ubicación" v={s.ubicacion} />

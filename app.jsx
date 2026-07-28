@@ -285,6 +285,7 @@ function App() {
       adjuntos: (s.adjuntos || []).map((a) => ({ ...a, bucket: "solicitudes" })),
       referencia: "Denuncia web",
       ...(cia ? { cia } : {}),
+      ...(s.ramo ? { ramo: s.ramo } : {}),
     };
     setModal({ type: "new", prefill, solicitudId: s._dbId });
   };
