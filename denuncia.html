@@ -118,15 +118,17 @@ textarea{ resize:vertical; min-height:110px; }
         <label><span>N° de póliza</span><input id="poliza" placeholder="Si lo tenés a mano" /></label>
       </div>
 
-      <div class="sect">Datos del tercero <span class="opt">(si corresponde)</span></div>
-      <div class="grid">
-        <label class="full"><span>Nombre y apellido / Razón social</span>
-          <input id="t_nombre" placeholder="Del otro involucrado" /></label>
-        <label><span>DNI / CUIT</span><input id="t_dni" inputmode="numeric" placeholder="Sin puntos" /></label>
-        <label><span>Número de celular</span><input id="t_cel" type="tel" placeholder="11 5555-5555" /></label>
-        <label id="campoTDominio" style="display:none"><span>Patente</span><input id="t_dominio" placeholder="Ej: CD456EF" style="text-transform:uppercase" /></label>
-        <label><span>Compañía</span><input id="t_cia" placeholder="Aseguradora del tercero" /></label>
-        <label><span>N° de póliza</span><input id="t_poliza" placeholder="Si lo tenés" /></label>
+      <div id="seccionTercero" style="display:none">
+        <div class="sect">Datos del tercero <span class="opt">(si corresponde)</span></div>
+        <div class="grid">
+          <label class="full"><span>Nombre y apellido / Razón social</span>
+            <input id="t_nombre" placeholder="Del otro involucrado" /></label>
+          <label><span>DNI / CUIT</span><input id="t_dni" inputmode="numeric" placeholder="Sin puntos" /></label>
+          <label><span>Número de celular</span><input id="t_cel" type="tel" placeholder="11 5555-5555" /></label>
+          <label><span>Patente</span><input id="t_dominio" placeholder="Ej: CD456EF" style="text-transform:uppercase" /></label>
+          <label><span>Compañía</span><input id="t_cia" placeholder="Aseguradora del tercero" /></label>
+          <label><span>N° de póliza</span><input id="t_poliza" placeholder="Si lo tenés" /></label>
+        </div>
       </div>
 
       <div class="sect">Datos del siniestro</div>
@@ -194,13 +196,16 @@ textarea{ resize:vertical; min-height:110px; }
   }
   $("fecha").max = todayISO(); // la fecha del hecho no puede ser futura
 
-  // Ramo del siniestro: los campos de patente solo aplican a Auto; para Auto,
-  // ubicación y localidad pasan a ser obligatorias y se piden fotos específicas.
+  // Ramo del siniestro: patente y "Datos del tercero" solo aplican a Auto;
+  // para Auto, ubicación y localidad pasan a ser obligatorias y se piden fotos específicas.
   function updateRamoUI() {
     var esAuto = $("ramo").value === "AUTO";
     $("campoDominio").style.display = esAuto ? "" : "none";
-    $("campoTDominio").style.display = esAuto ? "" : "none";
-    if (!esAuto) { $("dominio").value = ""; $("t_dominio").value = ""; }
+    $("seccionTercero").style.display = esAuto ? "" : "none";
+    if (!esAuto) {
+      $("dominio").value = "";
+      ["t_nombre", "t_dni", "t_cel", "t_dominio", "t_cia", "t_poliza"].forEach(function (id) { $(id).value = ""; });
+    }
     ["reqUbicacion", "reqLocalidad"].forEach(function (id) { $(id).style.display = esAuto ? "inline" : "none"; });
     $("autoDocs").style.display = esAuto ? "block" : "none";
   }
