@@ -89,12 +89,25 @@ textarea{ resize:vertical; min-height:110px; }
     </div>
 
     <form id="form" novalidate>
+      <div class="sect">Tipo de siniestro</div>
+      <div class="grid">
+        <label class="full"><span>Ramo <i>*</i></span>
+          <select id="ramo" required>
+            <option value="" disabled selected>Seleccioná…</option>
+            <option value="AUTO">Auto</option>
+            <option value="HOGAR">Hogar</option>
+            <option value="ICO">Int. Comercio</option>
+            <option value="INT_CONSORCIO">Int. Consorcio</option>
+            <option value="VIDA">Vida</option>
+          </select></label>
+      </div>
+
       <div class="sect">Tus datos</div>
       <div class="grid">
         <label class="full"><span>Nombre y apellido / Razón social <i>*</i></span>
           <input id="nombre" required placeholder="Como figura en la póliza" /></label>
         <label><span>DNI / CUIT</span><input id="dni" inputmode="numeric" placeholder="Sin puntos" /></label>
-        <label><span>Patente<i class="req-auto" id="reqDominio"> *</i></span><input id="dominio" placeholder="Ej: AB123CD" style="text-transform:uppercase" /></label>
+        <label id="campoDominio" style="display:none"><span>Patente <i>*</i></span><input id="dominio" placeholder="Ej: AB123CD" style="text-transform:uppercase" /></label>
         <label><span>Compañía</span>
           <input id="cia" list="cias" placeholder="Tu aseguradora" />
           <datalist id="cias">
@@ -111,22 +124,13 @@ textarea{ resize:vertical; min-height:110px; }
           <input id="t_nombre" placeholder="Del otro involucrado" /></label>
         <label><span>DNI / CUIT</span><input id="t_dni" inputmode="numeric" placeholder="Sin puntos" /></label>
         <label><span>Número de celular</span><input id="t_cel" type="tel" placeholder="11 5555-5555" /></label>
-        <label><span>Patente</span><input id="t_dominio" placeholder="Ej: CD456EF" style="text-transform:uppercase" /></label>
+        <label id="campoTDominio" style="display:none"><span>Patente</span><input id="t_dominio" placeholder="Ej: CD456EF" style="text-transform:uppercase" /></label>
         <label><span>Compañía</span><input id="t_cia" placeholder="Aseguradora del tercero" /></label>
         <label><span>N° de póliza</span><input id="t_poliza" placeholder="Si lo tenés" /></label>
       </div>
 
       <div class="sect">Datos del siniestro</div>
       <div class="grid">
-        <label class="full"><span>Ramo del siniestro <i>*</i></span>
-          <select id="ramo" required>
-            <option value="" disabled selected>Seleccioná…</option>
-            <option value="AUTO">Auto</option>
-            <option value="HOGAR">Hogar</option>
-            <option value="ICO">Int. Comercio</option>
-            <option value="INT_CONSORCIO">Int. Consorcio</option>
-            <option value="VIDA">Vida</option>
-          </select></label>
         <label><span>Fecha del hecho <i>*</i></span><input id="fecha" type="date" required /></label>
         <label><span>Hora</span><input id="hora" type="time" /></label>
         <label><span>Ubicación<i class="req-auto" id="reqUbicacion"> *</i></span><input id="ubicacion" placeholder="Calle y altura / lugar del hecho" /></label>
@@ -190,10 +194,14 @@ textarea{ resize:vertical; min-height:110px; }
   }
   $("fecha").max = todayISO(); // la fecha del hecho no puede ser futura
 
-  // Ramo del siniestro: para Auto, algunos campos y fotos pasan a ser obligatorios
+  // Ramo del siniestro: los campos de patente solo aplican a Auto; para Auto,
+  // ubicación y localidad pasan a ser obligatorias y se piden fotos específicas.
   function updateRamoUI() {
     var esAuto = $("ramo").value === "AUTO";
-    ["reqDominio", "reqUbicacion", "reqLocalidad"].forEach(function (id) { $(id).style.display = esAuto ? "inline" : "none"; });
+    $("campoDominio").style.display = esAuto ? "" : "none";
+    $("campoTDominio").style.display = esAuto ? "" : "none";
+    if (!esAuto) { $("dominio").value = ""; $("t_dominio").value = ""; }
+    ["reqUbicacion", "reqLocalidad"].forEach(function (id) { $(id).style.display = esAuto ? "inline" : "none"; });
     $("autoDocs").style.display = esAuto ? "block" : "none";
   }
   $("ramo").addEventListener("change", updateRamoUI);
