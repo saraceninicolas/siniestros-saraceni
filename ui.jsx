@@ -85,6 +85,9 @@ const PORTAL_NAV = [
   { key: "facturacion", label: "Facturación", icon: "doc", org: true, children: [
     { key: "fact-comprobantes", label: "Comprobantes", icon: "doc" },
     { key: "fact-reportes", label: "Reportes", icon: "grid" } ] },
+  { key: "renovaciones", label: "Renovaciones", icon: "refresh", children: [
+    { key: "renov-proximas", label: "Próximas a vencer", icon: "clock" },
+    { key: "renov-historial", label: "Historial", icon: "agenda" } ] },
   { key: "pendientes", label: "Pendientes", icon: "flag", children: [
     { key: "pend-panel", label: "Panel de control", icon: "grid" },
     { key: "pend-agenda", label: "Agenda por vencimiento", icon: "agenda" } ] },
@@ -98,6 +101,7 @@ const NAV_LOOKUP = {};
 PORTAL_NAV.forEach((g) => g.children.forEach((c) => { NAV_LOOKUP[c.key] = { section: g.label, sectionKey: g.key, title: c.label }; }));
 const SINIESTROS_KEYS = ["dashboard", "agenda", "solicitudes"];
 const FACTURACION_KEYS = ["fact-comprobantes", "fact-reportes"];
+const RENOVACION_KEYS = ["renov-proximas", "renov-historial"];
 const PENDIENTES_KEYS = ["pend-panel", "pend-agenda"];
 const OBJETIVOS_KEYS = ["obj-panel", "obj-metas"];
 const ADMIN_KEYS = ["usuarios"];
@@ -463,6 +467,6 @@ function ModuleScreen({ info }) {
 
 Object.assign(window, {
   Ico, Icons, Badge, UrgBadge, RamoTag, Sidebar, Topbar, Kpis, Toolbar, ClaimsTable, Agenda,
-  ModuleScreen, PORTAL_NAV, NAV_LOOKUP, SINIESTROS_KEYS, FACTURACION_KEYS,
+  ModuleScreen, PORTAL_NAV, NAV_LOOKUP, SINIESTROS_KEYS, FACTURACION_KEYS, RENOVACION_KEYS,
   PENDIENTES_KEYS, OBJETIVOS_KEYS, ADMIN_KEYS, ORG_ONLY_KEYS,
 });
