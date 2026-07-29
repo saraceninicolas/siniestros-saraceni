@@ -31,14 +31,14 @@ function Field({ label, children, required, full }) {
 function FormSection({ label }) { return <div className="form-section">{label}</div>; }
 
 // ---- Create / Edit ----
-function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
+function ClaimFormModal({ mode, initial, station, onClose, onSubmit, usuarios }) {
   const todayISO = () => new Date().toISOString().slice(0, 10);
   const byFecha = (a, b) => (a.fecha || "").localeCompare(b.fecha || "");
   const blank = {
     estado: "Abierto", cliente: "", dominio: "", referencia: "", cia: CIAS[0], ramo: "AUTO", hecho: HECHOS[0], cobertura: COBERTURAS_AUTO[0],
     poliza: "", nroSiniestro: "", fechaOcurrido: "", fechaDenuncia: "", fechaLimite: "", fechaInspeccion: "",
     gestionAR: "", gestionReal: "", gestiones: [], gestor: "", gestorEmail: "", gestorTel: "", obs: "", ticket: "",
-    franquiciaPct: "", franquiciaMonto: "", adjuntos: [], enCalendario: false,
+    franquiciaPct: "", franquiciaMonto: "", adjuntos: [], enCalendario: false, asignadoA: null,
   };
   const [f, setF] = React.useState(() => {
     const base = initial ? { ...blank, ...initial } : blank;
@@ -275,6 +275,14 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit }) {
             ))}
           </div>
         </Field>
+        {(usuarios || []).length > 0 && (
+          <Field label="Asignado a (usuario del portal)">
+            <select className="input" value={f.asignadoA || ""} onChange={(e) => set("asignadoA", e.target.value || null)}>
+              <option value="">Sin asignar</option>
+              {usuarios.map((u) => <option key={u.id} value={u.id}>{u.nombre || u.email}</option>)}
+            </select>
+          </Field>
+        )}
         <Field label="Ticket / enlace">
           <input className="input" value={f.ticket} onChange={(e) => set("ticket", e.target.value)} placeholder="https://…" />
         </Field>

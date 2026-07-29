@@ -36,6 +36,14 @@ input:focus,select:focus,textarea:focus{ border-color:var(--brand); box-shadow:0
 textarea{ resize:vertical; min-height:110px; }
 .hp{ position:absolute; left:-9999px; top:-9999px; height:1px; width:1px; overflow:hidden; }
 .files-note{ font-size:13px; color:var(--muted); margin:4px 0 10px; line-height:1.5; }
+.file-row{ display:flex; gap:10px; flex-wrap:wrap; }
+.file-row .file-btn{ flex:1 1 220px; }
+.sino-label{ display:block; font-size:13.5px; font-weight:600; color:var(--ink-2); margin-bottom:6px; }
+.sino{ display:flex; gap:10px; }
+.sino-btn{ flex:1; padding:12px; border:1.5px solid var(--line); border-radius:10px; background:#fff;
+  font-size:16px; font-weight:700; font-family:inherit; color:var(--ink-2); cursor:pointer; transition:.15s; }
+.sino-btn:hover{ border-color:#d3d7dd; }
+.sino-btn.on{ border-color:var(--brand); color:var(--brand); background:#fdf3f3; }
 .file-btn{ display:inline-flex; align-items:center; gap:8px; border:1.5px dashed var(--line); background:var(--surface-2);
   color:var(--ink-2); border-radius:10px; padding:12px 16px; font-size:14.5px; font-weight:600; cursor:pointer; width:100%;
   justify-content:center; transition:.15s; }
@@ -62,6 +70,12 @@ textarea{ resize:vertical; min-height:110px; }
 .ok .ref{ display:inline-block; margin-top:14px; background:var(--surface-2); border:1px solid var(--line);
   border-radius:10px; padding:10px 22px; font-size:22px; font-weight:800; letter-spacing:.18em; font-family:ui-monospace,monospace; }
 .foot{ text-align:center; font-size:12px; font-weight:700; letter-spacing:.14em; color:var(--muted); margin-top:22px; }
+.auto-docs{ display:none; background:#fdf3f3; border:1px solid #f3c9c9; border-radius:10px; padding:12px 16px;
+  margin:6px 0 14px; font-size:13.5px; line-height:1.6; color:var(--ink-2); }
+.auto-docs b{ color:var(--brand); display:block; margin-bottom:4px; }
+.auto-docs ul{ margin:4px 0 0; padding-left:18px; }
+.auto-docs li{ margin:2px 0; }
+.req-auto{ display:none; color:var(--brand); font-style:normal; }
 @media (max-width:560px){ .grid{ grid-template-columns:1fr; } form{ padding:14px 18px 24px; } }
 </style>
 </head>
@@ -75,12 +89,24 @@ textarea{ resize:vertical; min-height:110px; }
     </div>
 
     <form id="form" novalidate>
+      <div class="sect">Tipo de siniestro</div>
+      <div class="grid">
+        <label class="full"><span>Ramo <i>*</i></span>
+          <select id="ramo" required>
+            <option value="" disabled selected>Seleccioná…</option>
+            <option value="AUTO">Auto</option>
+            <option value="HOGAR">Hogar</option>
+            <option value="ICO">Int. Comercio</option>
+            <option value="INT_CONSORCIO">Int. Consorcio</option>
+          </select></label>
+      </div>
+
       <div class="sect">Tus datos</div>
       <div class="grid">
         <label class="full"><span>Nombre y apellido / Razón social <i>*</i></span>
           <input id="nombre" required placeholder="Como figura en la póliza" /></label>
         <label><span>DNI / CUIT</span><input id="dni" inputmode="numeric" placeholder="Sin puntos" /></label>
-        <label><span>Patente</span><input id="dominio" placeholder="Ej: AB123CD" style="text-transform:uppercase" /></label>
+        <label id="campoDominio" style="display:none"><span>Patente <i>*</i></span><input id="dominio" placeholder="Ej: AB123CD" style="text-transform:uppercase" /></label>
         <label><span>Compañía</span>
           <input id="cia" list="cias" placeholder="Tu aseguradora" />
           <datalist id="cias">
@@ -91,30 +117,52 @@ textarea{ resize:vertical; min-height:110px; }
         <label><span>N° de póliza</span><input id="poliza" placeholder="Si lo tenés a mano" /></label>
       </div>
 
-      <div class="sect">Datos del tercero <span class="opt">(si corresponde)</span></div>
-      <div class="grid">
-        <label class="full"><span>Nombre y apellido / Razón social</span>
-          <input id="t_nombre" placeholder="Del otro involucrado" /></label>
-        <label><span>DNI / CUIT</span><input id="t_dni" inputmode="numeric" placeholder="Sin puntos" /></label>
-        <label><span>Patente</span><input id="t_dominio" placeholder="Ej: CD456EF" style="text-transform:uppercase" /></label>
-        <label><span>Compañía</span><input id="t_cia" placeholder="Aseguradora del tercero" /></label>
-        <label><span>N° de póliza</span><input id="t_poliza" placeholder="Si lo tenés" /></label>
+      <div id="seccionTercero" style="display:none">
+        <div class="sect">Datos del tercero <span class="opt">(si corresponde)</span></div>
+        <div class="grid">
+          <label class="full"><span>Nombre y apellido / Razón social</span>
+            <input id="t_nombre" placeholder="Del otro involucrado" /></label>
+          <label><span>DNI / CUIT</span><input id="t_dni" inputmode="numeric" placeholder="Sin puntos" /></label>
+          <label><span>Número de celular</span><input id="t_cel" type="tel" placeholder="11 5555-5555" /></label>
+          <label><span>Patente</span><input id="t_dominio" placeholder="Ej: CD456EF" style="text-transform:uppercase" /></label>
+          <label><span>Compañía</span><input id="t_cia" placeholder="Aseguradora del tercero" /></label>
+          <label><span>N° de póliza</span><input id="t_poliza" placeholder="Si lo tenés" /></label>
+        </div>
       </div>
 
       <div class="sect">Datos del siniestro</div>
       <div class="grid">
         <label><span>Fecha del hecho <i>*</i></span><input id="fecha" type="date" required /></label>
         <label><span>Hora</span><input id="hora" type="time" /></label>
-        <label><span>Ubicación</span><input id="ubicacion" placeholder="Calle y altura / lugar del hecho" /></label>
-        <label><span>Localidad</span><input id="localidad" placeholder="Ciudad / partido" /></label>
+        <label><span>Ubicación<i class="req-auto" id="reqUbicacion"> *</i></span><input id="ubicacion" placeholder="Calle y altura / lugar del hecho" /></label>
+        <label><span>Localidad<i class="req-auto" id="reqLocalidad"> *</i></span><input id="localidad" placeholder="Ciudad / partido" /></label>
+        <div class="full">
+          <span class="sino-label">¿Hay lesionados?</span>
+          <div class="sino">
+            <button type="button" class="sino-btn" id="les_si">Sí</button>
+            <button type="button" class="sino-btn" id="les_no">No</button>
+          </div>
+        </div>
         <label class="full"><span>Relato del hecho <i>*</i></span>
           <textarea id="relato" required placeholder="Contanos cómo, dónde y qué pasó: daños, si hubo terceros o heridos…"></textarea></label>
       </div>
 
       <div class="sect">Documentación</div>
       <p class="files-note">Adjuntá fotos de los daños, DNI, cédula/documentación del bien y la denuncia policial si la hubiera. Fotos o PDF, hasta 10&nbsp;MB por archivo.</p>
-      <label class="file-btn">＋ Agregar fotos o PDF
-        <input id="files" type="file" accept="image/*,application/pdf" multiple style="display:none" /></label>
+      <div class="auto-docs" id="autoDocs">
+        <b>Para siniestros de auto además necesitamos:</b>
+        <ul>
+          <li>Registro de quien conducía (asegurado y tercero)</li>
+          <li>Cédula verde (asegurado y tercero)</li>
+          <li>Fotos de los daños donde se aprecie la patente (asegurado y tercero)</li>
+        </ul>
+      </div>
+      <div class="file-row">
+        <label class="file-btn">＋ Agregar fotos o PDF
+          <input id="files" type="file" accept="image/*,application/pdf" multiple style="display:none" /></label>
+        <label class="file-btn">📷 Tomar foto con la cámara
+          <input id="camara" type="file" accept="image/*" capture="environment" style="display:none" /></label>
+      </div>
       <ul class="flist" id="flist"></ul>
 
       <label class="hp"><span>Sitio web</span><input id="website" tabindex="-1" autocomplete="off" /></label>
@@ -147,7 +195,23 @@ textarea{ resize:vertical; min-height:110px; }
   }
   $("fecha").max = todayISO(); // la fecha del hecho no puede ser futura
 
-  $("files").addEventListener("change", function (e) {
+  // Ramo del siniestro: patente y "Datos del tercero" solo aplican a Auto;
+  // para Auto, ubicación y localidad pasan a ser obligatorias y se piden fotos específicas.
+  function updateRamoUI() {
+    var esAuto = $("ramo").value === "AUTO";
+    $("campoDominio").style.display = esAuto ? "" : "none";
+    $("seccionTercero").style.display = esAuto ? "" : "none";
+    if (!esAuto) {
+      $("dominio").value = "";
+      ["t_nombre", "t_dni", "t_cel", "t_dominio", "t_cia", "t_poliza"].forEach(function (id) { $(id).value = ""; });
+    }
+    ["reqUbicacion", "reqLocalidad"].forEach(function (id) { $(id).style.display = esAuto ? "inline" : "none"; });
+    $("autoDocs").style.display = esAuto ? "block" : "none";
+  }
+  $("ramo").addEventListener("change", updateRamoUI);
+  updateRamoUI();
+
+  function addPicked(e) {
     var picked = Array.prototype.slice.call(e.target.files || []);
     e.target.value = "";
     picked.forEach(function (f) {
@@ -156,7 +220,19 @@ textarea{ resize:vertical; min-height:110px; }
       files.push(f);
     });
     renderFiles();
-  });
+  }
+  $("files").addEventListener("change", addPicked);
+  $("camara").addEventListener("change", addPicked);
+
+  // ¿Hay lesionados? (SÍ / NO, con destoque)
+  var lesionados = null;
+  function setLes(v) {
+    lesionados = v;
+    $("les_si").classList.toggle("on", v === "SI");
+    $("les_no").classList.toggle("on", v === "NO");
+  }
+  $("les_si").addEventListener("click", function () { setLes(lesionados === "SI" ? null : "SI"); });
+  $("les_no").addEventListener("click", function () { setLes(lesionados === "NO" ? null : "NO"); });
   function renderFiles() {
     var ul = $("flist"); ul.innerHTML = "";
     files.forEach(function (f, i) {
@@ -187,8 +263,17 @@ textarea{ resize:vertical; min-height:110px; }
     var ref = refCode();
     if ($("website").value) { showOk(ref); return; } // honeypot anti-bots
     var nombre = $("nombre").value.trim(), fecha = $("fecha").value, relato = $("relato").value.trim();
+    var ramo = $("ramo").value;
     if (!nombre || !fecha || !relato) { showErr("Completá los campos obligatorios: nombre, fecha del hecho y el relato."); return; }
+    if (!ramo) { showErr("Seleccioná el ramo del siniestro."); return; }
     if (fecha > todayISO()) { showErr("La fecha del hecho no puede ser posterior al día de hoy."); return; }
+    if (ramo === "AUTO") {
+      var faltan = [];
+      if (!$("dominio").value.trim()) faltan.push("patente");
+      if (!$("ubicacion").value.trim()) faltan.push("ubicación");
+      if (!$("localidad").value.trim()) faltan.push("localidad");
+      if (faltan.length) { showErr("Para siniestros de auto son obligatorios: " + faltan.join(", ") + "."); return; }
+    }
     var btn = $("send"); btn.disabled = true; btn.textContent = "Enviando…";
     try {
       var adjuntos = [];
@@ -209,8 +294,10 @@ textarea{ resize:vertical; min-height:110px; }
         cia: $("cia").value.trim() || null,
         poliza: $("poliza").value.trim() || null,
         dominio: $("dominio").value.trim().toUpperCase() || null,
+        ramo: ramo || null,
         tercero_nombre: $("t_nombre").value.trim() || null,
         tercero_dni: $("t_dni").value.trim() || null,
+        tercero_celular: $("t_cel").value.trim() || null,
         tercero_dominio: $("t_dominio").value.trim().toUpperCase() || null,
         tercero_cia: $("t_cia").value.trim() || null,
         tercero_poliza: $("t_poliza").value.trim() || null,
@@ -218,6 +305,7 @@ textarea{ resize:vertical; min-height:110px; }
         hora_hecho: $("hora").value || null,
         ubicacion: $("ubicacion").value.trim() || null,
         localidad: $("localidad").value.trim() || null,
+        lesionados: lesionados,
         relato: relato,
         adjuntos: adjuntos
       });

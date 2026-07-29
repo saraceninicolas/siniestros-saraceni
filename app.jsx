@@ -14,6 +14,10 @@ function App() {
   const [selectedId, setSelectedId] = React.useState(null);
   const [detailId, setDetailId] = React.useState(null);
   const [solicitudes, setSolicitudes] = React.useState([]);
+  const [perfil, setPerfil] = React.useState(null);           // rol y estado del usuario logueado
+  const [perfilChecked, setPerfilChecked] = React.useState(false);
+  const [perfiles, setPerfiles] = React.useState([]);         // usuarios del portal (para asignar / administrar)
+  const [notifs, setNotifs] = React.useState([]);
   const [modal, setModal] = React.useState(null);
   const [active, setActive] = React.useState("dashboard");
   const [navOpen, setNavOpen] = React.useState(false);
@@ -43,11 +47,25 @@ function App() {
     return () => { alive = false; if (unsub) unsub(); };
   }, []);
 
+  // ---- perfil (rol organizador/empleado + estado de aprobación) ----
+  React.useEffect(() => {
+    const configured = window.DB && window.DB.configured();
+    if (!configured || !session) { setPerfil(null); setPerfilChecked(true); return; }
+    let alive = true;
+    setPerfilChecked(false);
+    (async () => {
+      try { const p = await window.DB.perfiles.me(); if (alive) setPerfil(p); }
+      catch (e) { console.error("Perfil:", e); }
+      if (alive) setPerfilChecked(true);
+    })();
+    return () => { alive = false; };
+  }, [session]);
+
   // ---- carga de datos: solo con sesión (o modo demo sin Supabase) ----
   React.useEffect(() => {
     const configured = window.DB && window.DB.configured();
-    if (configured && !session) {
-      // sin login: limpiamos y esperamos
+    if (configured && (!session || !perfil || perfil.estado !== "activo")) {
+      // sin login o cuenta sin aprobar: limpiamos y esperamos
       setSiniestros([]); setUsingDb(false); setLoading(false);
       return;
     }
@@ -75,7 +93,7 @@ function App() {
       if (alive) setLoading(false);
     })();
     return () => { alive = false; };
-  }, [session, flash]);
+  }, [session, perfil, flash]);
 
   // ---- tiempo real: refresca cuando otro puesto carga/edita/elimina ----
   React.useEffect(() => {
@@ -110,6 +128,45 @@ function App() {
     });
     return () => { alive = false; clearTimeout(timer); if (unsub) unsub(); };
   }, [usingDb, flash]);
+
+  // ---- usuarios del portal (lista para asignar + administración) ----
+  React.useEffect(() => {
+    if (!usingDb || !window.DB.perfiles) return;
+    let alive = true, timer = null;
+    const load = async () => {
+      try { const ps = await window.DB.perfiles.list(); if (alive) setPerfiles(ps); }
+      catch (e) { console.error("Perfiles:", e); }
+    };
+    load();
+    const unsub = window.DB.perfiles.subscribe(() => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        load();
+        // si me cambiaron el rol o el estado, reflejarlo sin recargar la página
+        try {
+          const p = await window.DB.perfiles.me();
+          if (alive) setPerfil((prev) => (prev && p && prev.rol === p.rol && prev.estado === p.estado && prev.nombre === p.nombre ? prev : p));
+        } catch (e) { /* noop */ }
+      }, 300);
+    });
+    return () => { alive = false; clearTimeout(timer); if (unsub) unsub(); };
+  }, [usingDb]);
+
+  // ---- notificaciones in-app (campana) ----
+  React.useEffect(() => {
+    if (!usingDb || !window.DB.notif || !session) return;
+    let alive = true, timer = null;
+    const load = async () => {
+      try { const ns = await window.DB.notif.list(); if (alive) setNotifs(ns); }
+      catch (e) { console.error("Notif:", e); }
+    };
+    load();
+    const unsub = window.DB.notif.subscribe(session.user.id, (p) => {
+      if (p && p.new && p.new.titulo) flash("🔔 " + p.new.titulo);
+      clearTimeout(timer); timer = setTimeout(load, 300);
+    });
+    return () => { alive = false; clearTimeout(timer); if (unsub) unsub(); };
+  }, [usingDb, session, flash]);
 
   const activos = siniestros.filter((s) => !s.eliminado);
   const abiertos = activos.filter((s) => s.estado === "Abierto");
@@ -159,7 +216,10 @@ function App() {
     const p = (email || "").split("@")[0].replace(/[._-]+/g, " ").trim();
     return p ? p.replace(/\b\w/g, (c) => c.toUpperCase()) : email;
   };
-  const quien = userEmail ? nombreDe(userEmail) : station;
+  const quien = (perfil && perfil.nombre) || (userEmail ? nombreDe(userEmail) : station);
+  const rol = window.DB && window.DB.configured() ? (perfil ? perfil.rol : "empleado") : "organizador";
+  const usuariosActivos = perfiles.filter((p) => p.estado === "activo");
+  const usuariosPend = perfiles.filter((p) => p.estado === "pendiente").length;
 
   const handleCreate = async (data) => {
   // Aviso si ya existe un siniestro activo con el mismo número
@@ -201,6 +261,7 @@ function App() {
     const lugar = [s.ubicacion, s.localidad].filter(Boolean).join(", ");
     if (s.horaHecho) lineas.push("Hora del hecho: " + s.horaHecho);
     if (lugar) lineas.push("Lugar: " + lugar);
+    if (s.lesionados) lineas.push(s.lesionados === "SI" ? "⚠ HAY LESIONADOS" : "Sin lesionados");
     const contactoAseg = [
       s.telefono ? "Tel: " + s.telefono : null,
       s.email ? "Email: " + s.email : null,
@@ -210,6 +271,7 @@ function App() {
     if (contactoAseg) lineas.push("Asegurado: " + contactoAseg);
     const terc = [
       s.terceroNombre || null,
+      s.terceroCelular ? "Cel " + s.terceroCelular : null,
       s.terceroDominio ? "Dominio " + s.terceroDominio : null,
       s.terceroCia ? "Cía " + s.terceroCia : null,
       s.terceroPoliza ? "Póliza " + s.terceroPoliza : null,
@@ -223,6 +285,7 @@ function App() {
       adjuntos: (s.adjuntos || []).map((a) => ({ ...a, bucket: "solicitudes" })),
       referencia: "Denuncia web",
       ...(cia ? { cia } : {}),
+      ...(s.ramo ? { ramo: s.ramo } : {}),
     };
     setModal({ type: "new", prefill, solicitudId: s._dbId });
   };
@@ -305,14 +368,42 @@ function App() {
 
   const configured = !!(window.DB && window.DB.configured());
   const isSiniestros = SINIESTROS_KEYS.includes(active);
+
+  // Control de acceso por rol: un empleado nunca entra a los módulos de organizador
+  React.useEffect(() => {
+    if (rol !== "organizador" && ORG_ONLY_KEYS.includes(active)) setActive("dashboard");
+  }, [rol, active]);
+
+  // ---- notificaciones: abrir / marcar leídas ----
+  const abrirNotif = (n) => {
+    if (!n.leida) {
+      window.DB.notif.markRead(n._dbId);
+      setNotifs((p) => p.map((x) => (x._dbId === n._dbId ? { ...x, leida: true } : x)));
+    }
+    if (n.modulo && (rol === "organizador" || !ORG_ONLY_KEYS.includes(n.modulo))) {
+      setActive(n.modulo); setDetailId(null);
+    }
+  };
+  const marcarTodasNotifs = () => {
+    window.DB.notif.markAll();
+    setNotifs((p) => p.map((x) => ({ ...x, leida: true })));
+  };
+  // ---- administración de usuarios (solo organizador) ----
+  const actualizarUsuario = async (id, patch) => {
+    try {
+      const u = await window.DB.perfiles.update(id, patch);
+      setPerfiles((p) => p.map((x) => (x.id === id ? u : x)));
+      flash(patch.estado === "activo" ? `Acceso habilitado para ${u.nombre || u.email}` : `Usuario ${u.nombre || u.email} actualizado`);
+    } catch (e) { console.error(e); flash("No se pudo actualizar el usuario", true); }
+  };
   const logout = async () => {
     setModal(null); setDetailId(null); setSelectedId(null);
     try { await window.DB.auth.signOut(); } catch (e) { console.error(e); }
-    setSession(null);
+    setSession(null); setPerfil(null); setPerfiles([]); setNotifs([]);
   };
 
-  // verificando sesión
-  if (configured && !authChecked) {
+  // verificando sesión / perfil
+  if (configured && (!authChecked || (session && !perfilChecked))) {
     return (
       <div className="boot"><div className="boot-inner"><div className="boot-spin" /></div></div>
     );
@@ -320,6 +411,11 @@ function App() {
   // sin login → pantalla de acceso
   if (configured && !session) {
     return <LoginScreen onSignIn={(email, password) => window.DB.auth.signIn(email, password)} />;
+  }
+  // logueado pero sin aprobar (o suspendido) → sala de espera
+  if (configured && session && (!perfil || perfil.estado !== "activo")) {
+    return <PendingScreen perfil={perfil} email={userEmail} onLogout={logout}
+      onRefresh={async () => { try { const p = await window.DB.perfiles.me(); setPerfil(p); } catch (e) { console.error(e); } }} />;
   }
   // cargando datos
   if (loading) {
@@ -330,8 +426,8 @@ function App() {
 
   return (
     <div className="app">
-      <Sidebar active={active} onNav={(k) => { setActive(k); setDetailId(null); setNavOpen(false); }} station={quien}
-        counts={{ abiertos: abiertos.length, porVencer, solicitudes: solNuevas }} open={navOpen} />
+      <Sidebar active={active} onNav={(k) => { setActive(k); setDetailId(null); setNavOpen(false); }} station={quien} rol={rol}
+        counts={{ abiertos: abiertos.length, porVencer, solicitudes: solNuevas, usuariosPend }} open={navOpen} />
       {navOpen && <div className="sb-scrim" onClick={() => setNavOpen(false)} />}
 
       <main className="main">
@@ -339,14 +435,17 @@ function App() {
           onSwitchStation={switchStation} onNew={() => setModal({ type: "new" })}
           onOpenSync={() => setModal({ type: "sync" })} onLogout={configured ? logout : undefined}
           onChangePass={configured && session ? () => setModal({ type: "pass" }) : undefined}
-          onMenu={() => setNavOpen(true)} isSiniestros={isSiniestros} />
+          onMenu={() => setNavOpen(true)} isSiniestros={isSiniestros}
+          notifs={configured && session ? notifs : null} onOpenNotif={abrirNotif} onMarkAllNotifs={marcarTodasNotifs} />
 
         {!isSiniestros ? (
           <div className="content">
-            {FACTURACION_KEYS.includes(active)
+            {ADMIN_KEYS.includes(active) && rol === "organizador"
+              ? <UsuariosView perfiles={perfiles} me={perfil} onUpdate={actualizarUsuario} />
+              : FACTURACION_KEYS.includes(active)
               ? <FacturacionModule active={active} station={quien} query={query} />
               : PENDIENTES_KEYS.includes(active)
-              ? <PendientesModule active={active} station={quien} query={query} />
+              ? <PendientesModule active={active} station={quien} query={query} usuarios={usuariosActivos} />
               : OBJETIVOS_KEYS.includes(active)
               ? <ObjetivosModule active={active} station={quien} query={query} />
               : <ModuleScreen info={NAV_LOOKUP[active]} />}
@@ -386,8 +485,8 @@ function App() {
         )}
       </main>
 
-      {modal?.type === "new" && <ClaimFormModal mode="new" initial={modal.prefill} station={quien} onClose={() => setModal(null)} onSubmit={handleCreate} />}
-      {modal?.type === "edit" && <ClaimFormModal mode="edit" initial={modal.item} station={quien} onClose={() => setModal(null)} onSubmit={handleUpdate} />}
+      {modal?.type === "new" && <ClaimFormModal mode="new" initial={modal.prefill} station={quien} usuarios={usuariosActivos} onClose={() => setModal(null)} onSubmit={handleCreate} />}
+      {modal?.type === "edit" && <ClaimFormModal mode="edit" initial={modal.item} station={quien} usuarios={usuariosActivos} onClose={() => setModal(null)} onSubmit={handleUpdate} />}
       {modal?.type === "delete" && <ConfirmDelete item={modal.item} station={quien} onClose={() => setModal(null)} onConfirm={handleDelete} />}
       {modal?.type === "sync" && <CalendarSync data={activos} onClose={() => setModal(null)} onAgendar={marcarAgendado} />}
       {modal?.type === "pass" && <ChangePassModal onClose={() => setModal(null)} onDone={() => { setModal(null); flash("Contraseña actualizada"); }} />}

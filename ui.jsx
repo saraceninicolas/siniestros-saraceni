@@ -40,6 +40,7 @@ const Icons = {
   target: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M12 16.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9z", "M12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"],
   phone:  ["M4 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L14 18l5 2v4a2 2 0 0 1-2 2A18 18 0 0 1 2 8a2 2 0 0 1 2-2z"],
   menu:   ["M4 7h16", "M4 12h16", "M4 17h16"],
+  bell:   ["M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9", "M10.3 21a2 2 0 0 0 3.4 0"],
 };
 const Ico = ({ name, ...rest }) => <Icon d={Icons[name]} {...rest} />;
 
@@ -81,15 +82,17 @@ const PORTAL_NAV = [
     { key: "dashboard", label: "Panel de control", icon: "grid", count: "abiertos" },
     { key: "agenda", label: "Agenda de gestiones", icon: "agenda", count: "porVencer" },
     { key: "solicitudes", label: "Solicitudes recibidas", icon: "mail", count: "solicitudes" } ] },
-  { key: "facturacion", label: "Facturación", icon: "doc", children: [
+  { key: "facturacion", label: "Facturación", icon: "doc", org: true, children: [
     { key: "fact-comprobantes", label: "Comprobantes", icon: "doc" },
     { key: "fact-reportes", label: "Reportes", icon: "grid" } ] },
   { key: "pendientes", label: "Pendientes", icon: "flag", children: [
     { key: "pend-panel", label: "Panel de control", icon: "grid" },
     { key: "pend-agenda", label: "Agenda por vencimiento", icon: "agenda" } ] },
-  { key: "objetivos", label: "Objetivos", icon: "target", children: [
+  { key: "objetivos", label: "Objetivos", icon: "target", org: true, children: [
     { key: "obj-panel", label: "Panel de control", icon: "grid" },
     { key: "obj-metas", label: "Metas y seguimiento", icon: "check" } ] },
+  { key: "admin", label: "Administración", icon: "user", org: true, children: [
+    { key: "usuarios", label: "Usuarios y roles", icon: "user", count: "usuariosPend" } ] },
 ];
 const NAV_LOOKUP = {};
 PORTAL_NAV.forEach((g) => g.children.forEach((c) => { NAV_LOOKUP[c.key] = { section: g.label, sectionKey: g.key, title: c.label }; }));
@@ -97,10 +100,14 @@ const SINIESTROS_KEYS = ["dashboard", "agenda", "solicitudes"];
 const FACTURACION_KEYS = ["fact-comprobantes", "fact-reportes"];
 const PENDIENTES_KEYS = ["pend-panel", "pend-agenda"];
 const OBJETIVOS_KEYS = ["obj-panel", "obj-metas"];
+const ADMIN_KEYS = ["usuarios"];
+// Módulos reservados al organizador (los empleados no los ven ni acceden)
+const ORG_ONLY_KEYS = [...FACTURACION_KEYS, ...OBJETIVOS_KEYS, ...ADMIN_KEYS];
 
 // ---------- sidebar ----------
-function Sidebar({ active, onNav, station, counts, open: drawerOpen }) {
-  const sectionOf = (k) => (PORTAL_NAV.find((g) => g.children.some((c) => c.key === k)) || {}).key;
+function Sidebar({ active, onNav, station, counts, open: drawerOpen, rol }) {
+  const nav = PORTAL_NAV.filter((g) => !g.org || rol === "organizador");
+  const sectionOf = (k) => (nav.find((g) => g.children.some((c) => c.key === k)) || {}).key;
   const [open, setOpen] = React.useState(() => ({ [sectionOf(active) || "siniestros"]: true }));
   const toggle = (k) => setOpen((o) => ({ ...o, [k]: !o[k] }));
   return (
@@ -111,7 +118,7 @@ function Sidebar({ active, onNav, station, counts, open: drawerOpen }) {
       </div>
       <nav className="sb-nav">
         <div className="sb-group-label">Carpetas de gestión</div>
-        {PORTAL_NAV.map((g) => {
+        {nav.map((g) => {
           const isOpen = !!open[g.key];
           const hasActive = g.children.some((c) => c.key === active);
           return (
@@ -144,7 +151,7 @@ function Sidebar({ active, onNav, station, counts, open: drawerOpen }) {
           <span className="sb-station-led" /><span className="sb-station-label">Usuario</span><Ico name="user" size={14} />
         </div>
         <div className="sb-station-name" title={station} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{station}</div>
-        <div className="sb-station-note">Sesión activa</div>
+        <div className="sb-station-note">{rol === "organizador" ? "Organizador" : rol === "empleado" ? "Empleado" : "Sesión activa"}</div>
       </div>
       <div className="sb-foot">
         <span className="sb-foot-mark">SARACENI</span>
@@ -156,7 +163,7 @@ function Sidebar({ active, onNav, station, counts, open: drawerOpen }) {
 
 // ---------- topbar ----------
 const HOY = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpenSync, onLogout, onChangePass, onMenu, isSiniestros }) {
+function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpenSync, onLogout, onChangePass, onMenu, isSiniestros, notifs, onOpenNotif, onMarkAllNotifs }) {
   const info = NAV_LOOKUP[active] || { section: "Siniestros", title: "Panel de control" };
   return (
     <header className="tb">
@@ -175,6 +182,7 @@ function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpe
         <div className="tb-date"><Ico name="clock" size={14} /><span style={{ textTransform: "capitalize" }}>{HOY}</span></div>
         <div className="tb-sep" />
         {isSiniestros && <button className="btn-ghost tb-icon" title="Sincronizar con Google Calendar" onClick={onOpenSync}><Ico name="agenda" size={18} /></button>}
+        {notifs && <NotifBell notifs={notifs} onOpenNotif={onOpenNotif} onMarkAll={onMarkAllNotifs} />}
         <span className="tb-station-chip" title="Usuario conectado">
           <span className="sb-station-led" /><Ico name="user" size={14} />{station}
         </span>
@@ -456,5 +464,5 @@ function ModuleScreen({ info }) {
 Object.assign(window, {
   Ico, Icons, Badge, UrgBadge, RamoTag, Sidebar, Topbar, Kpis, Toolbar, ClaimsTable, Agenda,
   ModuleScreen, PORTAL_NAV, NAV_LOOKUP, SINIESTROS_KEYS, FACTURACION_KEYS,
-  PENDIENTES_KEYS, OBJETIVOS_KEYS,
+  PENDIENTES_KEYS, OBJETIVOS_KEYS, ADMIN_KEYS, ORG_ONLY_KEYS,
 });

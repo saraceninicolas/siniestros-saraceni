@@ -16,8 +16,10 @@ create table if not exists public.solicitudes (
   cia              text,                             -- compañía declarada por el asegurado
   poliza           text,
   dominio          text,                             -- patente / bien del asegurado
+  ramo             text,                             -- AUTO | HOGAR | ICO | INT_CONSORCIO | VIDA (para AUTO: patente, ubicacion y localidad son obligatorios en el formulario)
   tercero_nombre   text,                             -- datos del tercero (si corresponde)
   tercero_dni      text,
+  tercero_celular  text,
   tercero_dominio  text,
   tercero_cia      text,
   tercero_poliza   text,
@@ -25,6 +27,7 @@ create table if not exists public.solicitudes (
   hora_hecho       text,
   ubicacion        text,
   localidad        text,
+  lesionados       text,                             -- 'SI' | 'NO' | null
   relato           text,
   adjuntos         jsonb not null default '[]'::jsonb, -- [{name, path, tipo, size}]
   estado           text not null default 'nueva',    -- nueva | procesada | descartada
