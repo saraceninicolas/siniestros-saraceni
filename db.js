@@ -556,7 +556,9 @@ async function dbMaxN() {
   }
   function cotSubscribe(onChange) {
     const c = client(); if (!c) return null;
-    const ch = c.channel("cotizaciones-realtime")
+    // Nombre único por suscriptor: el badge del menú y la bandeja escuchan a la vez
+    // y Supabase no admite dos suscripciones sobre el mismo canal.
+    const ch = c.channel("cotizaciones-realtime-" + Math.random().toString(36).slice(2, 8))
       .on("postgres_changes", { event: "*", schema: "public", table: "cotizaciones" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
       .subscribe();
     return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
