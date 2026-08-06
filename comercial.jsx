@@ -46,6 +46,14 @@ function CotCard({ c, onCotizar, onDescartar, onReabrir, onNotas }) {
         <D k="Tipo" v={c.tipoVivienda} />
         <D k="Superficie" v={c.metros2 ? c.metros2 + " m²" : ""} />
         <D k="Código postal" v={c.codigoPostal} mono />
+        {c.enCountry != null && (
+          <div>
+            <div className="sol-k">Country / barrio cerrado</div>
+            <div className="sol-v" style={c.enCountry ? { color: "#15803D", fontWeight: 700 } : null}>
+              {c.enCountry ? "Sí — con vallado perimetral" : "No"}
+            </div>
+          </div>
+        )}
       </div>
       {domicilio && <div className="sol-relato" style={{ marginTop: 8 }}>{domicilio}</div>}
 
