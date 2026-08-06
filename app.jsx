@@ -17,6 +17,7 @@ function App() {
   const [perfil, setPerfil] = React.useState(null);           // rol y estado del usuario logueado
   const [perfilChecked, setPerfilChecked] = React.useState(false);
   const [perfiles, setPerfiles] = React.useState([]);         // usuarios del portal (para asignar / administrar)
+  const [cotNuevas, setCotNuevas] = React.useState(0);        // cotizaciones sin responder (badge del menú)
   const [notifs, setNotifs] = React.useState([]);
   const [modal, setModal] = React.useState(null);
   const [active, setActive] = React.useState("dashboard");
@@ -124,6 +125,24 @@ function App() {
     load();
     const unsub = window.DB.sol.subscribe((payload) => {
       if (payload && payload.eventType === "INSERT") flash("Nueva solicitud de siniestro recibida — mirá Solicitudes recibidas");
+      clearTimeout(timer); timer = setTimeout(load, 400);
+    });
+    return () => { alive = false; clearTimeout(timer); if (unsub) unsub(); };
+  }, [usingDb, flash]);
+
+  // ---- cotizaciones sin responder (solo el contador del menú Comercial) ----
+  React.useEffect(() => {
+    if (!usingDb || !window.DB.cot) return;
+    let alive = true, timer = null;
+    const load = async () => {
+      try {
+        const items = await window.DB.cot.list();
+        if (alive) setCotNuevas(items.filter((c) => c.estado === "nueva").length);
+      } catch (e) { console.error("Cotizaciones:", e); }
+    };
+    load();
+    const unsub = window.DB.cot.subscribe((payload) => {
+      if (payload && payload.eventType === "INSERT") flash("Nuevo pedido de cotización — mirá Comercial");
       clearTimeout(timer); timer = setTimeout(load, 400);
     });
     return () => { alive = false; clearTimeout(timer); if (unsub) unsub(); };
@@ -427,7 +446,7 @@ function App() {
   return (
     <div className="app">
       <Sidebar active={active} onNav={(k) => { setActive(k); setDetailId(null); setNavOpen(false); }} station={quien} rol={rol}
-        counts={{ abiertos: abiertos.length, porVencer, solicitudes: solNuevas, usuariosPend }} open={navOpen} />
+        counts={{ abiertos: abiertos.length, porVencer, solicitudes: solNuevas, usuariosPend, cotNuevas }} open={navOpen} />
       {navOpen && <div className="sb-scrim" onClick={() => setNavOpen(false)} />}
 
       <main className="main">
@@ -444,6 +463,8 @@ function App() {
               ? <UsuariosView perfiles={perfiles} me={perfil} onUpdate={actualizarUsuario} />
               : FACTURACION_KEYS.includes(active)
               ? <FacturacionModule active={active} station={quien} query={query} />
+              : COMERCIAL_KEYS.includes(active)
+              ? <ComercialModule active={active} station={quien} query={query} />
               : RENOVACION_KEYS.includes(active)
               ? <RenovacionesModule active={active} station={quien} query={query} />
               : PENDIENTES_KEYS.includes(active)

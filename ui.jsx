@@ -85,6 +85,9 @@ const PORTAL_NAV = [
   { key: "facturacion", label: "Facturación", icon: "doc", org: true, children: [
     { key: "fact-comprobantes", label: "Comprobantes", icon: "doc" },
     { key: "fact-reportes", label: "Reportes", icon: "grid" } ] },
+  { key: "comercial", label: "Comercial", icon: "target", children: [
+    { key: "com-panel", label: "Panel de control", icon: "grid" },
+    { key: "com-cotizaciones", label: "Cotizaciones de hogar", icon: "home", count: "cotNuevas" } ] },
   { key: "renovaciones", label: "Renovaciones", icon: "refresh", children: [
     { key: "renov-proximas", label: "Próximas a vencer", icon: "clock" },
     { key: "renov-historial", label: "Historial", icon: "agenda" } ] },
@@ -101,6 +104,7 @@ const NAV_LOOKUP = {};
 PORTAL_NAV.forEach((g) => g.children.forEach((c) => { NAV_LOOKUP[c.key] = { section: g.label, sectionKey: g.key, title: c.label }; }));
 const SINIESTROS_KEYS = ["dashboard", "agenda", "solicitudes"];
 const FACTURACION_KEYS = ["fact-comprobantes", "fact-reportes"];
+const COMERCIAL_KEYS = ["com-panel", "com-cotizaciones"];
 const RENOVACION_KEYS = ["renov-proximas", "renov-historial"];
 const PENDIENTES_KEYS = ["pend-panel", "pend-agenda"];
 const OBJETIVOS_KEYS = ["obj-panel", "obj-metas"];
@@ -467,6 +471,6 @@ function ModuleScreen({ info }) {
 
 Object.assign(window, {
   Ico, Icons, Badge, UrgBadge, RamoTag, Sidebar, Topbar, Kpis, Toolbar, ClaimsTable, Agenda,
-  ModuleScreen, PORTAL_NAV, NAV_LOOKUP, SINIESTROS_KEYS, FACTURACION_KEYS, RENOVACION_KEYS,
+  ModuleScreen, PORTAL_NAV, NAV_LOOKUP, SINIESTROS_KEYS, FACTURACION_KEYS, RENOVACION_KEYS, COMERCIAL_KEYS,
   PENDIENTES_KEYS, OBJETIVOS_KEYS, ADMIN_KEYS, ORG_ONLY_KEYS,
 });

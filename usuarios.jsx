@@ -91,7 +91,7 @@ function UsuariosView({ perfiles, me, onUpdate }) {
 }
 
 // ---------- campana de notificaciones (topbar) ----------
-const NOTIF_ICON = { asignacion: "user", vencimiento: "alert", solicitud: "mail", sistema: "info" };
+const NOTIF_ICON = { asignacion: "user", vencimiento: "alert", solicitud: "mail", cotizacion: "home", sistema: "info" };
 function NotifBell({ notifs, onOpenNotif, onMarkAll }) {
   const [open, setOpen] = React.useState(false);
   const ref = React.useRef(null);

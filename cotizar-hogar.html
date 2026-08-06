@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cotizar seguro de hogar · Saraceni Seguros</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+:root{ --brand:#DD0909; --brand-d:#bb0707; --bg:#F5F6F8; --surface:#fff; --surface-2:#FBFBFC;
+  --ink:#191C22; --ink-2:#5A6271; --muted:#8B93A1; --line:#E7E9ED; --line-2:#EFF1F4; }
+*{ box-sizing:border-box; }
+body{ margin:0; font-family:"Public Sans",system-ui,sans-serif; font-size:17px; background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; }
+.wrap{ max-width:640px; margin:0 auto; padding:28px 18px 60px; }
+.card{ background:var(--surface); border:1px solid var(--line); border-radius:16px; overflow:hidden;
+  box-shadow:0 4px 16px rgba(16,20,28,.08); }
+.card::before{ content:""; display:block; height:5px; background:var(--brand); }
+.head{ padding:26px 28px 6px; text-align:center; }
+.logo{ display:inline-block; background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 18px; }
+.logo img{ display:block; max-width:220px; height:auto; }
+h1{ font-size:23px; margin:18px 0 6px; letter-spacing:-.01em; }
+.sub{ color:var(--ink-2); font-size:14.5px; margin:0 auto 8px; max-width:460px; line-height:1.5; }
+form{ padding:16px 28px 28px; }
+.sect{ font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--brand);
+  margin:22px 0 12px; padding-bottom:6px; border-bottom:1px solid var(--line-2); }
+.sect .opt{ color:var(--muted); font-weight:600; text-transform:none; letter-spacing:0; font-size:12.5px; }
+.grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px 16px; }
+.full{ grid-column:1/-1; }
+label{ display:flex; flex-direction:column; gap:6px; }
+label span{ font-size:13.5px; font-weight:600; color:var(--ink-2); }
+label span i{ color:var(--brand); font-style:normal; }
+input,select,textarea{ border:1px solid var(--line); border-radius:10px; padding:11px 13px; font-size:16px;
+  font-family:inherit; color:var(--ink); background:#fff; outline:none; width:100%; transition:.15s; }
+input:focus,select:focus,textarea:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(221,9,9,.09); }
+textarea{ resize:vertical; min-height:80px; }
+.hp{ position:absolute; left:-9999px; top:-9999px; height:1px; width:1px; overflow:hidden; }
+.hint{ font-size:12.5px; color:var(--muted); margin-top:-2px; }
+.sino-label{ display:block; font-size:13.5px; font-weight:600; color:var(--ink-2); margin-bottom:6px; }
+.sino{ display:flex; gap:10px; }
+.sino-btn{ flex:1; padding:12px; border:1.5px solid var(--line); border-radius:10px; background:#fff;
+  font-size:16px; font-weight:700; font-family:inherit; color:var(--ink-2); cursor:pointer; transition:.15s; }
+.sino-btn:hover{ border-color:#d3d7dd; }
+.sino-btn.on{ border-color:var(--brand); color:var(--brand); background:#fdf3f3; }
+.money{ position:relative; }
+.money input{ padding-left:28px; }
+.money::before{ content:"$"; position:absolute; left:12px; top:37px; color:var(--muted); font-weight:700; z-index:1; }
+.send{ display:flex; align-items:center; justify-content:center; gap:9px; width:100%; margin-top:22px;
+  background:var(--brand); color:#fff; border:none; border-radius:11px; padding:15px; font-size:16.5px;
+  font-weight:700; font-family:inherit; cursor:pointer; transition:.15s; }
+.send:hover{ background:var(--brand-d); }
+.send:disabled{ opacity:.55; cursor:not-allowed; }
+.err{ display:none; background:#FBE3E3; color:#B91C1C; border:1px solid #f3c0c0; border-radius:10px;
+  padding:11px 14px; font-size:14px; margin-top:14px; line-height:1.5; }
+.ok{ display:none; padding:44px 30px 50px; text-align:center; }
+.ok .tick{ width:64px; height:64px; border-radius:99px; background:#E6F4EA; color:#15803D; display:grid;
+  place-items:center; margin:0 auto 18px; font-size:30px; }
+.ok h2{ font-size:22px; margin:0 0 10px; }
+.ok p{ color:var(--ink-2); font-size:15px; line-height:1.6; margin:0 auto 8px; max-width:420px; }
+.ok .ref{ display:inline-block; margin-top:14px; background:var(--surface-2); border:1px solid var(--line);
+  border-radius:10px; padding:10px 22px; font-size:22px; font-weight:800; letter-spacing:.18em; font-family:ui-monospace,monospace; }
+.foot{ text-align:center; font-size:12px; font-weight:700; letter-spacing:.14em; color:var(--muted); margin-top:22px; }
+@media (max-width:560px){ .grid{ grid-template-columns:1fr; } form{ padding:14px 18px 24px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="head">
+      <span class="logo"><img src="assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></span>
+      <h1>Cotizá tu seguro de hogar</h1>
+      <p class="sub">Completá estos datos y te preparamos una cotización a medida. Te contactamos con la propuesta a la brevedad.</p>
+    </div>
+
+    <form id="form" novalidate>
+      <div class="sect">Tus datos</div>
+      <div class="grid">
+        <label class="full"><span>Nombre y apellido <i>*</i></span>
+          <input id="nombre" required placeholder="Tu nombre completo" /></label>
+        <label><span>N° de documento <i>*</i></span>
+          <input id="documento" inputmode="numeric" required placeholder="Sin puntos" /></label>
+        <label><span>Teléfono <i>*</i></span>
+          <input id="telefono" type="tel" required placeholder="11 5555-5555" /></label>
+        <label class="full"><span>Email</span>
+          <input id="email" type="email" placeholder="tu@email.com" /></label>
+      </div>
+
+      <div class="sect">La vivienda a asegurar</div>
+      <div class="grid">
+        <label class="full"><span>Dirección <i>*</i></span>
+          <input id="direccion" required placeholder="Calle y altura" /></label>
+        <label><span>Localidad</span><input id="localidad" placeholder="Ciudad / partido" /></label>
+        <label><span>Código postal <i>*</i></span><input id="cp" required placeholder="Ej: 1425" /></label>
+        <div class="full">
+          <span class="sino-label">¿Es casa o departamento? <i style="color:#DD0909;font-style:normal">*</i></span>
+          <div class="sino">
+            <button type="button" class="sino-btn" id="tv_casa">Casa</button>
+            <button type="button" class="sino-btn" id="tv_depto">Departamento</button>
+          </div>
+        </div>
+        <label id="campoPiso" style="display:none"><span>Piso y departamento <i>*</i></span>
+          <input id="piso" placeholder="Ej: 4° B" /></label>
+        <label><span>Metros cuadrados <i>*</i></span>
+          <input id="metros" inputmode="numeric" required placeholder="Ej: 85" /></label>
+      </div>
+
+      <div class="sect">Bienes a cubrir</div>
+      <div class="grid">
+        <label class="full money"><span>Valor aproximado de electrodomésticos</span>
+          <input id="electro" inputmode="numeric" placeholder="Ej: 2500000" />
+          <span class="hint">Sumá heladera, lavarropas, TV, aire acondicionado, computadoras, etc.</span></label>
+
+        <div class="full">
+          <span class="sino-label">¿Algún equipo sale del hogar?</span>
+          <div class="sino">
+            <button type="button" class="sino-btn" id="eq_si">Sí</button>
+            <button type="button" class="sino-btn" id="eq_no">No</button>
+          </div>
+          <span class="hint" style="display:block;margin-top:6px">Por ejemplo una notebook, cámara o celular que llevás fuera de casa.</span>
+        </div>
+        <label id="campoEquipos" class="full" style="display:none"><span>¿Cuáles y qué valor tienen? <i>*</i></span>
+          <textarea id="equipos_detalle" placeholder="Ej: notebook Dell $1.200.000 y cámara de fotos $600.000"></textarea></label>
+
+        <div class="full">
+          <span class="sino-label">¿Incluye bicicleta?</span>
+          <div class="sino">
+            <button type="button" class="sino-btn" id="bici_si">Sí</button>
+            <button type="button" class="sino-btn" id="bici_no">No</button>
+          </div>
+        </div>
+        <label id="campoBici" class="full money" style="display:none"><span>Valor de la bicicleta <i>*</i></span>
+          <input id="bici_valor" inputmode="numeric" placeholder="Ej: 900000" /></label>
+
+        <label class="full"><span>Algo más que quieras aclarar</span>
+          <textarea id="obs" placeholder="Opcional: alarma, rejas, caja fuerte, obras de arte…"></textarea></label>
+      </div>
+
+      <label class="hp"><span>Sitio web</span><input id="website" tabindex="-1" autocomplete="off" /></label>
+
+      <button class="send" id="send" type="submit">Pedir cotización</button>
+      <div class="err" id="err"></div>
+    </form>
+
+    <div class="ok" id="ok">
+      <div class="tick">✓</div>
+      <h2>¡Listo! Recibimos tu pedido</h2>
+      <p>Ya estamos preparando tu cotización de seguro de hogar. Nos comunicamos con vos a la brevedad con la propuesta.</p>
+      <p>Guardá tu código de referencia:</p>
+      <span class="ref" id="refcode"></span>
+    </div>
+  </div>
+  <div class="foot">SARACENI · BROKER DE SEGUROS</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+(function () {
+  var sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---- Casa / Departamento (el piso solo aplica a departamento) ----
+  var tipoVivienda = null;
+  function setTipo(v) {
+    tipoVivienda = v;
+    $("tv_casa").classList.toggle("on", v === "Casa");
+    $("tv_depto").classList.toggle("on", v === "Departamento");
+    $("campoPiso").style.display = v === "Departamento" ? "" : "none";
+    if (v !== "Departamento") $("piso").value = "";
+  }
+  $("tv_casa").addEventListener("click", function () { setTipo(tipoVivienda === "Casa" ? null : "Casa"); });
+  $("tv_depto").addEventListener("click", function () { setTipo(tipoVivienda === "Departamento" ? null : "Departamento"); });
+
+  // ---- ¿Equipos fuera del hogar? ----
+  var equiposFuera = null;
+  function setEquipos(v) {
+    equiposFuera = v;
+    $("eq_si").classList.toggle("on", v === true);
+    $("eq_no").classList.toggle("on", v === false);
+    $("campoEquipos").style.display = v === true ? "" : "none";
+    if (v !== true) $("equipos_detalle").value = "";
+  }
+  $("eq_si").addEventListener("click", function () { setEquipos(equiposFuera === true ? null : true); });
+  $("eq_no").addEventListener("click", function () { setEquipos(equiposFuera === false ? null : false); });
+
+  // ---- ¿Incluye bicicleta? ----
+  var bicicleta = null;
+  function setBici(v) {
+    bicicleta = v;
+    $("bici_si").classList.toggle("on", v === true);
+    $("bici_no").classList.toggle("on", v === false);
+    $("campoBici").style.display = v === true ? "" : "none";
+    if (v !== true) $("bici_valor").value = "";
+  }
+  $("bici_si").addEventListener("click", function () { setBici(bicicleta === true ? null : true); });
+  $("bici_no").addEventListener("click", function () { setBici(bicicleta === false ? null : false); });
+
+  function showErr(msg) { var e = $("err"); e.textContent = msg; e.style.display = "block"; }
+  function hideErr() { $("err").style.display = "none"; }
+  function num(id) {
+    var v = ($(id).value || "").replace(/[^0-9,.]/g, "").replace(/\./g, "").replace(",", ".");
+    if (!v) return null;
+    var n = Number(v);
+    return isNaN(n) ? null : n;
+  }
+  function refCode() {
+    var chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789", out = "";
+    for (var i = 0; i < 6; i++) out += chars.charAt(Math.floor(Math.random() * chars.length));
+    return out;
+  }
+  function showOk(ref) {
+    $("form").style.display = "none";
+    $("refcode").textContent = ref;
+    $("ok").style.display = "block";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  $("form").addEventListener("submit", async function (ev) {
+    ev.preventDefault(); hideErr();
+    var ref = refCode();
+    if ($("website").value) { showOk(ref); return; } // honeypot anti-bots
+
+    var nombre = $("nombre").value.trim();
+    var documento = $("documento").value.trim();
+    var telefono = $("telefono").value.trim();
+    var direccion = $("direccion").value.trim();
+    var cp = $("cp").value.trim();
+    var metros = num("metros");
+
+    var faltan = [];
+    if (!nombre) faltan.push("nombre");
+    if (!documento) faltan.push("documento");
+    if (!telefono) faltan.push("teléfono");
+    if (!direccion) faltan.push("dirección");
+    if (!cp) faltan.push("código postal");
+    if (!tipoVivienda) faltan.push("casa o departamento");
+    if (!metros) faltan.push("metros cuadrados");
+    if (faltan.length) { showErr("Nos faltan estos datos: " + faltan.join(", ") + "."); return; }
+    if (tipoVivienda === "Departamento" && !$("piso").value.trim()) { showErr("Indicanos el piso y departamento."); return; }
+    if (equiposFuera === true && !$("equipos_detalle").value.trim()) { showErr("Contanos qué equipos salen del hogar y su valor."); return; }
+    if (bicicleta === true && !num("bici_valor")) { showErr("Indicanos el valor de la bicicleta."); return; }
+
+    var btn = $("send"); btn.disabled = true; btn.textContent = "Enviando…";
+    try {
+      var ins = await sb.from("cotizaciones").insert({
+        ref: ref,
+        ramo: "HOGAR",
+        nombre: nombre,
+        documento: documento,
+        telefono: telefono,
+        email: $("email").value.trim() || null,
+        direccion: direccion,
+        localidad: $("localidad").value.trim() || null,
+        codigo_postal: cp,
+        tipo_vivienda: tipoVivienda,
+        piso: $("piso").value.trim() || null,
+        metros2: metros,
+        valor_electrodomesticos: num("electro"),
+        equipos_fuera: equiposFuera,
+        equipos_fuera_detalle: $("equipos_detalle").value.trim() || null,
+        bicicleta: bicicleta,
+        bicicleta_valor: num("bici_valor"),
+        observaciones: $("obs").value.trim() || null
+      });
+      if (ins.error) throw ins.error;
+      showOk(ref);
+    } catch (e) {
+      console.error(e);
+      showErr("No pudimos enviar el pedido. Revisá tu conexión e intentá de nuevo, o comunicate por teléfono con la oficina.");
+      btn.disabled = false; btn.textContent = "Pedir cotización";
+    }
+  });
+})();
+</script>
+</body>
+</html>

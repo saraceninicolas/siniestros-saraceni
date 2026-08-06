@@ -524,6 +524,44 @@ async function dbMaxN() {
     return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
   }
 
+  // ============================ COTIZACIONES (comercial) ============================
+  function fromRowC(r) {
+    return {
+      _dbId: r.id, id: "COT-" + String(r.id).padStart(4, "0"),
+      ref: r.ref || "", ramo: r.ramo || "HOGAR",
+      nombre: r.nombre || "", documento: r.documento || "",
+      telefono: r.telefono || "", email: r.email || "",
+      direccion: r.direccion || "", localidad: r.localidad || "", codigoPostal: r.codigo_postal || "",
+      tipoVivienda: r.tipo_vivienda || "", piso: r.piso || "", metros2: r.metros2,
+      valorElectro: r.valor_electrodomesticos,
+      equiposFuera: r.equipos_fuera, equiposFueraDetalle: r.equipos_fuera_detalle || "",
+      bicicleta: r.bicicleta, bicicletaValor: r.bicicleta_valor,
+      observaciones: r.observaciones || "",
+      estado: r.estado || "nueva", notasInternas: r.notas_internas || "",
+      gestionadaPor: r.gestionada_por || "",
+      creado: r.created_at || null,
+    };
+  }
+  async function cotList() {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("cotizaciones").select("*").order("id", { ascending: false });
+    if (error) throw error; return (data || []).map(fromRowC);
+  }
+  async function cotUpdate(it) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const row = { estado: it.estado, gestionada_por: orNull(it.gestionadaPor) };
+    if (it.notasInternas !== undefined) row.notas_internas = orNull(it.notasInternas);
+    const { data, error } = await c.from("cotizaciones").update(row).eq("id", it._dbId).select().single();
+    if (error) throw error; return fromRowC(data);
+  }
+  function cotSubscribe(onChange) {
+    const c = client(); if (!c) return null;
+    const ch = c.channel("cotizaciones-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "cotizaciones" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
+      .subscribe();
+    return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
+  }
+
   // ============================ PERFILES (usuarios y roles) ============================
   function fromRowU(r) {
     return {
@@ -654,6 +692,7 @@ async function dbMaxN() {
       remove: objRemove, maxN: objMaxN, subscribe: objSubscribe,
     },
     sol: { list: solList, update: solUpdate, subscribe: solSubscribe },
+    cot: { list: cotList, update: cotUpdate, subscribe: cotSubscribe },
     files: { upload: fileUpload, signedUrl: fileSignedUrl, remove: fileRemove },
   };
 })();
