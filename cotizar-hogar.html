@@ -108,6 +108,13 @@ textarea{ resize:vertical; min-height:80px; }
           </div>
           <span class="hint" style="display:block;margin-top:6px">Nos sirve para saber si el predio tiene vallado perimetral y seguridad.</span>
         </div>
+        <div class="full" id="campoPileta" style="display:none">
+          <span class="sino-label">¿Tiene pileta? <i style="color:#DD0909;font-style:normal">*</i></span>
+          <div class="sino">
+            <button type="button" class="sino-btn" id="pil_si">Sí</button>
+            <button type="button" class="sino-btn" id="pil_no">No</button>
+          </div>
+        </div>
         <label><span>Metros cuadrados <i>*</i></span>
           <input id="metros" inputmode="numeric" required placeholder="Ej: 85" /></label>
       </div>
@@ -168,13 +175,20 @@ textarea{ resize:vertical; min-height:80px; }
   var $ = function (id) { return document.getElementById(id); };
 
   // ---- Casa / Departamento ----
-  // El piso solo aplica a departamento; el country (vallado perimetral), solo a casa.
+  // El piso solo aplica a departamento; el country (vallado perimetral) y la
+  // pileta, solo a casa.
   var tipoVivienda = null;
   var enCountry = null;
+  var tienePileta = null;
   function setCountry(v) {
     enCountry = v;
     $("ctry_si").classList.toggle("on", v === true);
     $("ctry_no").classList.toggle("on", v === false);
+  }
+  function setPileta(v) {
+    tienePileta = v;
+    $("pil_si").classList.toggle("on", v === true);
+    $("pil_no").classList.toggle("on", v === false);
   }
   function setTipo(v) {
     tipoVivienda = v;
@@ -182,11 +196,14 @@ textarea{ resize:vertical; min-height:80px; }
     $("tv_depto").classList.toggle("on", v === "Departamento");
     $("campoPiso").style.display = v === "Departamento" ? "" : "none";
     $("campoCountry").style.display = v === "Casa" ? "" : "none";
+    $("campoPileta").style.display = v === "Casa" ? "" : "none";
     if (v !== "Departamento") $("piso").value = "";
-    if (v !== "Casa") setCountry(null);
+    if (v !== "Casa") { setCountry(null); setPileta(null); }
   }
   $("ctry_si").addEventListener("click", function () { setCountry(enCountry === true ? null : true); });
   $("ctry_no").addEventListener("click", function () { setCountry(enCountry === false ? null : false); });
+  $("pil_si").addEventListener("click", function () { setPileta(tienePileta === true ? null : true); });
+  $("pil_no").addEventListener("click", function () { setPileta(tienePileta === false ? null : false); });
   $("tv_casa").addEventListener("click", function () { setTipo(tipoVivienda === "Casa" ? null : "Casa"); });
   $("tv_depto").addEventListener("click", function () { setTipo(tipoVivienda === "Departamento" ? null : "Departamento"); });
 
@@ -257,6 +274,7 @@ textarea{ resize:vertical; min-height:80px; }
     if (faltan.length) { showErr("Nos faltan estos datos: " + faltan.join(", ") + "."); return; }
     if (tipoVivienda === "Departamento" && !$("piso").value.trim()) { showErr("Indicanos el piso y departamento."); return; }
     if (tipoVivienda === "Casa" && enCountry === null) { showErr("Contanos si la casa está en un country o barrio cerrado."); return; }
+    if (tipoVivienda === "Casa" && tienePileta === null) { showErr("Contanos si la casa tiene pileta."); return; }
     if (equiposFuera === true && !$("equipos_detalle").value.trim()) { showErr("Contanos qué equipos salen del hogar y su valor."); return; }
     if (bicicleta === true && !num("bici_valor")) { showErr("Indicanos el valor de la bicicleta."); return; }
 
@@ -275,6 +293,7 @@ textarea{ resize:vertical; min-height:80px; }
         tipo_vivienda: tipoVivienda,
         piso: $("piso").value.trim() || null,
         en_country: enCountry,
+        tiene_pileta: tienePileta,
         metros2: metros,
         valor_electrodomesticos: num("electro"),
         equipos_fuera: equiposFuera,

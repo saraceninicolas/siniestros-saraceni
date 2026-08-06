@@ -54,6 +54,14 @@ function CotCard({ c, onCotizar, onDescartar, onReabrir, onNotas }) {
             </div>
           </div>
         )}
+        {c.tienePileta != null && (
+          <div>
+            <div className="sol-k">Pileta</div>
+            <div className="sol-v" style={c.tienePileta ? { color: "#1D4ED8", fontWeight: 700 } : null}>
+              {c.tienePileta ? "Sí" : "No"}
+            </div>
+          </div>
+        )}
       </div>
       {domicilio && <div className="sol-relato" style={{ marginTop: 8 }}>{domicilio}</div>}
 

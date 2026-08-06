@@ -22,6 +22,7 @@ create table if not exists public.cotizaciones (
   tipo_vivienda     text,                       -- Casa | Departamento
   piso              text,                       -- solo si es departamento
   en_country        boolean,                    -- solo si es casa (vallado perimetral)
+  tiene_pileta      boolean,                    -- solo si es casa (riesgo de RC)
   metros2           numeric,
   -- bienes
   valor_electrodomesticos numeric,
