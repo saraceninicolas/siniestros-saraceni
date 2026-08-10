@@ -26,10 +26,12 @@ create table if not exists public.cotizaciones (
   metros2           numeric,
   -- medidas de seguridad (casa y departamento)
   alarma            boolean not null default false,
-  rejas             boolean not null default false,
+  medidas_seguridad boolean not null default false,  -- rejas, cerraduras, etc.
   -- coberturas pedidas (casillas del formulario)
-  equipos_fuera     boolean,                    -- equipos que salen del hogar
-  equipos_fuera_detalle   text,                 -- marca, modelo y valor de cada uno (obligatorio si se tilda)
+  equipos_fuera     boolean,                    -- equipos electrónicos fuera del domicilio
+  equipos_fuera_detalle   text,                 -- objeto, marca y modelo (obligatorio si se tilda)
+  notebook_pc       boolean not null default false,  -- notebook o PC dentro del domicilio
+  notebook_pc_detalle     text,                 -- objeto, marca y modelo (obligatorio si se tilda)
   bicicleta         boolean,
   bicicleta_marca   text,                       -- marca/modelo/valor obligatorios si se tilda
   bicicleta_modelo  text,

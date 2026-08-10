@@ -64,18 +64,19 @@ function CotCard({ c, onCotizar, onDescartar, onReabrir, onNotas }) {
         )}
       </div>
       {domicilio && <div className="sol-relato" style={{ marginTop: 8 }}>{domicilio}</div>}
-      {(c.alarma || c.rejas) && (
+      {(c.alarma || c.medidasSeguridad) && (
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
           {c.alarma && <span className="cia-pill sm">Alarma</span>}
-          {c.rejas && <span className="cia-pill sm">Rejas</span>}
+          {c.medidasSeguridad && <span className="cia-pill sm">Medidas mínimas de seguridad</span>}
         </div>
       )}
 
       <div className="sol-sub">Coberturas pedidas</div>
-      {(c.equiposFuera || c.bicicleta || c.roboCelular) ? (
+      {(c.equiposFuera || c.notebookPc || c.bicicleta || c.roboCelular) ? (
         <>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {c.equiposFuera && <span className="cia-pill sm">Equipos fuera del hogar</span>}
+            {c.equiposFuera && <span className="cia-pill sm">Equipos electrónicos fuera del domicilio</span>}
+            {c.notebookPc && <span className="cia-pill sm">Notebook o PC en el domicilio</span>}
             {c.bicicleta && <span className="cia-pill sm">Bicicleta</span>}
             {c.roboCelular && <span className="cia-pill sm">Robo de celular</span>}
           </div>
@@ -86,7 +87,10 @@ function CotCard({ c, onCotizar, onDescartar, onReabrir, onNotas }) {
             </div>
           )}
           {c.equiposFuera && c.equiposFueraDetalle && (
-            <div className="sol-relato" style={{ marginTop: 8 }}><b>Equipos que salen:</b> {c.equiposFueraDetalle}</div>
+            <div className="sol-relato" style={{ marginTop: 8 }}><b>Equipos fuera del domicilio:</b> {c.equiposFueraDetalle}</div>
+          )}
+          {c.notebookPc && c.notebookPcDetalle && (
+            <div className="sol-relato" style={{ marginTop: 8 }}><b>Notebook / PC:</b> {c.notebookPcDetalle}</div>
           )}
         </>
       ) : (

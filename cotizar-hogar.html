@@ -124,7 +124,7 @@ textarea{ resize:vertical; min-height:80px; }
           <span class="sino-label">Marcá lo que corresponda</span>
           <div class="chk-group">
             <label class="chk" id="wrapAlarma"><input type="checkbox" id="alarma" /><span>Alarma</span></label>
-            <label class="chk" id="wrapRejas"><input type="checkbox" id="rejas" /><span>Rejas</span></label>
+            <label class="chk" id="wrapRejas"><input type="checkbox" id="rejas" /><span>Medidas mínimas de seguridad</span></label>
             <label class="chk" id="wrapCountry" style="display:none"><input type="checkbox" id="country" /><span>Country / barrio cerrado</span></label>
             <label class="chk" id="wrapPileta" style="display:none"><input type="checkbox" id="pileta" /><span>Pileta</span></label>
           </div>
@@ -135,16 +135,23 @@ textarea{ resize:vertical; min-height:80px; }
       <div class="grid">
         <div class="full">
           <div class="chk-group">
-            <label class="chk" id="wrapEquipos"><input type="checkbox" id="equipos" /><span>Equipos fuera del hogar</span></label>
+            <label class="chk" id="wrapEquipos"><input type="checkbox" id="equipos" /><span>Equipos electrónicos fuera del domicilio</span></label>
+            <label class="chk" id="wrapNotebook"><input type="checkbox" id="notebook" /><span>Notebook o PC en el domicilio</span></label>
             <label class="chk" id="wrapBici"><input type="checkbox" id="bici" /><span>Bicicleta</span></label>
             <label class="chk" id="wrapCel"><input type="checkbox" id="celular" /><span>Robo de celular</span></label>
           </div>
         </div>
 
         <div class="full sub-box" id="boxEquipos" style="display:none">
-          <label class="full"><span>Equipos que salen del hogar — marca, modelo y valor de cada uno <i>*</i></span>
-            <textarea id="equipos_detalle" placeholder="Ej: notebook Lenovo IdeaPad 3 — $1.200.000 / cámara Canon EOS R50 — $900.000"></textarea>
-            <span class="hint">Indicá los tres datos de cada equipo: marca, modelo y valor.</span></label>
+          <label class="full"><span>Equipos electrónicos fuera del domicilio — objeto, marca y modelo <i>*</i></span>
+            <textarea id="equipos_detalle" placeholder="Ej: notebook Lenovo IdeaPad 3 / cámara de fotos Canon EOS R50"></textarea>
+            <span class="hint">Detallá qué objeto es, la marca y el modelo de cada uno.</span></label>
+        </div>
+
+        <div class="full sub-box" id="boxNotebook" style="display:none">
+          <label class="full"><span>Notebook o PC en el domicilio — objeto, marca y modelo <i>*</i></span>
+            <textarea id="notebook_detalle" placeholder="Ej: notebook HP Pavilion 15 / PC de escritorio armada con monitor Samsung 24"></textarea>
+            <span class="hint">Detallá qué objeto es, la marca y el modelo de cada uno.</span></label>
         </div>
 
         <div class="full sub-box" id="boxBici" style="display:none">
@@ -196,6 +203,7 @@ textarea{ resize:vertical; min-height:80px; }
   bindChk("pileta", "wrapPileta");
   bindChk("celular", "wrapCel");
   bindChk("equipos", "wrapEquipos", "boxEquipos", function () { $("equipos_detalle").value = ""; });
+  bindChk("notebook", "wrapNotebook", "boxNotebook", function () { $("notebook_detalle").value = ""; });
   bindChk("bici", "wrapBici", "boxBici", function () {
     $("bici_marca").value = ""; $("bici_modelo").value = ""; $("bici_valor").value = "";
   });
@@ -264,7 +272,10 @@ textarea{ resize:vertical; min-height:80px; }
     if (faltan.length) { showErr("Nos faltan estos datos: " + faltan.join(", ") + "."); return; }
     if (tipoVivienda === "Departamento" && !$("piso").value.trim()) { showErr("Indicanos el piso y departamento."); return; }
     if ($("equipos").checked && !$("equipos_detalle").value.trim()) {
-      showErr("Detallá marca, modelo y valor de los equipos que salen del hogar."); return;
+      showErr("Detallá objeto, marca y modelo de los equipos electrónicos que salen del domicilio."); return;
+    }
+    if ($("notebook").checked && !$("notebook_detalle").value.trim()) {
+      showErr("Detallá objeto, marca y modelo de la notebook o PC del domicilio."); return;
     }
     if ($("bici").checked) {
       var faltanBici = [];
@@ -292,9 +303,11 @@ textarea{ resize:vertical; min-height:80px; }
         tiene_pileta: tipoVivienda === "Casa" ? $("pileta").checked : null,
         metros2: metros,
         alarma: $("alarma").checked,
-        rejas: $("rejas").checked,
+        medidas_seguridad: $("rejas").checked,
         equipos_fuera: $("equipos").checked,
         equipos_fuera_detalle: $("equipos_detalle").value.trim() || null,
+        notebook_pc: $("notebook").checked,
+        notebook_pc_detalle: $("notebook_detalle").value.trim() || null,
         bicicleta: $("bici").checked,
         bicicleta_marca: $("bici_marca").value.trim() || null,
         bicicleta_modelo: $("bici_modelo").value.trim() || null,
