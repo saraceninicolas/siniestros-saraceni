@@ -64,15 +64,33 @@ function CotCard({ c, onCotizar, onDescartar, onReabrir, onNotas }) {
         )}
       </div>
       {domicilio && <div className="sol-relato" style={{ marginTop: 8 }}>{domicilio}</div>}
+      {(c.alarma || c.rejas) && (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+          {c.alarma && <span className="cia-pill sm">Alarma</span>}
+          {c.rejas && <span className="cia-pill sm">Rejas</span>}
+        </div>
+      )}
 
-      <div className="sol-sub">Bienes</div>
-      <div className="sol-grid-datos">
-        <D k="Electrodomésticos" v={money(c.valorElectro)} mono />
-        <D k="Equipos fuera del hogar" v={c.equiposFuera == null ? "" : (c.equiposFuera ? "Sí" : "No")} />
-        <D k="Bicicleta" v={c.bicicleta == null ? "" : (c.bicicleta ? "Sí — " + money(c.bicicletaValor) : "No")} />
-      </div>
-      {c.equiposFuera && c.equiposFueraDetalle && (
-        <div className="sol-relato" style={{ marginTop: 8 }}><b>Equipos que salen:</b> {c.equiposFueraDetalle}</div>
+      <div className="sol-sub">Coberturas pedidas</div>
+      {(c.equiposFuera || c.bicicleta || c.roboCelular) ? (
+        <>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {c.equiposFuera && <span className="cia-pill sm">Equipos fuera del hogar</span>}
+            {c.bicicleta && <span className="cia-pill sm">Bicicleta</span>}
+            {c.roboCelular && <span className="cia-pill sm">Robo de celular</span>}
+          </div>
+          {c.bicicleta && (
+            <div className="sol-relato" style={{ marginTop: 8 }}>
+              <b>Bicicleta:</b> {[c.bicicletaMarca, c.bicicletaModelo].filter(Boolean).join(" ")}
+              {c.bicicletaValor ? " — " + money(c.bicicletaValor) : ""}
+            </div>
+          )}
+          {c.equiposFuera && c.equiposFueraDetalle && (
+            <div className="sol-relato" style={{ marginTop: 8 }}><b>Equipos que salen:</b> {c.equiposFueraDetalle}</div>
+          )}
+        </>
+      ) : (
+        <div className="sol-v" style={{ color: "var(--muted)" }}>Solo la cobertura base</div>
       )}
       {c.observaciones && <div className="sol-relato" style={{ marginTop: 8 }}>{c.observaciones}</div>}
 

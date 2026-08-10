@@ -24,12 +24,18 @@ create table if not exists public.cotizaciones (
   en_country        boolean,                    -- solo si es casa (vallado perimetral)
   tiene_pileta      boolean,                    -- solo si es casa (riesgo de RC)
   metros2           numeric,
-  -- bienes
-  valor_electrodomesticos numeric,
-  equipos_fuera     boolean,                    -- ¿algún equipo sale del hogar?
-  equipos_fuera_detalle   text,
+  -- medidas de seguridad (casa y departamento)
+  alarma            boolean not null default false,
+  rejas             boolean not null default false,
+  -- coberturas pedidas (casillas del formulario)
+  equipos_fuera     boolean,                    -- equipos que salen del hogar
+  equipos_fuera_detalle   text,                 -- marca, modelo y valor de cada uno (obligatorio si se tilda)
   bicicleta         boolean,
+  bicicleta_marca   text,                       -- marca/modelo/valor obligatorios si se tilda
+  bicicleta_modelo  text,
   bicicleta_valor   numeric,
+  robo_celular      boolean not null default false,
+  valor_electrodomesticos numeric,              -- ya NO se pide en el formulario (se quitó a pedido)
   observaciones     text,
   -- seguimiento interno
   estado            text not null default 'nueva',  -- nueva | cotizada | descartada
