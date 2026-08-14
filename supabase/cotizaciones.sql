@@ -44,6 +44,7 @@ create table if not exists public.cotizaciones (
   bicicleta_modelo  text,
   bicicleta_valor   numeric,
   robo_celular      boolean not null default false,
+  celular_valor     numeric,                    -- obligatorio si se tilda robo de celular
   valor_electrodomesticos numeric,              -- ya NO se pide en el formulario (se quitó a pedido)
   observaciones     text,
   -- seguimiento interno

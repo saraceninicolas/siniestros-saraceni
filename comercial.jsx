@@ -84,7 +84,7 @@ function CotCard({ c, onCotizar, onDescartar, onReabrir, onNotas }) {
             {c.equiposFuera && <span className="cia-pill sm">Equipos electrónicos fuera del domicilio</span>}
             {c.notebookPc && <span className="cia-pill sm">Notebook o PC en el domicilio</span>}
             {c.bicicleta && <span className="cia-pill sm">Bicicleta</span>}
-            {c.roboCelular && <span className="cia-pill sm">Robo de celular</span>}
+            {c.roboCelular && <span className="cia-pill sm">Robo de celular{c.celularValor ? " — " + money(c.celularValor) : ""}</span>}
           </div>
           {c.bicicleta && (
             <div className="sol-relato" style={{ marginTop: 8 }}>

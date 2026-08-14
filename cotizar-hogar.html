@@ -163,6 +163,11 @@ textarea{ resize:vertical; min-height:62px; }
             <input id="nb_valor" inputmode="numeric" placeholder="Ej: 1500000" /></label>
         </div>
 
+        <div class="full sub-box" id="boxCel" style="display:none">
+          <label class="full money"><span>Valor del celular <i>*</i></span>
+            <input id="cel_valor" inputmode="numeric" placeholder="Ej: 800000" /></label>
+        </div>
+
         <div class="full sub-box" id="boxBici" style="display:none">
           <label><span>Marca de la bicicleta <i>*</i></span><input id="bici_marca" placeholder="Ej: Trek" /></label>
           <label><span>Modelo <i>*</i></span><input id="bici_modelo" placeholder="Ej: Marlin 5" /></label>
@@ -210,7 +215,7 @@ textarea{ resize:vertical; min-height:62px; }
   bindChk("rejas", "wrapRejas");
   bindChk("country", "wrapCountry");
   bindChk("pileta", "wrapPileta");
-  bindChk("celular", "wrapCel");
+  bindChk("celular", "wrapCel", "boxCel", function () { $("cel_valor").value = ""; });
   bindChk("equipos", "wrapEquipos", "boxEquipos", function () {
     ["eq_objeto", "eq_marca", "eq_modelo", "eq_valor"].forEach(function (id) { $(id).value = ""; });
   });
@@ -299,6 +304,7 @@ textarea{ resize:vertical; min-height:62px; }
       if (!num("nb_valor")) faltanNb.push("valor");
       if (faltanNb.length) { showErr("De la notebook o PC nos falta: " + faltanNb.join(", ") + "."); return; }
     }
+    if ($("celular").checked && !num("cel_valor")) { showErr("Indicanos el valor del celular."); return; }
     if ($("bici").checked) {
       var faltanBici = [];
       if (!$("bici_marca").value.trim()) faltanBici.push("marca");
@@ -340,6 +346,7 @@ textarea{ resize:vertical; min-height:62px; }
         bicicleta_modelo: $("bici_modelo").value.trim() || null,
         bicicleta_valor: num("bici_valor"),
         robo_celular: $("celular").checked,
+        celular_valor: num("cel_valor"),
         observaciones: $("obs").value.trim() || null
       });
       if (ins.error) throw ins.error;

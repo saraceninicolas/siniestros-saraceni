@@ -543,7 +543,7 @@ async function dbMaxN() {
       notebookPcValor: r.notebook_pc_valor,
       bicicleta: r.bicicleta, bicicletaMarca: r.bicicleta_marca || "",
       bicicletaModelo: r.bicicleta_modelo || "", bicicletaValor: r.bicicleta_valor,
-      roboCelular: !!r.robo_celular,
+      roboCelular: !!r.robo_celular, celularValor: r.celular_valor,
       observaciones: r.observaciones || "",
       estado: r.estado || "nueva", notasInternas: r.notas_internas || "",
       gestionadaPor: r.gestionada_por || "",
