@@ -12,6 +12,12 @@ function cotBadge(estado) {
   return <span className="badge" style={{ background: c.bg, color: c.fg, fontSize: 12 }}><span className="badge-dot" style={{ background: c.fg }} />{c.t}</span>;
 }
 const money = (v) => (v == null || v === "" ? "" : "$ " + Number(v).toLocaleString("es-AR"));
+// "notebook Lenovo IdeaPad 3 — $ 1.200.000" a partir de los campos separados
+function equipoTxt(objeto, marca, modelo, valor) {
+  const desc = [objeto, marca, modelo].filter(Boolean).join(" ");
+  if (!desc && valor == null) return "";
+  return desc + (valor != null ? (desc ? " — " : "") + money(valor) : "");
+}
 
 // ---------- tarjeta de cotización ----------
 function CotCard({ c, onCotizar, onDescartar, onReabrir, onNotas }) {
@@ -86,11 +92,17 @@ function CotCard({ c, onCotizar, onDescartar, onReabrir, onNotas }) {
               {c.bicicletaValor ? " — " + money(c.bicicletaValor) : ""}
             </div>
           )}
-          {c.equiposFuera && c.equiposFueraDetalle && (
-            <div className="sol-relato" style={{ marginTop: 8 }}><b>Equipos fuera del domicilio:</b> {c.equiposFueraDetalle}</div>
+          {c.equiposFuera && (equipoTxt(c.equiposFueraObjeto, c.equiposFueraMarca, c.equiposFueraModelo, c.equiposFueraValor) || c.equiposFueraDetalle) && (
+            <div className="sol-relato" style={{ marginTop: 8 }}>
+              <b>Equipo fuera del domicilio:</b>{" "}
+              {equipoTxt(c.equiposFueraObjeto, c.equiposFueraMarca, c.equiposFueraModelo, c.equiposFueraValor) || c.equiposFueraDetalle}
+            </div>
           )}
-          {c.notebookPc && c.notebookPcDetalle && (
-            <div className="sol-relato" style={{ marginTop: 8 }}><b>Notebook / PC:</b> {c.notebookPcDetalle}</div>
+          {c.notebookPc && (equipoTxt("", c.notebookPcMarca, c.notebookPcModelo, c.notebookPcValor) || c.notebookPcDetalle) && (
+            <div className="sol-relato" style={{ marginTop: 8 }}>
+              <b>Notebook / PC:</b>{" "}
+              {equipoTxt("", c.notebookPcMarca, c.notebookPcModelo, c.notebookPcValor) || c.notebookPcDetalle}
+            </div>
           )}
         </>
       ) : (

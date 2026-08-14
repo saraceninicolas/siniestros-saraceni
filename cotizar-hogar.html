@@ -12,59 +12,60 @@
   --ink:#191C22; --ink-2:#5A6271; --muted:#8B93A1; --line:#E7E9ED; --line-2:#EFF1F4; }
 *{ box-sizing:border-box; }
 body{ margin:0; font-family:"Public Sans",system-ui,sans-serif; font-size:17px; background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; }
-.wrap{ max-width:640px; margin:0 auto; padding:28px 18px 60px; }
+.wrap{ max-width:640px; margin:0 auto; padding:20px 16px 44px; }
 .card{ background:var(--surface); border:1px solid var(--line); border-radius:16px; overflow:hidden;
   box-shadow:0 4px 16px rgba(16,20,28,.08); }
 .card::before{ content:""; display:block; height:5px; background:var(--brand); }
-.head{ padding:26px 28px 6px; text-align:center; }
-.logo{ display:inline-block; background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 18px; }
-.logo img{ display:block; max-width:220px; height:auto; }
-h1{ font-size:23px; margin:18px 0 6px; letter-spacing:-.01em; }
-.sub{ color:var(--ink-2); font-size:14.5px; margin:0 auto 8px; max-width:460px; line-height:1.5; }
-form{ padding:16px 28px 28px; }
+.head{ padding:20px 26px 4px; text-align:center; }
+.logo{ display:inline-block; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 16px; }
+.logo img{ display:block; max-width:200px; height:auto; }
+h1{ font-size:22px; margin:14px 0 5px; letter-spacing:-.01em; }
+.sub{ color:var(--ink-2); font-size:14px; margin:0 auto 4px; max-width:460px; line-height:1.45; }
+form{ padding:12px 26px 24px; }
 .sect{ font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--brand);
-  margin:22px 0 12px; padding-bottom:6px; border-bottom:1px solid var(--line-2); }
+  margin:16px 0 9px; padding-bottom:5px; border-bottom:1px solid var(--line-2); }
 .sect .opt{ color:var(--muted); font-weight:600; text-transform:none; letter-spacing:0; font-size:12.5px; }
-.grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px 16px; }
+.grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; }
 .full{ grid-column:1/-1; }
-label{ display:flex; flex-direction:column; gap:6px; }
-label span{ font-size:13.5px; font-weight:600; color:var(--ink-2); }
+label{ display:flex; flex-direction:column; gap:4px; }
+label span{ font-size:13px; font-weight:600; color:var(--ink-2); }
 label span i{ color:var(--brand); font-style:normal; }
-input,select,textarea{ border:1px solid var(--line); border-radius:10px; padding:11px 13px; font-size:16px;
+input,select,textarea{ border:1px solid var(--line); border-radius:9px; padding:9px 12px; font-size:16px;
   font-family:inherit; color:var(--ink); background:#fff; outline:none; width:100%; transition:.15s; }
 input:focus,select:focus,textarea:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(221,9,9,.09); }
-textarea{ resize:vertical; min-height:80px; }
+textarea{ resize:vertical; min-height:62px; }
 .hp{ position:absolute; left:-9999px; top:-9999px; height:1px; width:1px; overflow:hidden; }
-.hint{ font-size:12.5px; color:var(--muted); margin-top:-2px; }
-.sino-label{ display:block; font-size:13.5px; font-weight:600; color:var(--ink-2); margin-bottom:6px; }
+.hint{ font-size:12px; color:var(--muted); margin-top:-1px; line-height:1.35; }
+.sino-label{ display:block; font-size:13px; font-weight:600; color:var(--ink-2); margin-bottom:5px; }
 /* ---- casillas a tildar (compactas) ---- */
-.chk-group{ display:flex; flex-wrap:wrap; gap:8px; }
-.chk{ display:inline-flex; align-items:center; gap:8px; flex-direction:row;
-  border:1.5px solid var(--line); border-radius:9px; padding:9px 13px; background:#fff;
-  font-size:14.5px; font-weight:600; color:var(--ink-2); cursor:pointer; transition:.14s; user-select:none; }
+.chk-group{ display:flex; flex-wrap:wrap; gap:7px; }
+.chk{ display:inline-flex; align-items:center; gap:7px; flex-direction:row;
+  border:1.5px solid var(--line); border-radius:8px; padding:7px 11px; background:#fff;
+  font-size:14px; font-weight:600; color:var(--ink-2); cursor:pointer; transition:.14s; user-select:none; }
 .chk:hover{ border-color:#d3d7dd; }
 .chk.on{ border-color:var(--brand); color:var(--brand); background:#fdf3f3; }
-.chk input{ width:17px; height:17px; margin:0; accent-color:var(--brand); cursor:pointer; flex:none; }
-.chk span{ font-size:14.5px; font-weight:600; color:inherit; }
+.chk input{ width:16px; height:16px; margin:0; accent-color:var(--brand); cursor:pointer; flex:none; }
+.chk span{ font-size:14px; font-weight:600; color:inherit; }
 /* ---- elección casa / departamento ---- */
-.radio-group{ display:flex; gap:8px; flex-wrap:wrap; }
-.radio-opt{ display:inline-flex; align-items:center; gap:8px; flex-direction:row;
-  border:1.5px solid var(--line); border-radius:9px; padding:9px 15px; background:#fff;
-  font-size:14.5px; font-weight:600; color:var(--ink-2); cursor:pointer; transition:.14s; user-select:none; }
+.radio-group{ display:flex; gap:7px; flex-wrap:wrap; }
+.radio-opt{ display:inline-flex; align-items:center; gap:7px; flex-direction:row;
+  border:1.5px solid var(--line); border-radius:8px; padding:7px 13px; background:#fff;
+  font-size:14px; font-weight:600; color:var(--ink-2); cursor:pointer; transition:.14s; user-select:none; }
 .radio-opt:hover{ border-color:#d3d7dd; }
 .radio-opt.on{ border-color:var(--brand); color:var(--brand); background:#fdf3f3; }
-.radio-opt input{ width:17px; height:17px; margin:0; accent-color:var(--brand); cursor:pointer; flex:none; }
-.radio-opt span{ font-size:14.5px; font-weight:600; color:inherit; }
+.radio-opt input{ width:16px; height:16px; margin:0; accent-color:var(--brand); cursor:pointer; flex:none; }
+.radio-opt span{ font-size:14px; font-weight:600; color:inherit; }
 /* ---- bloque que se despliega al tildar una cobertura ---- */
-.sub-box{ border-left:3px solid var(--brand); background:var(--surface-2); border-radius:0 10px 10px 0;
-  padding:14px 16px; margin-top:2px; display:grid; grid-template-columns:1fr 1fr; gap:12px 14px; }
+.sub-box{ border-left:3px solid var(--brand); background:var(--surface-2); border-radius:0 9px 9px 0;
+  padding:11px 13px; margin-top:1px; display:grid; grid-template-columns:1fr 1fr; gap:9px 12px; }
 .sub-box .full{ grid-column:1/-1; }
+.sub-box-title{ grid-column:1/-1; font-size:12.5px; font-weight:700; color:var(--ink-2); margin-bottom:-2px; }
 @media (max-width:560px){ .sub-box{ grid-template-columns:1fr; } }
 .money{ position:relative; }
 .money input{ padding-left:28px; }
-.money::before{ content:"$"; position:absolute; left:12px; top:37px; color:var(--muted); font-weight:700; z-index:1; }
-.send{ display:flex; align-items:center; justify-content:center; gap:9px; width:100%; margin-top:22px;
-  background:var(--brand); color:#fff; border:none; border-radius:11px; padding:15px; font-size:16.5px;
+.money::before{ content:"$"; position:absolute; left:12px; top:31px; color:var(--muted); font-weight:700; z-index:1; }
+.send{ display:flex; align-items:center; justify-content:center; gap:9px; width:100%; margin-top:18px;
+  background:var(--brand); color:#fff; border:none; border-radius:11px; padding:14px; font-size:16.5px;
   font-weight:700; font-family:inherit; cursor:pointer; transition:.15s; }
 .send:hover{ background:var(--brand-d); }
 .send:disabled{ opacity:.55; cursor:not-allowed; }
@@ -128,6 +129,7 @@ textarea{ resize:vertical; min-height:80px; }
             <label class="chk" id="wrapCountry" style="display:none"><input type="checkbox" id="country" /><span>Country / barrio cerrado</span></label>
             <label class="chk" id="wrapPileta" style="display:none"><input type="checkbox" id="pileta" /><span>Pileta</span></label>
           </div>
+          <span class="hint" style="display:block;margin-top:6px">Medidas mínimas de seguridad: cerraduras de seguridad y rejas en puertas y ventanas.</span>
         </div>
       </div>
 
@@ -143,15 +145,22 @@ textarea{ resize:vertical; min-height:80px; }
         </div>
 
         <div class="full sub-box" id="boxEquipos" style="display:none">
-          <label class="full"><span>Equipos electrónicos fuera del domicilio — objeto, marca y modelo <i>*</i></span>
-            <textarea id="equipos_detalle" placeholder="Ej: notebook Lenovo IdeaPad 3 / cámara de fotos Canon EOS R50"></textarea>
-            <span class="hint">Detallá qué objeto es, la marca y el modelo de cada uno.</span></label>
+          <div class="sub-box-title">Equipo electrónico que sale del domicilio</div>
+          <label class="full"><span>¿Qué objeto es? <i>*</i></span>
+            <input id="eq_objeto" placeholder="Ej: notebook, cámara de fotos, tablet, consola…" /></label>
+          <label><span>Marca <i>*</i></span><input id="eq_marca" placeholder="Ej: Lenovo" /></label>
+          <label><span>Modelo <i>*</i></span><input id="eq_modelo" placeholder="Ej: IdeaPad 3" /></label>
+          <label class="full money"><span>Valor <i>*</i></span>
+            <input id="eq_valor" inputmode="numeric" placeholder="Ej: 1200000" />
+            <span class="hint">Si tenés más de un equipo, sumalos en “Algo más que quieras aclarar”.</span></label>
         </div>
 
         <div class="full sub-box" id="boxNotebook" style="display:none">
-          <label class="full"><span>Notebook o PC en el domicilio — objeto, marca y modelo <i>*</i></span>
-            <textarea id="notebook_detalle" placeholder="Ej: notebook HP Pavilion 15 / PC de escritorio armada con monitor Samsung 24"></textarea>
-            <span class="hint">Detallá qué objeto es, la marca y el modelo de cada uno.</span></label>
+          <div class="sub-box-title">Notebook o PC que queda en el domicilio</div>
+          <label><span>Marca <i>*</i></span><input id="nb_marca" placeholder="Ej: HP" /></label>
+          <label><span>Modelo <i>*</i></span><input id="nb_modelo" placeholder="Ej: Pavilion 15" /></label>
+          <label class="full money"><span>Valor <i>*</i></span>
+            <input id="nb_valor" inputmode="numeric" placeholder="Ej: 1500000" /></label>
         </div>
 
         <div class="full sub-box" id="boxBici" style="display:none">
@@ -202,8 +211,12 @@ textarea{ resize:vertical; min-height:80px; }
   bindChk("country", "wrapCountry");
   bindChk("pileta", "wrapPileta");
   bindChk("celular", "wrapCel");
-  bindChk("equipos", "wrapEquipos", "boxEquipos", function () { $("equipos_detalle").value = ""; });
-  bindChk("notebook", "wrapNotebook", "boxNotebook", function () { $("notebook_detalle").value = ""; });
+  bindChk("equipos", "wrapEquipos", "boxEquipos", function () {
+    ["eq_objeto", "eq_marca", "eq_modelo", "eq_valor"].forEach(function (id) { $(id).value = ""; });
+  });
+  bindChk("notebook", "wrapNotebook", "boxNotebook", function () {
+    ["nb_marca", "nb_modelo", "nb_valor"].forEach(function (id) { $(id).value = ""; });
+  });
   bindChk("bici", "wrapBici", "boxBici", function () {
     $("bici_marca").value = ""; $("bici_modelo").value = ""; $("bici_valor").value = "";
   });
@@ -271,11 +284,20 @@ textarea{ resize:vertical; min-height:80px; }
     if (!metros) faltan.push("metros cuadrados");
     if (faltan.length) { showErr("Nos faltan estos datos: " + faltan.join(", ") + "."); return; }
     if (tipoVivienda === "Departamento" && !$("piso").value.trim()) { showErr("Indicanos el piso y departamento."); return; }
-    if ($("equipos").checked && !$("equipos_detalle").value.trim()) {
-      showErr("Detallá objeto, marca y modelo de los equipos electrónicos que salen del domicilio."); return;
+    if ($("equipos").checked) {
+      var faltanEq = [];
+      if (!$("eq_objeto").value.trim()) faltanEq.push("qué objeto es");
+      if (!$("eq_marca").value.trim()) faltanEq.push("marca");
+      if (!$("eq_modelo").value.trim()) faltanEq.push("modelo");
+      if (!num("eq_valor")) faltanEq.push("valor");
+      if (faltanEq.length) { showErr("Del equipo que sale del domicilio nos falta: " + faltanEq.join(", ") + "."); return; }
     }
-    if ($("notebook").checked && !$("notebook_detalle").value.trim()) {
-      showErr("Detallá objeto, marca y modelo de la notebook o PC del domicilio."); return;
+    if ($("notebook").checked) {
+      var faltanNb = [];
+      if (!$("nb_marca").value.trim()) faltanNb.push("marca");
+      if (!$("nb_modelo").value.trim()) faltanNb.push("modelo");
+      if (!num("nb_valor")) faltanNb.push("valor");
+      if (faltanNb.length) { showErr("De la notebook o PC nos falta: " + faltanNb.join(", ") + "."); return; }
     }
     if ($("bici").checked) {
       var faltanBici = [];
@@ -305,9 +327,14 @@ textarea{ resize:vertical; min-height:80px; }
         alarma: $("alarma").checked,
         medidas_seguridad: $("rejas").checked,
         equipos_fuera: $("equipos").checked,
-        equipos_fuera_detalle: $("equipos_detalle").value.trim() || null,
+        equipos_fuera_objeto: $("eq_objeto").value.trim() || null,
+        equipos_fuera_marca: $("eq_marca").value.trim() || null,
+        equipos_fuera_modelo: $("eq_modelo").value.trim() || null,
+        equipos_fuera_valor: num("eq_valor"),
         notebook_pc: $("notebook").checked,
-        notebook_pc_detalle: $("notebook_detalle").value.trim() || null,
+        notebook_pc_marca: $("nb_marca").value.trim() || null,
+        notebook_pc_modelo: $("nb_modelo").value.trim() || null,
+        notebook_pc_valor: num("nb_valor"),
         bicicleta: $("bici").checked,
         bicicleta_marca: $("bici_marca").value.trim() || null,
         bicicleta_modelo: $("bici_modelo").value.trim() || null,
