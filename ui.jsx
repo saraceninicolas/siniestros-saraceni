@@ -78,6 +78,9 @@ function RamoTag({ ramo, hecho }) {
 
 // ---------- navegación del portal (carpetas) ----------
 const PORTAL_NAV = [
+  { key: "objetivos", label: "Objetivos", icon: "target", org: true, children: [
+    { key: "obj-panel", label: "Panel de control", icon: "grid" },
+    { key: "obj-metas", label: "Metas y seguimiento", icon: "check" } ] },
   { key: "siniestros", label: "Siniestros", icon: "shield", children: [
     { key: "dashboard", label: "Panel de control", icon: "grid", count: "abiertos" },
     { key: "agenda", label: "Agenda de gestiones", icon: "agenda", count: "porVencer" },
@@ -85,7 +88,7 @@ const PORTAL_NAV = [
   { key: "facturacion", label: "Facturación", icon: "doc", org: true, children: [
     { key: "fact-comprobantes", label: "Comprobantes", icon: "doc" },
     { key: "fact-reportes", label: "Reportes", icon: "grid" } ] },
-  { key: "comercial", label: "Comercial", icon: "target", children: [
+  { key: "comercial", label: "Comercial", icon: "store", children: [
     { key: "com-panel", label: "Panel de control", icon: "grid" },
     { key: "com-cotizaciones", label: "Cotizaciones de hogar", icon: "home", count: "cotNuevas" } ] },
   { key: "renovaciones", label: "Renovaciones", icon: "refresh", children: [
@@ -94,9 +97,6 @@ const PORTAL_NAV = [
   { key: "pendientes", label: "Pendientes", icon: "flag", children: [
     { key: "pend-panel", label: "Panel de control", icon: "grid" },
     { key: "pend-agenda", label: "Agenda por vencimiento", icon: "agenda" } ] },
-  { key: "objetivos", label: "Objetivos", icon: "target", org: true, children: [
-    { key: "obj-panel", label: "Panel de control", icon: "grid" },
-    { key: "obj-metas", label: "Metas y seguimiento", icon: "check" } ] },
   { key: "admin", label: "Administración", icon: "user", org: true, children: [
     { key: "usuarios", label: "Usuarios y roles", icon: "user", count: "usuariosPend" } ] },
 ];

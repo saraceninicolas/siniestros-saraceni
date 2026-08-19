@@ -86,7 +86,7 @@ function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs, onTermina
   // gestión rápida (sin abrir el editor)
   const hoyISO = () => new Date().toISOString().slice(0, 10);
   const [qg, setQg] = React.useState({ fecha: hoyISO(), texto: "" });
-  const [histDesc, setHistDesc] = React.useState(false);
+  const [histDesc, setHistDesc] = React.useState(true); // por defecto, la última gestión arriba
   const addQuick = () => {
     const texto = qg.texto.trim();
     if (!texto || !onQuickGestion) return;
