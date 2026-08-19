@@ -352,7 +352,7 @@ function ClaimsTable({ rows, selectedId, onSelect, onOpen, multi, onClientFilter
                 <td><RamoTag ramo={r.ramo} hecho={r.hecho} /></td>
                 <td>
                   <Badge estado={r.estado} />
-                  {dias != null && <div className="cell-sub">{dias === 0 ? "hoy" : dias + " d activo"}</div>}
+                  {dias != null && <div className="cell-sub">{dias === 0 ? "hoy" : dias + " d hábiles"}</div>}
                 </td>
                 <td>
                   <div className="mono cell-id">{r.nroSiniestro}</div>
