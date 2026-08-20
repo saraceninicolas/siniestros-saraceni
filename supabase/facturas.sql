@@ -50,5 +50,9 @@ create policy "fact_mensual_org_all" on public.fact_mensual
 
 -- Realtime en ambas tablas.
 --
--- DATOS: se importaron 12 compañías y 185 movimientos (ene-2025 a jun-2026)
--- desde FACTURACION.xlsx. La tabla vieja `facturas` quedó sin uso.
+-- DATOS: 11 compañías y 197 movimientos (ene-2025 a ago-2026) importados de
+-- 'FACTURACION (1).xlsx'. Zurich se quitó a pedido. OJO al releer ese Excel:
+-- las hojas de 2025 y ene-26 tienen el encabezado en la fila 4 y los datos
+-- desde la 5, pero de feb-26 en adelante el encabezado está en la fila 3 y los
+-- datos arrancan en la 4 — hay que detectar la fila de 'FECHA', no asumirla.
+-- La tabla vieja `facturas` quedó sin uso.
