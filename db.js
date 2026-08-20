@@ -226,85 +226,93 @@ async function dbMaxN() {
   if (error) throw error;
   return data && data.length ? data[0].n : 0;
 }
-  // ============================ FACTURAS ============================
-  const numOrNull = (v) => {
-    if (v === "" || v === null || v === undefined) return null;
-    const n = Number(String(v).replace(",", "."));
-    return isNaN(n) ? null : n;
-  };
-  function fromRowF(r) {
+  // ============================ FACTURACIÓN ============================
+  // Modelo en dos partes: `fact_companias` guarda lo que nunca cambia (razón
+  // social, CUIT, tipo, envío) y `fact_mensual` solo los importes de cada mes.
+  function fromRowFC(r) {
     return {
-      _dbId: r.id, id: r.codigo, n: r.n,
-      fechaEmision: r.fecha_emision || "",
-      nroFactura: r.nro_factura || "",
-      tipo: r.tipo || "",
-      cuit: r.cuit || "",
-      razonSocial: r.razon_social || "",
-      neto: r.neto_gravado, iva: r.iva, total: r.total,
-      mailEnvio: r.mail_envio || "",
-      estadoEnvio: r.estado_envio || "",
-      montoPagado: r.monto_pagado,
-      estadoPago: r.estado_pago || "",
-      banco: r.banco || "",
+      id: r.id, razonSocial: r.razon_social || "", cuit: r.cuit || "",
+      tipo: r.tipo || "", envio: r.envio || "", banco: r.banco || "",
+      notas: r.notas || "", activa: r.activa !== false, orden: r.orden || 0,
+    };
+  }
+  function toRowFC(it) {
+    return {
+      razon_social: it.razonSocial, cuit: it.cuit,
+      tipo: orNull(it.tipo), envio: orNull(it.envio), banco: orNull(it.banco),
+      notas: orNull(it.notas), activa: it.activa !== false,
+      orden: Number(it.orden) || 0,
+    };
+  }
+  function fromRowFM(r) {
+    return {
+      _dbId: r.id, companiaId: r.compania_id, anio: r.anio, mes: r.mes,
+      fecha: r.fecha || "", nroFactura: r.nro_factura || "",
+      neto: r.neto, iva: r.iva, total: r.total,
+      enviado: !!r.enviado, pago: r.pago,
       observaciones: r.observaciones || "",
-      mes: r.mes, anio: r.anio,
       ultimaModPor: r.ultima_mod_por || "",
-      ultimaModFecha: r.ultima_mod_fecha || new Date().toISOString(),
-      eliminado: !!r.eliminado,
     };
   }
-  function toRowF(it) {
+  function toRowFM(it) {
     return {
-      codigo: it.id, n: it.n,
-      fecha_emision: orNull(it.fechaEmision),
-      nro_factura: orNull(it.nroFactura),
-      tipo: orNull(it.tipo),
-      cuit: orNull(it.cuit),
-      razon_social: it.razonSocial,
-      neto_gravado: numOrNull(it.neto),
-      iva: numOrNull(it.iva),
-      total: numOrNull(it.total),
-      mail_envio: orNull(it.mailEnvio),
-      estado_envio: orNull(it.estadoEnvio),
-      monto_pagado: numOrNull(it.montoPagado),
-      estado_pago: orNull(it.estadoPago),
-      banco: orNull(it.banco),
+      compania_id: it.companiaId, anio: Number(it.anio), mes: Number(it.mes),
+      fecha: orNull(it.fecha), nro_factura: orNull(it.nroFactura),
+      neto: numOrNull(it.neto), iva: numOrNull(it.iva), total: numOrNull(it.total),
+      enviado: !!it.enviado, pago: numOrNull(it.pago),
       observaciones: orNull(it.observaciones),
-      mes: it.mes, anio: it.anio,
       ultima_mod_por: orNull(it.ultimaModPor),
-      ultima_mod_fecha: it.ultimaModFecha || new Date().toISOString(),
-      eliminado: !!it.eliminado,
+      ultima_mod_fecha: new Date().toISOString(),
     };
   }
-  async function factList() {
+  // --- compañías (datos fijos) ---
+  async function fcList() {
     const c = client(); if (!c) throw new Error("Supabase no configurado");
-    const { data, error } = await c.from("facturas").select("*").eq("eliminado", false).order("n", { ascending: true });
-    if (error) throw error; return (data || []).map(fromRowF);
+    const { data, error } = await c.from("fact_companias").select("*").order("orden", { ascending: true });
+    if (error) throw error; return (data || []).map(fromRowFC);
   }
-  async function factCreate(item) {
+  async function fcCreate(it) {
     const c = client(); if (!c) throw new Error("Supabase no configurado");
-    const { data, error } = await c.from("facturas").insert(toRowF(item)).select().single();
-    if (error) throw error; return fromRowF(data);
+    const { data, error } = await c.from("fact_companias").insert(toRowFC(it)).select().single();
+    if (error) throw error; return fromRowFC(data);
   }
-  async function factUpdate(item) {
+  async function fcUpdate(it) {
     const c = client(); if (!c) throw new Error("Supabase no configurado");
-    const { data, error } = await c.from("facturas").update(toRowF(item)).eq("id", item._dbId).select().single();
-    if (error) throw error; return fromRowF(data);
+    const { data, error } = await c.from("fact_companias").update(toRowFC(it)).eq("id", it.id).select().single();
+    if (error) throw error; return fromRowFC(data);
   }
-  async function factRemove(item) {
+  async function fcRemove(it) {
     const c = client(); if (!c) throw new Error("Supabase no configurado");
-    const { error } = await c.from("facturas").update({ eliminado: true, ultima_mod_por: orNull(item.ultimaModPor), ultima_mod_fecha: new Date().toISOString() }).eq("id", item._dbId);
+    const { error } = await c.from("fact_companias").delete().eq("id", it.id);
     if (error) throw error;
   }
-  async function factMaxN() {
-    const c = client(); if (!c) return 0;
-    const { data, error } = await c.from("facturas").select("n").order("n", { ascending: false }).limit(1);
-    if (error) throw error; return data && data.length ? data[0].n : 0;
+  // --- movimientos mensuales (datos variables) ---
+  // Sin filtro trae todo (para las estadísticas anuales); con año, solo ese año.
+  async function fmList(anio) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    let q = c.from("fact_mensual").select("*");
+    if (anio) q = q.eq("anio", anio);
+    const { data, error } = await q.order("anio").order("mes");
+    if (error) throw error; return (data || []).map(fromRowFM);
   }
-  function factSubscribe(onChange) {
+  // Alta o actualización de la fila del mes de una compañía (una sola por período)
+  async function fmSave(it) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("fact_mensual")
+      .upsert(toRowFM(it), { onConflict: "compania_id,anio,mes" })
+      .select().single();
+    if (error) throw error; return fromRowFM(data);
+  }
+  async function fmRemove(it) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { error } = await c.from("fact_mensual").delete().eq("id", it._dbId);
+    if (error) throw error;
+  }
+  function fmSubscribe(onChange) {
     const c = client(); if (!c) return null;
-    const ch = c.channel("facturas-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "facturas" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
+    const ch = c.channel("fact-realtime-" + Math.random().toString(36).slice(2, 8))
+      .on("postgres_changes", { event: "*", schema: "public", table: "fact_mensual" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
+      .on("postgres_changes", { event: "*", schema: "public", table: "fact_companias" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
       .subscribe();
     return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
   }
@@ -686,8 +694,11 @@ async function dbMaxN() {
     perfiles: { me: perfMe, list: perfList, update: perfUpdate, subscribe: perfSubscribe },
     notif: { list: notifList, markRead: notifMarkRead, markAll: notifMarkAll, subscribe: notifSubscribe },
     fact: {
-      list: factList, create: factCreate, update: factUpdate,
-      remove: factRemove, maxN: factMaxN, subscribe: factSubscribe,
+      // datos fijos de cada compañía
+      companias: { list: fcList, create: fcCreate, update: fcUpdate, remove: fcRemove },
+      // importes de cada mes
+      mensual: { list: fmList, save: fmSave, remove: fmRemove },
+      subscribe: fmSubscribe,
     },
     renov: {
       list: renovList, create: renovCreate, update: renovUpdate,

@@ -86,8 +86,9 @@ const PORTAL_NAV = [
     { key: "agenda", label: "Agenda de gestiones", icon: "agenda", count: "porVencer" },
     { key: "solicitudes", label: "Solicitudes recibidas", icon: "mail", count: "solicitudes" } ] },
   { key: "facturacion", label: "Facturación", icon: "doc", org: true, children: [
-    { key: "fact-comprobantes", label: "Comprobantes", icon: "doc" },
-    { key: "fact-reportes", label: "Reportes", icon: "grid" } ] },
+    { key: "fact-carga", label: "Carga mensual", icon: "edit" },
+    { key: "fact-crecimiento", label: "Crecimiento anual", icon: "target" },
+    { key: "fact-companias", label: "Compañías", icon: "folder" } ] },
   { key: "comercial", label: "Comercial", icon: "store", children: [
     { key: "com-panel", label: "Panel de control", icon: "grid" },
     { key: "com-cotizaciones", label: "Cotizaciones de hogar", icon: "home", count: "cotNuevas" } ] },
@@ -103,7 +104,7 @@ const PORTAL_NAV = [
 const NAV_LOOKUP = {};
 PORTAL_NAV.forEach((g) => g.children.forEach((c) => { NAV_LOOKUP[c.key] = { section: g.label, sectionKey: g.key, title: c.label }; }));
 const SINIESTROS_KEYS = ["dashboard", "agenda", "solicitudes"];
-const FACTURACION_KEYS = ["fact-comprobantes", "fact-reportes"];
+const FACTURACION_KEYS = ["fact-carga", "fact-crecimiento", "fact-companias"];
 const COMERCIAL_KEYS = ["com-panel", "com-cotizaciones"];
 const RENOVACION_KEYS = ["renov-proximas", "renov-historial"];
 const PENDIENTES_KEYS = ["pend-panel", "pend-agenda"];
