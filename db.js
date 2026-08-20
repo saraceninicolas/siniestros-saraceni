@@ -71,6 +71,12 @@
 
   // ---- mapeo item (app) -> fila (DB) para insert/update ----
   const orNull = (v) => (v === "" || v === undefined ? null : v);
+  // Convierte a número lo que viene de un input; texto no numérico queda en null.
+  const numOrNull = (v) => {
+    if (v === "" || v === null || v === undefined) return null;
+    const n = Number(String(v).replace(",", "."));
+    return isNaN(n) ? null : n;
+  };
   function toRow(it) {
     return {
       codigo: it.id,
