@@ -94,7 +94,10 @@ function SolCard({ s, onConvertir, onDescartar, onReabrir }) {
                 {isImg && url
                   ? <img className="adj-thumb" src={url} alt={a.name} />
                   : <span className="adj-thumb adj-thumb-file"><Ico name="doc" size={24} /></span>}
-                <span className="adj-card-name" title={a.name}>{a.name}</span>
+                {/* si vino de un marco, mostramos qué foto es en vez del nombre del archivo */}
+                <span className="adj-card-name" title={a.etiqueta ? a.etiqueta + " — " + a.name : a.name}>
+                  {a.etiqueta || a.name}
+                </span>
               </a>
             );
           })}
