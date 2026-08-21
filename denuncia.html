@@ -225,7 +225,6 @@ textarea{ resize:vertical; min-height:110px; }
     renderMarcos();   // las fotos que pedimos dependen del ramo
   }
   $("ramo").addEventListener("change", updateRamoUI);
-  updateRamoUI();
 
   // ---- marcos de fotos: una casilla por cada foto que pedimos ----
   // Cambian según el ramo: para auto pedimos la documentación del asegurado y
@@ -318,6 +317,9 @@ textarea{ resize:vertical; min-height:110px; }
     renderFiles();
   }
   $("files").addEventListener("change", addPicked);
+
+  // Estado inicial: se llama recién acá porque necesita los marcos ya definidos.
+  updateRamoUI();
 
   // ¿Hay lesionados? (SÍ / NO, con destoque)
   var lesionados = null;
