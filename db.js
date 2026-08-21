@@ -508,6 +508,7 @@ async function dbMaxN() {
       ref: r.ref || "", nombre: r.nombre || "",
       dniCuit: r.dni_cuit || "", telefono: r.telefono || "", email: r.email || "",
       cia: r.cia || "", poliza: r.poliza || "", dominio: r.dominio || "", ramo: r.ramo || "",
+      tipoSiniestro: r.tipo_siniestro || "",
       terceroNombre: r.tercero_nombre || "", terceroDni: r.tercero_dni || "", terceroCelular: r.tercero_celular || "",
       terceroDominio: r.tercero_dominio || "", terceroCia: r.tercero_cia || "", terceroPoliza: r.tercero_poliza || "",
       fechaHecho: r.fecha_hecho || "", horaHecho: r.hora_hecho || "",

@@ -96,6 +96,7 @@ textarea{ resize:vertical; min-height:110px; }
 .marco-quitar:hover{ background:var(--brand); }
 .marco input[type=file]{ display:none; }
 .marcos-tit{ font-size:13.5px; font-weight:700; color:var(--ink-2); margin:2px 0 6px; }
+.hint{ font-size:12.5px; color:var(--muted); line-height:1.4; margin-top:1px; }
 .marcos-tit span{ font-weight:500; color:var(--muted); font-size:12.5px; }
 @media (max-width:460px){ .marcos{ grid-template-columns:1fr; } }
 
@@ -121,6 +122,11 @@ textarea{ resize:vertical; min-height:110px; }
             <option value="ICO">Int. Comercio</option>
             <option value="INT_CONSORCIO">Int. Consorcio</option>
           </select></label>
+        <label class="full" id="campoTipo" style="display:none"><span>¿Qué pasó? <i>*</i></span>
+          <select id="tipo">
+            <option value="" disabled selected>Seleccioná…</option>
+          </select>
+          <span class="hint">Según lo que elijas te vamos a pedir las fotos que corresponden.</span></label>
       </div>
 
       <div class="sect">Tus datos</div>
@@ -222,27 +228,85 @@ textarea{ resize:vertical; min-height:110px; }
       ["t_nombre", "t_dni", "t_cel", "t_dominio", "t_cia", "t_poliza"].forEach(function (id) { $(id).value = ""; });
     }
     ["reqUbicacion", "reqLocalidad"].forEach(function (id) { $(id).style.display = esAuto ? "inline" : "none"; });
-    renderMarcos();   // las fotos que pedimos dependen del ramo
+    renderTipos();     // los tipos de siniestro dependen del ramo
+    renderMarcos();    // y las fotos, del tipo elegido
   }
   $("ramo").addEventListener("change", updateRamoUI);
 
   // ---- marcos de fotos: una casilla por cada foto que pedimos ----
   // Cambian según el ramo: para auto pedimos la documentación del asegurado y
   // la del tercero; para los demás, los daños y la documentación del bien.
-  var MARCOS_AUTO = [
-    { id: "reg_aseg",  txt: "Registro del conductor", sub: "Asegurado" },
-    { id: "ced_aseg",  txt: "Cédula verde",           sub: "Asegurado" },
-    { id: "dan_aseg",  txt: "Daños con patente visible", sub: "Asegurado" },
-    { id: "reg_terc",  txt: "Registro del conductor", sub: "Tercero" },
-    { id: "ced_terc",  txt: "Cédula verde",           sub: "Tercero" },
-    { id: "dan_terc",  txt: "Daños con patente visible", sub: "Tercero" },
-  ];
-  var MARCOS_GRAL = [
-    { id: "danios1", txt: "Daños", sub: "Vista general" },
-    { id: "danios2", txt: "Daños", sub: "Detalle de cerca" },
-    { id: "bien",    txt: "Bien afectado", sub: "Factura o documentación" },
-    { id: "dni",     txt: "DNI del asegurado", sub: "" },
-  ];
+  // Catálogo de tipos de siniestro por ramo. Cada uno define qué fotos pedimos.
+  var TIPOS = {
+    AUTO: [
+      { id: "CHOQUE", txt: "Choque / daños con otro vehículo", marcos: [
+        { id: "reg_aseg", txt: "Registro del conductor", sub: "Asegurado" },
+        { id: "ced_aseg", txt: "Cédula verde", sub: "Asegurado" },
+        { id: "dan_aseg", txt: "Daños con patente visible", sub: "Asegurado" },
+        { id: "reg_terc", txt: "Registro del conductor", sub: "Tercero" },
+        { id: "ced_terc", txt: "Cédula verde", sub: "Tercero" },
+        { id: "dan_terc", txt: "Daños con patente visible", sub: "Tercero" } ] },
+      { id: "DANIO_PROPIO", txt: "Daño propio (sin terceros)", marcos: [
+        { id: "dan_gral", txt: "Daños", sub: "Vista general con patente" },
+        { id: "dan_det",  txt: "Daños", sub: "Detalle de cerca" },
+        { id: "ced_aseg", txt: "Cédula verde", sub: "" },
+        { id: "reg_aseg", txt: "Registro del conductor", sub: "" } ] },
+      { id: "CRISTALES", txt: "Cristales (parabrisas, luneta, ventanilla)", marcos: [
+        { id: "cristal",  txt: "Cristal dañado", sub: "De cerca, se vea el daño" },
+        { id: "cristal2", txt: "Cristal dañado", sub: "Desde adentro del auto" },
+        { id: "veh_pat",  txt: "Vehículo completo", sub: "Se vea la patente" },
+        { id: "ced_aseg", txt: "Cédula verde", sub: "" } ] },
+      { id: "ROBO_RUEDAS", txt: "Robo de ruedas", marcos: [
+        { id: "denuncia", txt: "Denuncia policial", sub: "Foto o PDF" },
+        { id: "rueda_ok", txt: "Una rueda colocada", sub: "Se vea rodado y marca" },
+        { id: "sin_rueda", txt: "Auto como quedó", sub: "Sin la rueda robada" },
+        { id: "ced_aseg", txt: "Cédula verde", sub: "" } ] },
+      { id: "ROBO_TOTAL", txt: "Robo total del vehículo", marcos: [
+        { id: "denuncia", txt: "Denuncia policial", sub: "Foto o PDF" },
+        { id: "ced_aseg", txt: "Cédula verde", sub: "" },
+        { id: "reg_aseg", txt: "Registro del conductor", sub: "" },
+        { id: "llaves",   txt: "Llaves del vehículo", sub: "Todos los juegos" } ] },
+      { id: "GRANIZO", txt: "Granizo", marcos: [
+        { id: "gr_techo", txt: "Daños en el techo", sub: "" },
+        { id: "gr_capot", txt: "Daños en el capot", sub: "" },
+        { id: "veh_pat",  txt: "Vehículo completo", sub: "Se vea la patente" },
+        { id: "ced_aseg", txt: "Cédula verde", sub: "" } ] },
+      { id: "INCENDIO", txt: "Incendio", marcos: [
+        { id: "inc_gral", txt: "Daños", sub: "Vista general" },
+        { id: "inc_det",  txt: "Daños", sub: "Detalle del foco" },
+        { id: "denuncia", txt: "Denuncia policial o de bomberos", sub: "" },
+        { id: "ced_aseg", txt: "Cédula verde", sub: "" } ] },
+    ],
+    HOGAR: [
+      { id: "ROBO", txt: "Robo", marcos: [
+        { id: "denuncia", txt: "Denuncia policial", sub: "Foto o PDF" },
+        { id: "acceso",   txt: "Por dónde entraron", sub: "Puerta o ventana forzada" },
+        { id: "lugar",    txt: "Lugar del hecho", sub: "Vista general" },
+        { id: "compro",   txt: "Comprobantes", sub: "De lo sustraído" } ] },
+      { id: "INCENDIO", txt: "Incendio", marcos: [
+        { id: "inc_gral", txt: "Daños", sub: "Vista general" },
+        { id: "inc_det",  txt: "Daños", sub: "Detalle del foco" },
+        { id: "denuncia", txt: "Informe de bomberos", sub: "Si lo hubiera" } ] },
+      { id: "AGUA", txt: "Daños por agua", marcos: [
+        { id: "origen",  txt: "De dónde viene la pérdida", sub: "" },
+        { id: "danios1", txt: "Daños causados", sub: "Vista general" },
+        { id: "danios2", txt: "Daños causados", sub: "Detalle de cerca" } ] },
+      { id: "ELECTRICO", txt: "Daños eléctricos", marcos: [
+        { id: "artefacto", txt: "Artefacto dañado", sub: "" },
+        { id: "chapa",     txt: "Chapa del artefacto", sub: "Marca, modelo y n° de serie" },
+        { id: "factura",   txt: "Factura de compra", sub: "Si la tenés" } ] },
+      { id: "CRISTALES", txt: "Cristales", marcos: [
+        { id: "cristal", txt: "Cristal roto", sub: "De cerca" },
+        { id: "ambiente", txt: "Ambiente", sub: "Se vea dónde está el cristal" } ] },
+      { id: "RC", txt: "Daños a terceros", marcos: [
+        { id: "dan_terc", txt: "Daños causados al tercero", sub: "" },
+        { id: "lugar",    txt: "Lugar del hecho", sub: "Vista general" } ] },
+    ],
+  };
+  // Comercio y consorcio comparten el catálogo de hogar
+  TIPOS.ICO = TIPOS.HOGAR;
+  TIPOS.INT_CONSORCIO = TIPOS.HOGAR;
+
   var fotos = {};   // { idMarco: File }
 
   var ICONO_CAMARA =
@@ -251,7 +315,34 @@ textarea{ resize:vertical; min-height:110px; }
     '<path d="M3 8a2 2 0 0 1 2-2h2.5l1.2-2h6.6l1.2 2H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>' +
     '<circle cx="12" cy="12.5" r="3.4"/></svg>';
 
-  function marcosDelRamo() { return $("ramo").value === "AUTO" ? MARCOS_AUTO : MARCOS_GRAL; }
+  function tiposDelRamo() { return TIPOS[$("ramo").value] || []; }
+  function tipoElegido() {
+    var t = $("tipo").value;
+    return tiposDelRamo().filter(function (x) { return x.id === t; })[0] || null;
+  }
+  // Los marcos salen del tipo de siniestro; sin tipo elegido, no hay fotos que pedir.
+  function marcosDelRamo() {
+    var t = tipoElegido();
+    return t ? t.marcos : [];
+  }
+  // Al cambiar de ramo se recarga la lista de tipos
+  function renderTipos() {
+    var sel = $("tipo"), tipos = tiposDelRamo(), previo = sel.value;
+    sel.innerHTML = "";
+    var op0 = document.createElement("option");
+    op0.value = ""; op0.disabled = true; op0.selected = true; op0.textContent = "Seleccioná…";
+    sel.appendChild(op0);
+    tipos.forEach(function (t) {
+      var o = document.createElement("option");
+      o.value = t.id; o.textContent = t.txt;
+      sel.appendChild(o);
+    });
+    // si el tipo anterior existe en el ramo nuevo lo conservamos
+    if (previo && tipos.some(function (t) { return t.id === previo; })) sel.value = previo;
+    else fotos = {};   // cambió el set de fotos: arrancamos limpio
+    $("campoTipo").style.display = tipos.length ? "" : "none";
+  }
+  $("tipo").addEventListener("change", function () { fotos = {}; renderMarcos(); });
 
   function renderMarcos() {
     var cont = $("marcos");
@@ -301,8 +392,13 @@ textarea{ resize:vertical; min-height:110px; }
       }
       cont.appendChild(lbl);
     });
-    var puestas = marcosDelRamo().filter(function (m) { return !!fotos[m.id]; }).length;
-    $("marcosTit").innerHTML = "Fotos que necesitamos <span>(" + puestas + " de " + marcosDelRamo().length + ")</span>";
+    var lista = marcosDelRamo();
+    if (!lista.length) {
+      $("marcosTit").innerHTML = "Fotos que necesitamos <span>(elegí primero qué pasó)</span>";
+      return;
+    }
+    var puestas = lista.filter(function (m) { return !!fotos[m.id]; }).length;
+    $("marcosTit").innerHTML = "Fotos que necesitamos <span>(" + puestas + " de " + lista.length + ")</span>";
   }
 
   // "Otros archivos": lo que no entra en ningún marco
@@ -363,6 +459,7 @@ textarea{ resize:vertical; min-height:110px; }
     var ramo = $("ramo").value;
     if (!nombre || !fecha || !relato) { showErr("Completá los campos obligatorios: nombre, fecha del hecho y el relato."); return; }
     if (!ramo) { showErr("Seleccioná el ramo del siniestro."); return; }
+    if (!$("tipo").value) { showErr("Contanos qué pasó para saber qué fotos pedirte."); return; }
     if (fecha > todayISO()) { showErr("La fecha del hecho no puede ser posterior al día de hoy."); return; }
     if (ramo === "AUTO") {
       var faltan = [];
@@ -400,6 +497,7 @@ textarea{ resize:vertical; min-height:110px; }
         poliza: $("poliza").value.trim() || null,
         dominio: $("dominio").value.trim().toUpperCase() || null,
         ramo: ramo || null,
+        tipo_siniestro: $("tipo").value || null,
         tercero_nombre: $("t_nombre").value.trim() || null,
         tercero_dni: $("t_dni").value.trim() || null,
         tercero_celular: $("t_cel").value.trim() || null,

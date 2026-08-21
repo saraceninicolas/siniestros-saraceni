@@ -305,6 +305,8 @@ function App() {
       referencia: "Denuncia web",
       ...(cia ? { cia } : {}),
       ...(s.ramo ? { ramo: s.ramo } : {}),
+      // "qué pasó" del formulario público se traduce al hecho que usa el portal
+      ...(s.tipoSiniestro && TIPO_SOL_HECHO[s.tipoSiniestro] ? { hecho: TIPO_SOL_HECHO[s.tipoSiniestro] } : {}),
     };
     setModal({ type: "new", prefill, solicitudId: s._dbId });
   };
