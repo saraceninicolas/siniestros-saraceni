@@ -78,29 +78,34 @@ function RamoTag({ ramo, hecho }) {
 
 // ---------- navegación del portal (carpetas) ----------
 const PORTAL_NAV = [
+  { key: "objetivos", label: "Objetivos", icon: "target", org: true, children: [
+    { key: "obj-panel", label: "Panel de control", icon: "grid" },
+    { key: "obj-metas", label: "Metas y seguimiento", icon: "check" } ] },
   { key: "siniestros", label: "Siniestros", icon: "shield", children: [
     { key: "dashboard", label: "Panel de control", icon: "grid", count: "abiertos" },
     { key: "agenda", label: "Agenda de gestiones", icon: "agenda", count: "porVencer" },
     { key: "solicitudes", label: "Solicitudes recibidas", icon: "mail", count: "solicitudes" } ] },
   { key: "facturacion", label: "Facturación", icon: "doc", org: true, children: [
-    { key: "fact-comprobantes", label: "Comprobantes", icon: "doc" },
-    { key: "fact-reportes", label: "Reportes", icon: "grid" } ] },
+    { key: "fact-carga", label: "Carga mensual", icon: "edit" },
+    { key: "fact-crecimiento", label: "Crecimiento anual", icon: "target" },
+    { key: "fact-companias", label: "Compañías", icon: "folder" } ] },
+  { key: "comercial", label: "Comercial", icon: "store", children: [
+    { key: "com-panel", label: "Panel de control", icon: "grid" },
+    { key: "com-cotizaciones", label: "Cotizaciones de hogar", icon: "home", count: "cotNuevas" } ] },
   { key: "renovaciones", label: "Renovaciones", icon: "refresh", children: [
     { key: "renov-proximas", label: "Próximas a vencer", icon: "clock" },
     { key: "renov-historial", label: "Historial", icon: "agenda" } ] },
   { key: "pendientes", label: "Pendientes", icon: "flag", children: [
     { key: "pend-panel", label: "Panel de control", icon: "grid" },
     { key: "pend-agenda", label: "Agenda por vencimiento", icon: "agenda" } ] },
-  { key: "objetivos", label: "Objetivos", icon: "target", org: true, children: [
-    { key: "obj-panel", label: "Panel de control", icon: "grid" },
-    { key: "obj-metas", label: "Metas y seguimiento", icon: "check" } ] },
   { key: "admin", label: "Administración", icon: "user", org: true, children: [
     { key: "usuarios", label: "Usuarios y roles", icon: "user", count: "usuariosPend" } ] },
 ];
 const NAV_LOOKUP = {};
 PORTAL_NAV.forEach((g) => g.children.forEach((c) => { NAV_LOOKUP[c.key] = { section: g.label, sectionKey: g.key, title: c.label }; }));
 const SINIESTROS_KEYS = ["dashboard", "agenda", "solicitudes"];
-const FACTURACION_KEYS = ["fact-comprobantes", "fact-reportes"];
+const FACTURACION_KEYS = ["fact-carga", "fact-crecimiento", "fact-companias"];
+const COMERCIAL_KEYS = ["com-panel", "com-cotizaciones"];
 const RENOVACION_KEYS = ["renov-proximas", "renov-historial"];
 const PENDIENTES_KEYS = ["pend-panel", "pend-agenda"];
 const OBJETIVOS_KEYS = ["obj-panel", "obj-metas"];
@@ -348,7 +353,7 @@ function ClaimsTable({ rows, selectedId, onSelect, onOpen, multi, onClientFilter
                 <td><RamoTag ramo={r.ramo} hecho={r.hecho} /></td>
                 <td>
                   <Badge estado={r.estado} />
-                  {dias != null && <div className="cell-sub">{dias === 0 ? "hoy" : dias + " d activo"}</div>}
+                  {dias != null && <div className="cell-sub">{dias === 0 ? "hoy" : dias + " d hábiles"}</div>}
                 </td>
                 <td>
                   <div className="mono cell-id">{r.nroSiniestro}</div>
@@ -467,6 +472,6 @@ function ModuleScreen({ info }) {
 
 Object.assign(window, {
   Ico, Icons, Badge, UrgBadge, RamoTag, Sidebar, Topbar, Kpis, Toolbar, ClaimsTable, Agenda,
-  ModuleScreen, PORTAL_NAV, NAV_LOOKUP, SINIESTROS_KEYS, FACTURACION_KEYS, RENOVACION_KEYS,
+  ModuleScreen, PORTAL_NAV, NAV_LOOKUP, SINIESTROS_KEYS, FACTURACION_KEYS, RENOVACION_KEYS, COMERCIAL_KEYS,
   PENDIENTES_KEYS, OBJETIVOS_KEYS, ADMIN_KEYS, ORG_ONLY_KEYS,
 });

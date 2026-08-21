@@ -101,7 +101,7 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit, usuarios })
     setEditIdx(null);
   };
   // orden de visualización del historial (asc = más vieja primero)
-  const [histDesc, setHistDesc] = React.useState(false);
+  const [histDesc, setHistDesc] = React.useState(true); // por defecto, la última gestión arriba
   // Aviso de cambios sin guardar al cerrar (scrim, X, Escape o Cancelar)
   const snap0 = React.useRef(null);
   if (snap0.current === null) snap0.current = JSON.stringify(f);

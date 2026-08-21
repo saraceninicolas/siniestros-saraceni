@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cotizar seguro de hogar · Saraceni Seguros</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+:root{ --brand:#DD0909; --brand-d:#bb0707; --bg:#F5F6F8; --surface:#fff; --surface-2:#FBFBFC;
+  --ink:#191C22; --ink-2:#5A6271; --muted:#8B93A1; --line:#E7E9ED; --line-2:#EFF1F4; }
+*{ box-sizing:border-box; }
+body{ margin:0; font-family:"Public Sans",system-ui,sans-serif; font-size:17px; background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; }
+.wrap{ max-width:640px; margin:0 auto; padding:20px 16px 44px; }
+.card{ background:var(--surface); border:1px solid var(--line); border-radius:16px; overflow:hidden;
+  box-shadow:0 4px 16px rgba(16,20,28,.08); }
+.card::before{ content:""; display:block; height:5px; background:var(--brand); }
+.head{ padding:20px 26px 4px; text-align:center; }
+.logo{ display:inline-block; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 16px; }
+.logo img{ display:block; max-width:200px; height:auto; }
+h1{ font-size:22px; margin:14px 0 5px; letter-spacing:-.01em; }
+.sub{ color:var(--ink-2); font-size:14px; margin:0 auto 4px; max-width:460px; line-height:1.45; }
+form{ padding:12px 26px 24px; }
+.sect{ font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--brand);
+  margin:16px 0 9px; padding-bottom:5px; border-bottom:1px solid var(--line-2); }
+.sect .opt{ color:var(--muted); font-weight:600; text-transform:none; letter-spacing:0; font-size:12.5px; }
+.grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; }
+.full{ grid-column:1/-1; }
+label{ display:flex; flex-direction:column; gap:4px; }
+label span{ font-size:13px; font-weight:600; color:var(--ink-2); }
+label span i{ color:var(--brand); font-style:normal; }
+input,select,textarea{ border:1px solid var(--line); border-radius:9px; padding:9px 12px; font-size:16px;
+  font-family:inherit; color:var(--ink); background:#fff; outline:none; width:100%; transition:.15s; }
+input:focus,select:focus,textarea:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(221,9,9,.09); }
+textarea{ resize:vertical; min-height:62px; }
+.hp{ position:absolute; left:-9999px; top:-9999px; height:1px; width:1px; overflow:hidden; }
+.hint{ font-size:12px; color:var(--muted); margin-top:-1px; line-height:1.35; }
+.sino-label{ display:block; font-size:13px; font-weight:600; color:var(--ink-2); margin-bottom:5px; }
+/* ---- casillas a tildar (compactas) ---- */
+.chk-group{ display:flex; flex-wrap:wrap; gap:7px; }
+.chk{ display:inline-flex; align-items:center; gap:7px; flex-direction:row;
+  border:1.5px solid var(--line); border-radius:8px; padding:7px 11px; background:#fff;
+  font-size:14px; font-weight:600; color:var(--ink-2); cursor:pointer; transition:.14s; user-select:none; }
+.chk:hover{ border-color:#d3d7dd; }
+.chk.on{ border-color:var(--brand); color:var(--brand); background:#fdf3f3; }
+.chk input{ width:16px; height:16px; margin:0; accent-color:var(--brand); cursor:pointer; flex:none; }
+.chk span{ font-size:14px; font-weight:600; color:inherit; }
+/* ---- elección casa / departamento ---- */
+.radio-group{ display:flex; gap:7px; flex-wrap:wrap; }
+.radio-opt{ display:inline-flex; align-items:center; gap:7px; flex-direction:row;
+  border:1.5px solid var(--line); border-radius:8px; padding:7px 13px; background:#fff;
+  font-size:14px; font-weight:600; color:var(--ink-2); cursor:pointer; transition:.14s; user-select:none; }
+.radio-opt:hover{ border-color:#d3d7dd; }
+.radio-opt.on{ border-color:var(--brand); color:var(--brand); background:#fdf3f3; }
+.radio-opt input{ width:16px; height:16px; margin:0; accent-color:var(--brand); cursor:pointer; flex:none; }
+.radio-opt span{ font-size:14px; font-weight:600; color:inherit; }
+/* ---- bloque que se despliega al tildar una cobertura ---- */
+.sub-box{ border-left:3px solid var(--brand); background:var(--surface-2); border-radius:0 9px 9px 0;
+  padding:11px 13px; margin-top:1px; display:grid; grid-template-columns:1fr 1fr; gap:9px 12px; }
+.sub-box .full{ grid-column:1/-1; }
+.sub-box-title{ grid-column:1/-1; font-size:12.5px; font-weight:700; color:var(--ink-2); margin-bottom:-2px; }
+@media (max-width:560px){ .sub-box{ grid-template-columns:1fr; } }
+.money{ position:relative; }
+.money input{ padding-left:28px; }
+.money::before{ content:"$"; position:absolute; left:12px; top:31px; color:var(--muted); font-weight:700; z-index:1; }
+.send{ display:flex; align-items:center; justify-content:center; gap:9px; width:100%; margin-top:18px;
+  background:var(--brand); color:#fff; border:none; border-radius:11px; padding:14px; font-size:16.5px;
+  font-weight:700; font-family:inherit; cursor:pointer; transition:.15s; }
+.send:hover{ background:var(--brand-d); }
+.send:disabled{ opacity:.55; cursor:not-allowed; }
+.err{ display:none; background:#FBE3E3; color:#B91C1C; border:1px solid #f3c0c0; border-radius:10px;
+  padding:11px 14px; font-size:14px; margin-top:14px; line-height:1.5; }
+.ok{ display:none; padding:44px 30px 50px; text-align:center; }
+.ok .tick{ width:64px; height:64px; border-radius:99px; background:#E6F4EA; color:#15803D; display:grid;
+  place-items:center; margin:0 auto 18px; font-size:30px; }
+.ok h2{ font-size:22px; margin:0 0 10px; }
+.ok p{ color:var(--ink-2); font-size:15px; line-height:1.6; margin:0 auto 8px; max-width:420px; }
+.ok .ref{ display:inline-block; margin-top:14px; background:var(--surface-2); border:1px solid var(--line);
+  border-radius:10px; padding:10px 22px; font-size:22px; font-weight:800; letter-spacing:.18em; font-family:ui-monospace,monospace; }
+.foot{ text-align:center; font-size:12px; font-weight:700; letter-spacing:.14em; color:var(--muted); margin-top:22px; }
+@media (max-width:560px){ .grid{ grid-template-columns:1fr; } form{ padding:14px 18px 24px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="head">
+      <span class="logo"><img src="assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></span>
+      <h1>Cotizá tu seguro de hogar</h1>
+      <p class="sub">Completá estos datos y te preparamos una cotización a medida. Te contactamos con la propuesta a la brevedad.</p>
+    </div>
+
+    <form id="form" novalidate>
+      <div class="sect">Tus datos</div>
+      <div class="grid">
+        <label class="full"><span>Nombre y apellido <i>*</i></span>
+          <input id="nombre" required placeholder="Tu nombre completo" /></label>
+        <label><span>N° de documento <i>*</i></span>
+          <input id="documento" inputmode="numeric" required placeholder="Sin puntos" /></label>
+        <label><span>Teléfono <i>*</i></span>
+          <input id="telefono" type="tel" required placeholder="11 5555-5555" /></label>
+        <label class="full"><span>Email</span>
+          <input id="email" type="email" placeholder="tu@email.com" /></label>
+      </div>
+
+      <div class="sect">La vivienda a asegurar</div>
+      <div class="grid">
+        <label class="full"><span>Dirección <i>*</i></span>
+          <input id="direccion" required placeholder="Calle y altura" /></label>
+        <label><span>Localidad</span><input id="localidad" placeholder="Ciudad / partido" /></label>
+        <label><span>Código postal <i>*</i></span><input id="cp" required placeholder="Ej: 1425" /></label>
+        <div class="full">
+          <span class="sino-label">¿Es casa o departamento? <i style="color:#DD0909;font-style:normal">*</i></span>
+          <div class="radio-group">
+            <label class="radio-opt" id="opt_casa"><input type="radio" name="tipoviv" value="Casa" /><span>Casa</span></label>
+            <label class="radio-opt" id="opt_depto"><input type="radio" name="tipoviv" value="Departamento" /><span>Departamento</span></label>
+          </div>
+        </div>
+        <label id="campoPiso" style="display:none"><span>Piso y departamento <i>*</i></span>
+          <input id="piso" placeholder="Ej: 4° B" /></label>
+        <label><span>Metros cuadrados <i>*</i></span>
+          <input id="metros" inputmode="numeric" required placeholder="Ej: 85" /></label>
+        <div class="full">
+          <span class="sino-label">Marcá lo que corresponda</span>
+          <div class="chk-group">
+            <label class="chk" id="wrapAlarma"><input type="checkbox" id="alarma" /><span>Alarma</span></label>
+            <label class="chk" id="wrapRejas"><input type="checkbox" id="rejas" /><span>Medidas mínimas de seguridad</span></label>
+            <label class="chk" id="wrapCountry" style="display:none"><input type="checkbox" id="country" /><span>Country / barrio cerrado</span></label>
+            <label class="chk" id="wrapPileta" style="display:none"><input type="checkbox" id="pileta" /><span>Pileta</span></label>
+          </div>
+          <span class="hint" style="display:block;margin-top:6px">Medidas mínimas de seguridad: cerraduras de seguridad y rejas en puertas y ventanas.</span>
+        </div>
+      </div>
+
+      <div class="sect">Bienes a cubrir <span class="opt">(marcá lo que quieras incluir)</span></div>
+      <div class="grid">
+        <div class="full">
+          <div class="chk-group">
+            <label class="chk" id="wrapEquipos"><input type="checkbox" id="equipos" /><span>Equipos electrónicos fuera del domicilio</span></label>
+            <label class="chk" id="wrapNotebook"><input type="checkbox" id="notebook" /><span>Notebook o PC en el domicilio</span></label>
+            <label class="chk" id="wrapBici"><input type="checkbox" id="bici" /><span>Bicicleta</span></label>
+            <label class="chk" id="wrapCel"><input type="checkbox" id="celular" /><span>Robo de celular</span></label>
+          </div>
+        </div>
+
+        <div class="full sub-box" id="boxEquipos" style="display:none">
+          <div class="sub-box-title">Equipo electrónico que sale del domicilio</div>
+          <label class="full"><span>¿Qué objeto es? <i>*</i></span>
+            <input id="eq_objeto" placeholder="Ej: notebook, cámara de fotos, tablet, consola…" /></label>
+          <label><span>Marca <i>*</i></span><input id="eq_marca" placeholder="Ej: Lenovo" /></label>
+          <label><span>Modelo <i>*</i></span><input id="eq_modelo" placeholder="Ej: IdeaPad 3" /></label>
+          <label class="full money"><span>Valor <i>*</i></span>
+            <input id="eq_valor" inputmode="numeric" placeholder="Ej: 1200000" />
+            <span class="hint">Si tenés más de un equipo, sumalos en “Algo más que quieras aclarar”.</span></label>
+        </div>
+
+        <div class="full sub-box" id="boxNotebook" style="display:none">
+          <div class="sub-box-title">Notebook o PC que queda en el domicilio</div>
+          <label><span>Marca <i>*</i></span><input id="nb_marca" placeholder="Ej: HP" /></label>
+          <label><span>Modelo <i>*</i></span><input id="nb_modelo" placeholder="Ej: Pavilion 15" /></label>
+          <label class="full money"><span>Valor <i>*</i></span>
+            <input id="nb_valor" inputmode="numeric" placeholder="Ej: 1500000" /></label>
+        </div>
+
+        <div class="full sub-box" id="boxCel" style="display:none">
+          <label class="full money"><span>Valor del celular <i>*</i></span>
+            <input id="cel_valor" inputmode="numeric" placeholder="Ej: 800000" /></label>
+        </div>
+
+        <div class="full sub-box" id="boxBici" style="display:none">
+          <label><span>Marca de la bicicleta <i>*</i></span><input id="bici_marca" placeholder="Ej: Trek" /></label>
+          <label><span>Modelo <i>*</i></span><input id="bici_modelo" placeholder="Ej: Marlin 5" /></label>
+          <label class="full money"><span>Valor <i>*</i></span><input id="bici_valor" inputmode="numeric" placeholder="Ej: 900000" /></label>
+        </div>
+
+        <label class="full"><span>Algo más que quieras aclarar</span>
+          <textarea id="obs" placeholder="Opcional: caja fuerte, obras de arte, matafuegos…"></textarea></label>
+      </div>
+
+      <label class="hp"><span>Sitio web</span><input id="website" tabindex="-1" autocomplete="off" /></label>
+
+      <button class="send" id="send" type="submit">Pedir cotización</button>
+      <div class="err" id="err"></div>
+    </form>
+
+    <div class="ok" id="ok">
+      <div class="tick">✓</div>
+      <h2>¡Listo! Recibimos tu pedido</h2>
+      <p>Ya estamos preparando tu cotización de seguro de hogar. Nos comunicamos con vos a la brevedad con la propuesta.</p>
+      <p>Guardá tu código de referencia:</p>
+      <span class="ref" id="refcode"></span>
+    </div>
+  </div>
+  <div class="foot">SARACENI · BROKER DE SEGUROS</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+(function () {
+  var sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---- casillas: destacan el recuadro y despliegan su bloque de datos ----
+  function bindChk(id, wrapId, boxId, alDestildar) {
+    var input = $(id), wrap = $(wrapId);
+    input.addEventListener("change", function () {
+      wrap.classList.toggle("on", input.checked);
+      if (boxId) $(boxId).style.display = input.checked ? "" : "none";
+      if (!input.checked && alDestildar) alDestildar();
+    });
+  }
+  bindChk("alarma", "wrapAlarma");
+  bindChk("rejas", "wrapRejas");
+  bindChk("country", "wrapCountry");
+  bindChk("pileta", "wrapPileta");
+  bindChk("celular", "wrapCel", "boxCel", function () { $("cel_valor").value = ""; });
+  bindChk("equipos", "wrapEquipos", "boxEquipos", function () {
+    ["eq_objeto", "eq_marca", "eq_modelo", "eq_valor"].forEach(function (id) { $(id).value = ""; });
+  });
+  bindChk("notebook", "wrapNotebook", "boxNotebook", function () {
+    ["nb_marca", "nb_modelo", "nb_valor"].forEach(function (id) { $(id).value = ""; });
+  });
+  bindChk("bici", "wrapBici", "boxBici", function () {
+    $("bici_marca").value = ""; $("bici_modelo").value = ""; $("bici_valor").value = "";
+  });
+
+  // ---- Casa / Departamento ----
+  // El piso solo aplica a departamento; el country (vallado perimetral) y la
+  // pileta, solo a casa.
+  var tipoVivienda = null;
+  function setTipo(v) {
+    tipoVivienda = v;
+    $("opt_casa").classList.toggle("on", v === "Casa");
+    $("opt_depto").classList.toggle("on", v === "Departamento");
+    $("campoPiso").style.display = v === "Departamento" ? "" : "none";
+    $("wrapCountry").style.display = v === "Casa" ? "" : "none";
+    $("wrapPileta").style.display = v === "Casa" ? "" : "none";
+    if (v !== "Departamento") $("piso").value = "";
+    if (v !== "Casa") {
+      $("country").checked = false; $("wrapCountry").classList.remove("on");
+      $("pileta").checked = false; $("wrapPileta").classList.remove("on");
+    }
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="tipoviv"]'), function (r) {
+    r.addEventListener("change", function () { setTipo(r.value); });
+  });
+
+  function showErr(msg) { var e = $("err"); e.textContent = msg; e.style.display = "block"; }
+  function hideErr() { $("err").style.display = "none"; }
+  function num(id) {
+    var v = ($(id).value || "").replace(/[^0-9,.]/g, "").replace(/\./g, "").replace(",", ".");
+    if (!v) return null;
+    var n = Number(v);
+    return isNaN(n) ? null : n;
+  }
+  function refCode() {
+    var chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789", out = "";
+    for (var i = 0; i < 6; i++) out += chars.charAt(Math.floor(Math.random() * chars.length));
+    return out;
+  }
+  function showOk(ref) {
+    $("form").style.display = "none";
+    $("refcode").textContent = ref;
+    $("ok").style.display = "block";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  $("form").addEventListener("submit", async function (ev) {
+    ev.preventDefault(); hideErr();
+    var ref = refCode();
+    if ($("website").value) { showOk(ref); return; } // honeypot anti-bots
+
+    var nombre = $("nombre").value.trim();
+    var documento = $("documento").value.trim();
+    var telefono = $("telefono").value.trim();
+    var direccion = $("direccion").value.trim();
+    var cp = $("cp").value.trim();
+    var metros = num("metros");
+
+    var faltan = [];
+    if (!nombre) faltan.push("nombre");
+    if (!documento) faltan.push("documento");
+    if (!telefono) faltan.push("teléfono");
+    if (!direccion) faltan.push("dirección");
+    if (!cp) faltan.push("código postal");
+    if (!tipoVivienda) faltan.push("casa o departamento");
+    if (!metros) faltan.push("metros cuadrados");
+    if (faltan.length) { showErr("Nos faltan estos datos: " + faltan.join(", ") + "."); return; }
+    if (tipoVivienda === "Departamento" && !$("piso").value.trim()) { showErr("Indicanos el piso y departamento."); return; }
+    if ($("equipos").checked) {
+      var faltanEq = [];
+      if (!$("eq_objeto").value.trim()) faltanEq.push("qué objeto es");
+      if (!$("eq_marca").value.trim()) faltanEq.push("marca");
+      if (!$("eq_modelo").value.trim()) faltanEq.push("modelo");
+      if (!num("eq_valor")) faltanEq.push("valor");
+      if (faltanEq.length) { showErr("Del equipo que sale del domicilio nos falta: " + faltanEq.join(", ") + "."); return; }
+    }
+    if ($("notebook").checked) {
+      var faltanNb = [];
+      if (!$("nb_marca").value.trim()) faltanNb.push("marca");
+      if (!$("nb_modelo").value.trim()) faltanNb.push("modelo");
+      if (!num("nb_valor")) faltanNb.push("valor");
+      if (faltanNb.length) { showErr("De la notebook o PC nos falta: " + faltanNb.join(", ") + "."); return; }
+    }
+    if ($("celular").checked && !num("cel_valor")) { showErr("Indicanos el valor del celular."); return; }
+    if ($("bici").checked) {
+      var faltanBici = [];
+      if (!$("bici_marca").value.trim()) faltanBici.push("marca");
+      if (!$("bici_modelo").value.trim()) faltanBici.push("modelo");
+      if (!num("bici_valor")) faltanBici.push("valor");
+      if (faltanBici.length) { showErr("De la bicicleta nos falta: " + faltanBici.join(", ") + "."); return; }
+    }
+
+    var btn = $("send"); btn.disabled = true; btn.textContent = "Enviando…";
+    try {
+      var ins = await sb.from("cotizaciones").insert({
+        ref: ref,
+        ramo: "HOGAR",
+        nombre: nombre,
+        documento: documento,
+        telefono: telefono,
+        email: $("email").value.trim() || null,
+        direccion: direccion,
+        localidad: $("localidad").value.trim() || null,
+        codigo_postal: cp,
+        tipo_vivienda: tipoVivienda,
+        piso: $("piso").value.trim() || null,
+        en_country: tipoVivienda === "Casa" ? $("country").checked : null,
+        tiene_pileta: tipoVivienda === "Casa" ? $("pileta").checked : null,
+        metros2: metros,
+        alarma: $("alarma").checked,
+        medidas_seguridad: $("rejas").checked,
+        equipos_fuera: $("equipos").checked,
+        equipos_fuera_objeto: $("eq_objeto").value.trim() || null,
+        equipos_fuera_marca: $("eq_marca").value.trim() || null,
+        equipos_fuera_modelo: $("eq_modelo").value.trim() || null,
+        equipos_fuera_valor: num("eq_valor"),
+        notebook_pc: $("notebook").checked,
+        notebook_pc_marca: $("nb_marca").value.trim() || null,
+        notebook_pc_modelo: $("nb_modelo").value.trim() || null,
+        notebook_pc_valor: num("nb_valor"),
+        bicicleta: $("bici").checked,
+        bicicleta_marca: $("bici_marca").value.trim() || null,
+        bicicleta_modelo: $("bici_modelo").value.trim() || null,
+        bicicleta_valor: num("bici_valor"),
+        robo_celular: $("celular").checked,
+        celular_valor: num("cel_valor"),
+        observaciones: $("obs").value.trim() || null
+      });
+      if (ins.error) throw ins.error;
+      showOk(ref);
+    } catch (e) {
+      console.error(e);
+      showErr("No pudimos enviar el pedido. Revisá tu conexión e intentá de nuevo, o comunicate por teléfono con la oficina.");
+      btn.disabled = false; btn.textContent = "Pedir cotización";
+    }
+  });
+})();
+</script>
+</body>
+</html>

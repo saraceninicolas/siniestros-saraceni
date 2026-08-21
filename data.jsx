@@ -101,14 +101,33 @@ function fmtTimeAgo(iso) {
   return `hace ${Math.round(h / 24)} d`;
 }
 
-// Días que lleva activo el siniestro: desde la denuncia (o el hecho / la carga)
+// Días hábiles transcurridos entre dos fechas (no cuenta sábados ni domingos)
+function diasHabilesEntre(desde, hasta) {
+  const d0 = new Date(desde.getFullYear(), desde.getMonth(), desde.getDate());
+  const d1 = new Date(hasta.getFullYear(), hasta.getMonth(), hasta.getDate());
+  const corridos = Math.floor((d1 - d0) / 86400000);
+  if (corridos <= 0) return 0;
+  // Cada semana completa aporta 5 hábiles; el resto se cuenta día por día.
+  const semanas = Math.floor(corridos / 7);
+  let habiles = semanas * 5;
+  const cursor = new Date(d0);
+  cursor.setDate(cursor.getDate() + semanas * 7);
+  for (let i = 0; i < corridos % 7; i++) {
+    cursor.setDate(cursor.getDate() + 1);
+    const dow = cursor.getDay();
+    if (dow !== 0 && dow !== 6) habiles++;
+  }
+  return habiles;
+}
+
+// Días hábiles que lleva activo el siniestro: desde la denuncia (o el hecho / la carga)
 function diasActivo(item) {
   let base = item.fechaDenuncia || item.fechaOcurrido || item.creado || item.ultimaModFecha;
   if (!base) return null;
   if (/^\d{4}-\d{2}-\d{2}$/.test(base)) base = base + "T00:00:00";
   const d = new Date(base);
   if (isNaN(d)) return null;
-  return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+  return diasHabilesEntre(d, new Date());
 }
 
 let _seq = 0;

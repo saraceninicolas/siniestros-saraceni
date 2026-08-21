@@ -54,7 +54,7 @@ function exportSiniestroPDF(item) {
       <span class="bdg" style="color:#1D4ED8;background:#E8F0FE">${esc(item.estado)}</span>
       <span class="bdg" style="color:#191C22;background:#F5F6F8">${esc(RAMO_LABEL[item.ramo] || item.ramo)}</span>
       <span class="bdg" style="color:#191C22;background:#F5F6F8">${esc(HECHO_LABEL[item.hecho] || item.hecho)}</span>
-      ${dias != null ? `<span class="bdg" style="color:#5A6271;background:#F5F6F8">${dias} días activo</span>` : ""}
+      ${dias != null ? `<span class="bdg" style="color:#5A6271;background:#F5F6F8">${dias} días hábiles</span>` : ""}
     </div>
     <div class="cols">
       <div>
@@ -63,7 +63,7 @@ function exportSiniestroPDF(item) {
       </div>
       <div>
         <h2>Fechas</h2>
-        ${kv([["Ocurrido", fd(item.fechaOcurrido)], ["Denuncia", fd(item.fechaDenuncia)], ["Límite respuesta", item.fechaLimite ? fmtDate(item.fechaLimite) : "—"], ["Inspección", inspeccion], ["Días activo", dias != null ? dias + " días" : "—"]])}
+        ${kv([["Ocurrido", fd(item.fechaOcurrido)], ["Denuncia", fd(item.fechaDenuncia)], ["Límite respuesta", item.fechaLimite ? fmtDate(item.fechaLimite) : "—"], ["Inspección", inspeccion], ["Días hábiles activo", dias != null ? dias + " días hábiles" : "—"]])}
       </div>
     </div>
     <h2>Gestión</h2>
@@ -86,7 +86,7 @@ function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs, onTermina
   // gestión rápida (sin abrir el editor)
   const hoyISO = () => new Date().toISOString().slice(0, 10);
   const [qg, setQg] = React.useState({ fecha: hoyISO(), texto: "" });
-  const [histDesc, setHistDesc] = React.useState(false);
+  const [histDesc, setHistDesc] = React.useState(true); // por defecto, la última gestión arriba
   const addQuick = () => {
     const texto = qg.texto.trim();
     if (!texto || !onQuickGestion) return;
@@ -135,7 +135,7 @@ function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs, onTermina
             {item.dominio && <span className="dt-cal mono" style={{ fontWeight: 700 }}><Ico name="car" size={13} />{item.dominio}</span>}
             <RamoTag ramo={item.ramo} hecho={item.hecho} />
             {abierto && <UrgBadge item={item} />}
-            {diasActivo(item) != null && <span className="dt-cal"><Ico name="clock" size={13} />{diasActivo(item)} días activo</span>}
+            {diasActivo(item) != null && <span className="dt-cal"><Ico name="clock" size={13} />{diasActivo(item)} días hábiles</span>}
             {item.enCalendario && <span className="dt-cal"><Ico name="agenda" size={13} />En calendario</span>}
           </div>
         </div>
