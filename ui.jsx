@@ -41,6 +41,7 @@ const Icons = {
   phone:  ["M4 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L14 18l5 2v4a2 2 0 0 1-2 2A18 18 0 0 1 2 8a2 2 0 0 1 2-2z"],
   menu:   ["M4 7h16", "M4 12h16", "M4 17h16"],
   bell:   ["M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9", "M10.3 21a2 2 0 0 0 3.4 0"],
+  chart:  ["M3 21h18", "M6 21v-6", "M12 21V4", "M18 21v-10"],
 };
 const Ico = ({ name, ...rest }) => <Icon d={Icons[name]} {...rest} />;
 
@@ -84,8 +85,10 @@ const PORTAL_NAV = [
   { key: "siniestros", label: "Siniestros", icon: "shield", children: [
     { key: "dashboard", label: "Panel de control", icon: "grid", count: "abiertos" },
     { key: "agenda", label: "Agenda de gestiones", icon: "agenda", count: "porVencer" },
-    { key: "solicitudes", label: "Solicitudes recibidas", icon: "mail", count: "solicitudes" } ] },
+    { key: "solicitudes", label: "Solicitudes recibidas", icon: "mail", count: "solicitudes" },
+    { key: "sin-estadisticas", label: "Estadísticas", icon: "chart" } ] },
   { key: "facturacion", label: "Facturación", icon: "doc", org: true, children: [
+    { key: "fact-estadisticas", label: "Estadísticas", icon: "chart" },
     { key: "fact-carga", label: "Carga mensual", icon: "edit" },
     { key: "fact-crecimiento", label: "Crecimiento anual", icon: "target" },
     { key: "fact-companias", label: "Compañías", icon: "folder" } ] },
@@ -103,8 +106,8 @@ const PORTAL_NAV = [
 ];
 const NAV_LOOKUP = {};
 PORTAL_NAV.forEach((g) => g.children.forEach((c) => { NAV_LOOKUP[c.key] = { section: g.label, sectionKey: g.key, title: c.label }; }));
-const SINIESTROS_KEYS = ["dashboard", "agenda", "solicitudes"];
-const FACTURACION_KEYS = ["fact-carga", "fact-crecimiento", "fact-companias"];
+const SINIESTROS_KEYS = ["dashboard", "agenda", "solicitudes", "sin-estadisticas"];
+const FACTURACION_KEYS = ["fact-estadisticas", "fact-carga", "fact-crecimiento", "fact-companias"];
 const COMERCIAL_KEYS = ["com-panel", "com-cotizaciones"];
 const RENOVACION_KEYS = ["renov-proximas", "renov-historial"];
 const PENDIENTES_KEYS = ["pend-panel", "pend-agenda"];

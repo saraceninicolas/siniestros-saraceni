@@ -25,9 +25,14 @@ Consecuencias prácticas:
   y al final hace `Object.assign(window, { ... })` con lo que expone.
 - **El orden de carga en `index.html` importa.** Un archivo solo puede usar lo
   que ya cargó antes. Orden actual:
-  `config.js → db.js → data.jsx → auth.jsx → ui.jsx → modals.jsx → detail.jsx →
-  solicitudes.jsx → usuarios.jsx → facturas.jsx → renovaciones.jsx →
-  comercial.jsx → pendientes.jsx → objetivos.jsx → calendar.jsx → app.jsx`
+  `config.js → db.js → data.jsx → auth.jsx → ui.jsx → charts.jsx →
+  estadisticas.jsx → modals.jsx → detail.jsx → solicitudes.jsx → usuarios.jsx →
+  facturas.jsx → renovaciones.jsx → comercial.jsx → pendientes.jsx →
+  objetivos.jsx → calendar.jsx → app.jsx`
+- **Todos los archivos comparten un mismo scope global.** Dos `const` de nivel
+  superior con el mismo nombre en archivos distintos rompen todo con
+  "Identifier has already been declared": los nombres nuevos van prefijados
+  (`CH_`, `est`, `obj`, `fact`).
 - **Cuidado con el orden dentro de un archivo**: las `function` se hoistean pero
   las `var`/`const` no. Si una función se *ejecuta* arriba y usa un `var`
   declarado abajo, recibe `undefined` (ya pasó dos veces).
@@ -42,6 +47,8 @@ Consecuencias prácticas:
 | `db.js` | Única capa de datos. Todo Supabase pasa por acá |
 | `data.jsx` | Constantes de negocio (ramos, compañías, estados) y helpers de fecha |
 | `ui.jsx` | Íconos, sidebar, topbar, tabla de siniestros, agenda, **menú de navegación** |
+| `charts.jsx` | Gráficos en SVG hechos a mano (barras, dona, anillo, barras horizontales). No hay librería de gráficos: se dibujan acá y miden el ancho del contenedor para que el texto del eje no escale |
+| `estadisticas.jsx` | Estadísticas de siniestros: demora promedio por ramo, por hecho y el cruce entre los dos |
 | `app.jsx` | Orquestador: sesión, perfil/rol, ruteo por `active`, estado global |
 | `auth.jsx` | Login, registro y pantalla de "cuenta pendiente" |
 | `modals.jsx` / `detail.jsx` | Alta/edición y ficha completa de siniestro (+ PDF) |

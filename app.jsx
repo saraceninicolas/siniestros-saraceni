@@ -464,7 +464,7 @@ function App() {
             {ADMIN_KEYS.includes(active) && rol === "organizador"
               ? <UsuariosView perfiles={perfiles} me={perfil} onUpdate={actualizarUsuario} />
               : FACTURACION_KEYS.includes(active)
-              ? <FacturacionModule active={active} station={quien} query={query} />
+              ? <FacturacionModule active={active} station={quien} query={query} onNav={(k) => { setActive(k); setDetailId(null); }} />
               : COMERCIAL_KEYS.includes(active)
               ? <ComercialModule active={active} station={quien} query={query} />
               : RENOVACION_KEYS.includes(active)
@@ -485,6 +485,10 @@ function App() {
           <div className="content">
             <SolicitudesView solicitudes={solicitudes} onConvertir={convertirSolicitud}
               onDescartar={descartarSolicitud} onReabrir={reabrirSolicitud} />
+          </div>
+        ) : active === "sin-estadisticas" ? (
+          <div className="content">
+            <EstadisticasSiniestros data={activos} />
           </div>
         ) : active === "agenda" ? (
           <div className="content">
