@@ -77,6 +77,29 @@ textarea{ resize:vertical; min-height:110px; }
 .auto-docs li{ margin:2px 0; }
 .req-auto{ display:none; color:var(--brand); font-style:normal; }
 @media (max-width:560px){ .grid{ grid-template-columns:1fr; } form{ padding:14px 18px 24px; } }
+/* ---- marcos de fotos: una casilla por foto requerida ---- */
+.marcos{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:4px 0 12px; }
+.marco{ position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:7px; min-height:104px; padding:12px 10px; border:2px dashed #f0b8b8; border-radius:11px;
+  background:#fff; cursor:pointer; transition:.15s; text-align:center; }
+.marco:hover{ border-color:var(--brand); background:#fffafa; }
+.marco.cargado{ border-style:solid; border-color:#15803D; background:#fbfefc; }
+.marco-ico{ color:var(--brand); flex:none; }
+.marco.cargado .marco-ico{ color:#15803D; }
+.marco-txt{ font-size:13px; font-weight:600; color:var(--ink-2); line-height:1.3; }
+.marco.cargado .marco-txt{ color:#15803D; }
+.marco-sub{ font-size:11px; color:var(--muted); font-weight:500; }
+.marco-thumb{ width:100%; height:74px; object-fit:cover; border-radius:7px; }
+.marco-quitar{ position:absolute; top:5px; right:5px; width:24px; height:24px; border-radius:99px;
+  border:none; background:rgba(16,20,28,.6); color:#fff; font-size:14px; line-height:1; cursor:pointer;
+  display:grid; place-items:center; }
+.marco-quitar:hover{ background:var(--brand); }
+.marco input[type=file]{ display:none; }
+.marcos-tit{ font-size:13.5px; font-weight:700; color:var(--ink-2); margin:2px 0 6px; }
+.hint{ font-size:12.5px; color:var(--muted); line-height:1.4; margin-top:1px; }
+.marcos-tit span{ font-weight:500; color:var(--muted); font-size:12.5px; }
+@media (max-width:460px){ .marcos{ grid-template-columns:1fr; } }
+
 </style>
 </head>
 <body>
@@ -99,6 +122,11 @@ textarea{ resize:vertical; min-height:110px; }
             <option value="ICO">Int. Comercio</option>
             <option value="INT_CONSORCIO">Int. Consorcio</option>
           </select></label>
+        <label class="full" id="campoTipo" style="display:none"><span>¿Qué pasó? <i>*</i></span>
+          <select id="tipo">
+            <option value="" disabled selected>Seleccioná…</option>
+          </select>
+          <span class="hint">Según lo que elijas te vamos a pedir las fotos que corresponden.</span></label>
       </div>
 
       <div class="sect">Tus datos</div>
@@ -148,20 +176,14 @@ textarea{ resize:vertical; min-height:110px; }
       </div>
 
       <div class="sect">Documentación</div>
-      <p class="files-note">Adjuntá fotos de los daños, DNI, cédula/documentación del bien y la denuncia policial si la hubiera. Fotos o PDF, hasta 10&nbsp;MB por archivo.</p>
-      <div class="auto-docs" id="autoDocs">
-        <b>Para siniestros de auto además necesitamos:</b>
-        <ul>
-          <li>Registro de quien conducía (asegurado y tercero)</li>
-          <li>Cédula verde (asegurado y tercero)</li>
-          <li>Fotos de los daños donde se aprecie la patente (asegurado y tercero)</li>
-        </ul>
-      </div>
+      <p class="files-note">Tocá cada recuadro para sacar la foto o elegirla de tu galería. Hasta 10&nbsp;MB por archivo.</p>
+      <div class="marcos-tit" id="marcosTit">Fotos que necesitamos <span>(las que puedas)</span></div>
+      <div class="marcos" id="marcos"></div>
+
+      <div class="marcos-tit">Otros archivos <span>(opcional: denuncia policial, presupuestos, PDF…)</span></div>
       <div class="file-row">
-        <label class="file-btn">＋ Agregar fotos o PDF
+        <label class="file-btn">＋ Agregar otros archivos
           <input id="files" type="file" accept="image/*,application/pdf" multiple style="display:none" /></label>
-        <label class="file-btn">📷 Tomar foto con la cámara
-          <input id="camara" type="file" accept="image/*" capture="environment" style="display:none" /></label>
       </div>
       <ul class="flist" id="flist"></ul>
 
@@ -206,11 +228,201 @@ textarea{ resize:vertical; min-height:110px; }
       ["t_nombre", "t_dni", "t_cel", "t_dominio", "t_cia", "t_poliza"].forEach(function (id) { $(id).value = ""; });
     }
     ["reqUbicacion", "reqLocalidad"].forEach(function (id) { $(id).style.display = esAuto ? "inline" : "none"; });
-    $("autoDocs").style.display = esAuto ? "block" : "none";
+    renderTipos();     // los tipos de siniestro dependen del ramo
+    renderMarcos();    // y las fotos, del tipo elegido
   }
   $("ramo").addEventListener("change", updateRamoUI);
-  updateRamoUI();
 
+  // ---- marcos de fotos: una casilla por cada foto que pedimos ----
+  // Cambian según el ramo: para auto pedimos la documentación del asegurado y
+  // la del tercero; para los demás, los daños y la documentación del bien.
+  // Catálogo de tipos de siniestro por ramo. Cada uno define qué fotos pedimos.
+  var TIPOS = {
+    AUTO: [
+      { id: "CHOQUE", txt: "Choque / daños con otro vehículo", marcos: [
+        { id: "reg_aseg", ico: "registro", txt: "Registro del conductor", sub: "Asegurado" },
+        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "Asegurado" },
+        { id: "dan_aseg", ico: "danio", txt: "Daños con patente visible", sub: "Asegurado" },
+        { id: "reg_terc", ico: "registro", txt: "Registro del conductor", sub: "Tercero" },
+        { id: "ced_terc", ico: "cedula", txt: "Cédula verde", sub: "Tercero" },
+        { id: "dan_terc", ico: "danio", txt: "Daños con patente visible", sub: "Tercero" } ] },
+      { id: "DANIO_PROPIO", txt: "Daño propio (sin terceros)", marcos: [
+        { id: "dan_gral", ico: "danio", txt: "Daños", sub: "Vista general con patente" },
+        { id: "dan_det",  ico: "danio", txt: "Daños", sub: "Detalle de cerca" },
+        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "" },
+        { id: "reg_aseg", ico: "registro", txt: "Registro del conductor", sub: "" } ] },
+      { id: "CRISTALES", txt: "Cristales (parabrisas, luneta, ventanilla)", marcos: [
+        { id: "cristal",  ico: "cristal", txt: "Cristal dañado", sub: "De cerca, se vea el daño" },
+        { id: "cristal2", ico: "cristal", txt: "Cristal dañado", sub: "Desde adentro del auto" },
+        { id: "veh_pat",  ico: "auto", txt: "Vehículo completo", sub: "Se vea la patente" },
+        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "" } ] },
+      { id: "ROBO_RUEDAS", txt: "Robo de ruedas", marcos: [
+        { id: "denuncia", ico: "policia", txt: "Denuncia policial", sub: "Foto o PDF" },
+        { id: "rueda_ok", ico: "rueda", txt: "Una rueda colocada", sub: "Se vea rodado y marca" },
+        { id: "sin_rueda", ico: "auto", txt: "Auto como quedó", sub: "Sin la rueda robada" },
+        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "" } ] },
+      { id: "ROBO_TOTAL", txt: "Robo total del vehículo", marcos: [
+        { id: "denuncia", ico: "policia", txt: "Denuncia policial", sub: "Foto o PDF" },
+        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "" },
+        { id: "reg_aseg", ico: "registro", txt: "Registro del conductor", sub: "" },
+        { id: "llaves",   ico: "llave", txt: "Llaves del vehículo", sub: "Todos los juegos" } ] },
+      { id: "GRANIZO", txt: "Granizo", marcos: [
+        { id: "gr_techo", ico: "granizo", txt: "Daños en el techo", sub: "" },
+        { id: "gr_capot", ico: "granizo", txt: "Daños en el capot", sub: "" },
+        { id: "veh_pat",  ico: "auto", txt: "Vehículo completo", sub: "Se vea la patente" },
+        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "" } ] },
+      { id: "INCENDIO", txt: "Incendio", marcos: [
+        { id: "inc_gral", ico: "fuego", txt: "Daños", sub: "Vista general" },
+        { id: "inc_det",  ico: "fuego", txt: "Daños", sub: "Detalle del foco" },
+        { id: "denuncia", ico: "policia", txt: "Denuncia policial o de bomberos", sub: "" },
+        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "" } ] },
+    ],
+    HOGAR: [
+      { id: "ROBO", txt: "Robo", marcos: [
+        { id: "denuncia", ico: "policia", txt: "Denuncia policial", sub: "Foto o PDF" },
+        { id: "acceso",   ico: "puerta", txt: "Por dónde entraron", sub: "Puerta o ventana forzada" },
+        { id: "lugar",    ico: "casa", txt: "Lugar del hecho", sub: "Vista general" },
+        { id: "compro",   ico: "ticket", txt: "Comprobantes", sub: "De lo sustraído" } ] },
+      { id: "INCENDIO", txt: "Incendio", marcos: [
+        { id: "inc_gral", ico: "fuego", txt: "Daños", sub: "Vista general" },
+        { id: "inc_det",  ico: "fuego", txt: "Daños", sub: "Detalle del foco" },
+        { id: "denuncia", ico: "policia", txt: "Informe de bomberos", sub: "Si lo hubiera" } ] },
+      { id: "AGUA", txt: "Daños por agua", marcos: [
+        { id: "origen",  ico: "gota", txt: "De dónde viene la pérdida", sub: "" },
+        { id: "danios1", ico: "gota", txt: "Daños causados", sub: "Vista general" },
+        { id: "danios2", ico: "gota", txt: "Daños causados", sub: "Detalle de cerca" } ] },
+      { id: "ELECTRICO", txt: "Daños eléctricos", marcos: [
+        { id: "artefacto", ico: "rayo", txt: "Artefacto dañado", sub: "" },
+        { id: "chapa",     ico: "chapa", txt: "Chapa del artefacto", sub: "Marca, modelo y n° de serie" },
+        { id: "factura",   ico: "ticket", txt: "Factura de compra", sub: "Si la tenés" } ] },
+      { id: "CRISTALES", txt: "Cristales", marcos: [
+        { id: "cristal", ico: "cristal", txt: "Cristal roto", sub: "De cerca" },
+        { id: "ambiente", ico: "casa", txt: "Ambiente", sub: "Se vea dónde está el cristal" } ] },
+      { id: "RC", txt: "Daños a terceros", marcos: [
+        { id: "dan_terc", ico: "persona", txt: "Daños causados al tercero", sub: "" },
+        { id: "lugar",    ico: "casa", txt: "Lugar del hecho", sub: "Vista general" } ] },
+    ],
+  };
+  // Comercio y consorcio comparten el catálogo de hogar
+  TIPOS.ICO = TIPOS.HOGAR;
+  TIPOS.INT_CONSORCIO = TIPOS.HOGAR;
+
+  var fotos = {};   // { idMarco: File }
+
+  // Un dibujo por tipo de foto, para que se entienda de un vistazo qué va en
+  // cada recuadro. El de la cámara es el que se usa si no hay uno específico.
+  var ICONOS = {
+    camara:   '<path d="M3 8a2 2 0 0 1 2-2h2.5l1.2-2h6.6l1.2 2H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.4"/>',
+    registro: '<rect x="2.5" y="5" width="19" height="14" rx="2"/><circle cx="8" cy="10.5" r="2"/><path d="M5.6 15.6c.5-1.2 1.3-1.8 2.4-1.8s1.9.6 2.4 1.8M14 10h4M14 13.5h4"/>',
+    cedula:   '<rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M7 9.5h10M7 13h6"/><path d="M7 16.5h3.5"/><circle cx="16" cy="16.5" r="1.6"/>',
+    danio:    '<path d="M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13"/><path d="M5 13h14v4H5z"/><path d="M7 17v2M17 17v2"/><path d="M12.5 3.5l-1.6 2.6 2.6.4-1.8 2.4"/>',
+    auto:     '<path d="M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13"/><path d="M4.5 13h15v4.5h-15z"/><path d="M7 17.5v2M17 17.5v2"/><path d="M9.5 15.2h5"/>',
+    cristal:  '<path d="M4 16.5l2.2-7A2 2 0 0 1 8.1 8h7.8a2 2 0 0 1 1.9 1.5l2.2 7z"/><path d="M12 8.5v3.2M12 11.7l-2.6 2M12 11.7l2.4 2.6"/>',
+    rueda:    '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v5M12 15.2v5.3M3.5 12h5M15.2 12h5.3"/>',
+    policia:  '<path d="M12 3l7 3v5.5c0 4-2.9 6.9-7 8.5-4.1-1.6-7-4.5-7-8.5V6z"/><path d="M9.2 11.8l2 2 3.6-4"/>',
+    llave:    '<circle cx="8" cy="8.5" r="3.5"/><path d="M10.4 11l8 8M15.5 16l1.8-1.8M17.8 18.3l1.6-1.6"/>',
+    granizo:  '<path d="M7 14a3.5 3.5 0 0 1 .4-7A5 5 0 0 1 17 8.4a3 3 0 0 1 .2 5.6"/><path d="M8.5 17.5v.01M12 17v.01M15.5 17.5v.01M10 20.5v.01M14 20.5v.01"/>',
+    fuego:    '<path d="M12 21c3.3 0 5.5-2.3 5.5-5.3 0-3.6-3-5-4.2-8.7-1.6 1.3-2 3-1.6 4.7-1-.4-1.7-1.4-1.9-2.6-1.8 1.5-3.3 3.7-3.3 6.6C6.5 18.7 8.7 21 12 21z"/>',
+    puerta:   '<path d="M4 20.5h16"/><path d="M6.5 20.5V4.5a1 1 0 0 1 1.2-1l7 1.4a1 1 0 0 1 .8 1V20.5"/><circle cx="12.8" cy="12.5" r=".9"/>',
+    casa:     '<path d="M4 11l8-7 8 7"/><path d="M6 10v9.5h12V10"/><path d="M10 19.5v-5h4v5"/>',
+    ticket:   '<path d="M6 3.5h12v17l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"/><path d="M9 8.5h6M9 12h6M9 15.5h3.5"/>',
+    gota:     '<path d="M12 3.2s5.5 6 5.5 9.6a5.5 5.5 0 1 1-11 0C6.5 9.2 12 3.2 12 3.2z"/><path d="M9.6 13.8a2.6 2.6 0 0 0 2.6 2.6"/>',
+    rayo:     '<path d="M13.2 2.5L5 13.5h5.6L9.8 21.5 18.5 10h-5.9z"/>',
+    chapa:    '<rect x="3" y="6" width="18" height="12" rx="1.6"/><circle cx="6.2" cy="9.2" r=".8"/><circle cx="17.8" cy="9.2" r=".8"/><path d="M7.5 13h9"/><path d="M7.5 15.6h5.5"/>',
+    persona:  '<circle cx="12" cy="8.5" r="3.6"/><path d="M5.2 20a6.8 6.8 0 0 1 13.6 0"/>',
+  };
+  function svgIcono(nombre) {
+    return '<svg class="marco-ico" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+      'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + (ICONOS[nombre] || ICONOS.camara) + '</svg>';
+  }
+
+  function tiposDelRamo() { return TIPOS[$("ramo").value] || []; }
+  function tipoElegido() {
+    var t = $("tipo").value;
+    return tiposDelRamo().filter(function (x) { return x.id === t; })[0] || null;
+  }
+  // Los marcos salen del tipo de siniestro; sin tipo elegido, no hay fotos que pedir.
+  function marcosDelRamo() {
+    var t = tipoElegido();
+    return t ? t.marcos : [];
+  }
+  // Al cambiar de ramo se recarga la lista de tipos
+  function renderTipos() {
+    var sel = $("tipo"), tipos = tiposDelRamo(), previo = sel.value;
+    sel.innerHTML = "";
+    var op0 = document.createElement("option");
+    op0.value = ""; op0.disabled = true; op0.selected = true; op0.textContent = "Seleccioná…";
+    sel.appendChild(op0);
+    tipos.forEach(function (t) {
+      var o = document.createElement("option");
+      o.value = t.id; o.textContent = t.txt;
+      sel.appendChild(o);
+    });
+    // si el tipo anterior existe en el ramo nuevo lo conservamos
+    if (previo && tipos.some(function (t) { return t.id === previo; })) sel.value = previo;
+    else fotos = {};   // cambió el set de fotos: arrancamos limpio
+    $("campoTipo").style.display = tipos.length ? "" : "none";
+  }
+  $("tipo").addEventListener("change", function () { fotos = {}; renderMarcos(); });
+
+  function renderMarcos() {
+    var cont = $("marcos");
+    cont.innerHTML = "";
+    marcosDelRamo().forEach(function (m) {
+      var lbl = document.createElement("label");
+      lbl.className = "marco" + (fotos[m.id] ? " cargado" : "");
+      var input = document.createElement("input");
+      input.type = "file"; input.accept = "image/*"; input.setAttribute("capture", "environment");
+      input.addEventListener("change", function (e) {
+        var f = (e.target.files || [])[0];
+        e.target.value = "";
+        if (!f) return;
+        if (f.size > 10 * 1024 * 1024) { showErr("La foto \"" + f.name + "\" supera los 10 MB."); return; }
+        hideErr();
+        fotos[m.id] = f;
+        renderMarcos();
+      });
+      lbl.appendChild(input);
+
+      if (fotos[m.id]) {
+        var img = document.createElement("img");
+        img.className = "marco-thumb";
+        img.src = URL.createObjectURL(fotos[m.id]);
+        img.onload = function () { URL.revokeObjectURL(this.src); };
+        lbl.appendChild(img);
+        var quitar = document.createElement("button");
+        quitar.type = "button"; quitar.className = "marco-quitar"; quitar.textContent = "✕";
+        quitar.title = "Quitar esta foto";
+        quitar.addEventListener("click", function (ev) {
+          ev.preventDefault(); ev.stopPropagation();
+          delete fotos[m.id]; renderMarcos();
+        });
+        lbl.appendChild(quitar);
+      } else {
+        var ico = document.createElement("span");
+        ico.innerHTML = svgIcono(m.ico);
+        lbl.appendChild(ico.firstChild);
+      }
+      var txt = document.createElement("span");
+      txt.className = "marco-txt"; txt.textContent = m.txt;
+      lbl.appendChild(txt);
+      if (m.sub) {
+        var sub = document.createElement("span");
+        sub.className = "marco-sub"; sub.textContent = m.sub;
+        lbl.appendChild(sub);
+      }
+      cont.appendChild(lbl);
+    });
+    var lista = marcosDelRamo();
+    if (!lista.length) {
+      $("marcosTit").innerHTML = "Fotos que necesitamos <span>(elegí primero qué pasó)</span>";
+      return;
+    }
+    var puestas = lista.filter(function (m) { return !!fotos[m.id]; }).length;
+    $("marcosTit").innerHTML = "Fotos que necesitamos <span>(" + puestas + " de " + lista.length + ")</span>";
+  }
+
+  // "Otros archivos": lo que no entra en ningún marco
   function addPicked(e) {
     var picked = Array.prototype.slice.call(e.target.files || []);
     e.target.value = "";
@@ -222,7 +434,9 @@ textarea{ resize:vertical; min-height:110px; }
     renderFiles();
   }
   $("files").addEventListener("change", addPicked);
-  $("camara").addEventListener("change", addPicked);
+
+  // Estado inicial: se llama recién acá porque necesita los marcos ya definidos.
+  updateRamoUI();
 
   // ¿Hay lesionados? (SÍ / NO, con destoque)
   var lesionados = null;
@@ -266,6 +480,7 @@ textarea{ resize:vertical; min-height:110px; }
     var ramo = $("ramo").value;
     if (!nombre || !fecha || !relato) { showErr("Completá los campos obligatorios: nombre, fecha del hecho y el relato."); return; }
     if (!ramo) { showErr("Seleccioná el ramo del siniestro."); return; }
+    if (!$("tipo").value) { showErr("Contanos qué pasó para saber qué fotos pedirte."); return; }
     if (fecha > todayISO()) { showErr("La fecha del hecho no puede ser posterior al día de hoy."); return; }
     if (ramo === "AUTO") {
       var faltan = [];
@@ -276,15 +491,23 @@ textarea{ resize:vertical; min-height:110px; }
     }
     var btn = $("send"); btn.disabled = true; btn.textContent = "Enviando…";
     try {
+      // Primero las fotos de los marcos (cada una viaja con su etiqueta) y
+      // después los archivos sueltos de "Otros archivos".
+      var aSubir = [];
+      marcosDelRamo().forEach(function (m) {
+        if (fotos[m.id]) aSubir.push({ file: fotos[m.id], etiqueta: m.txt + (m.sub ? " · " + m.sub : "") });
+      });
+      files.forEach(function (f) { aSubir.push({ file: f, etiqueta: "" }); });
+
       var adjuntos = [];
-      for (var i = 0; i < files.length; i++) {
-        var f = files[i];
+      for (var i = 0; i < aSubir.length; i++) {
+        var f = aSubir[i].file;
         var safe = (f.name || "archivo").replace(/[^a-zA-Z0-9._-]/g, "_");
         var path = Date.now() + "_" + Math.random().toString(36).slice(2, 8) + "_" + safe;
-        btn.textContent = "Subiendo archivo " + (i + 1) + " de " + files.length + "…";
+        btn.textContent = "Subiendo archivo " + (i + 1) + " de " + aSubir.length + "…";
         var up = await sb.storage.from("solicitudes").upload(path, f, { contentType: f.type || undefined });
         if (up.error) throw up.error;
-        adjuntos.push({ name: f.name, path: path, tipo: f.type || "", size: f.size || 0 });
+        adjuntos.push({ name: f.name, path: path, tipo: f.type || "", size: f.size || 0, etiqueta: aSubir[i].etiqueta });
       }
       btn.textContent = "Enviando…";
       var ins = await sb.from("solicitudes").insert({
@@ -295,6 +518,7 @@ textarea{ resize:vertical; min-height:110px; }
         poliza: $("poliza").value.trim() || null,
         dominio: $("dominio").value.trim().toUpperCase() || null,
         ramo: ramo || null,
+        tipo_siniestro: $("tipo").value || null,
         tercero_nombre: $("t_nombre").value.trim() || null,
         tercero_dni: $("t_dni").value.trim() || null,
         tercero_celular: $("t_cel").value.trim() || null,

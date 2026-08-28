@@ -27,9 +27,10 @@ create table if not exists public.solicitudes (
   hora_hecho       text,
   ubicacion        text,
   localidad        text,
+  tipo_siniestro   text,                             -- CHOQUE | CRISTALES | ROBO_RUEDAS | ROBO | AGUA | … (define qué fotos se piden)
   lesionados       text,                             -- 'SI' | 'NO' | null
   relato           text,
-  adjuntos         jsonb not null default '[]'::jsonb, -- [{name, path, tipo, size}]
+  adjuntos         jsonb not null default '[]'::jsonb, -- [{name, path, tipo, size, etiqueta}] etiqueta = qué foto es
   estado           text not null default 'nueva',    -- nueva | procesada | descartada
   siniestro_codigo text,                             -- STR-xx al convertirla
   procesada_por    text,
@@ -64,3 +65,7 @@ begin
     alter publication supabase_realtime add table public.solicitudes;
   end if;
 end $$;
+
+-- Nota: además de `solicitudes_anon_insert` (público), hace falta
+-- `solicitudes_activo_insert` para los usuarios logueados del portal; si no,
+-- cargar una denuncia desde la oficina con la sesión abierta da error de RLS.

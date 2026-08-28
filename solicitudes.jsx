@@ -2,6 +2,21 @@
 // Los asegurados cargan sus denuncias en /denuncia (sin login); acá se reciben,
 // se revisan y se convierten en siniestros reales con un clic.
 
+// Tipos de siniestro que puede elegir el asegurado en /denuncia, y a qué
+// "hecho" del portal corresponde cada uno al convertir la solicitud.
+const TIPO_SOL_LABEL = {
+  CHOQUE: "Choque / daños con otro vehículo", DANIO_PROPIO: "Daño propio (sin terceros)",
+  CRISTALES: "Cristales", ROBO_RUEDAS: "Robo de ruedas", ROBO_TOTAL: "Robo total",
+  GRANIZO: "Granizo", INCENDIO: "Incendio", ROBO: "Robo", AGUA: "Daños por agua",
+  ELECTRICO: "Daños eléctricos", RC: "Daños a terceros",
+};
+const TIPO_SOL_HECHO = {
+  CHOQUE: "DAÑO PARCIAL", DANIO_PROPIO: "DAÑO PARCIAL", CRISTALES: "CRISTAL",
+  ROBO_RUEDAS: "DAÑO PARCIAL", ROBO_TOTAL: "ROBO TOTAL", GRANIZO: "GRANIZO",
+  INCENDIO: "INCENDIO", ROBO: "ROBO TOTAL", AGUA: "DAÑO PARCIAL",
+  ELECTRICO: "DAÑO PARCIAL", RC: "RC",
+};
+
 const SOL_ESTADO = {
   "nueva":      { fg: "#B91C1C", bg: "#FBE3E3", t: "Nueva" },
   "procesada":  { fg: "#15803D", bg: "#E6F4EA", t: "Procesada" },
@@ -67,6 +82,7 @@ function SolCard({ s, onConvertir, onDescartar, onReabrir }) {
       <div className="sol-sub">Siniestro</div>
       <div className="sol-grid-datos">
         <D k="Ramo" v={s.ramo ? (RAMO_LABEL[s.ramo] || s.ramo) : ""} />
+        <D k="Qué pasó" v={s.tipoSiniestro ? (TIPO_SOL_LABEL[s.tipoSiniestro] || s.tipoSiniestro) : ""} />
         <D k="Fecha" v={s.fechaHecho ? fmtDate(s.fechaHecho) : ""} />
         <D k="Hora" v={s.horaHecho} mono />
         <D k="Ubicación" v={s.ubicacion} />
@@ -94,7 +110,10 @@ function SolCard({ s, onConvertir, onDescartar, onReabrir }) {
                 {isImg && url
                   ? <img className="adj-thumb" src={url} alt={a.name} />
                   : <span className="adj-thumb adj-thumb-file"><Ico name="doc" size={24} /></span>}
-                <span className="adj-card-name" title={a.name}>{a.name}</span>
+                {/* si vino de un marco, mostramos qué foto es en vez del nombre del archivo */}
+                <span className="adj-card-name" title={a.etiqueta ? a.etiqueta + " — " + a.name : a.name}>
+                  {a.etiqueta || a.name}
+                </span>
               </a>
             );
           })}
@@ -160,4 +179,4 @@ function SolicitudesView({ solicitudes, onConvertir, onDescartar, onReabrir }) {
   );
 }
 
-Object.assign(window, { SolicitudesView });
+Object.assign(window, { SolicitudesView, TIPO_SOL_LABEL, TIPO_SOL_HECHO });

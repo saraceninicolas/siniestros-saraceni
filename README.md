@@ -1,136 +1,104 @@
-# Saraceni Seguros · Portal de Siniestros
+# Saraceni Seguros · Portal de gestiones
 
-Portal interno para el **seguimiento de gestiones de siniestros** de Saraceni
-(broker de seguros). Permite registrar siniestros, ver una agenda de gestiones
-por fecha límite, marcar recordatorios en Google Calendar y llevar el estado de
-cada caso.
+Portal interno de **Saraceni Broker de Seguros**. Arrancó como seguimiento de
+siniestros y hoy cubre la operación diaria del estudio, más dos páginas públicas
+para que los clientes carguen denuncias y pidan cotizaciones sin llamar por
+teléfono.
 
-- **Panel de control** — KPIs (activos, por vencer, vencidas, terminados) + tabla.
-- **Siniestros** — listado completo con búsqueda en vivo y filtros (estado / ramo / compañía).
-- **Agenda de gestiones** — worklist agrupada por urgencia + integración Google Calendar / `.ics`.
-- **Detalle** — pantalla completa por siniestro con editar / eliminar.
+🔗 **Producción:** https://siniestros-saraceni.vercel.app
 
-Marca roja `#DD0909`, tipografía Public Sans. Diseñado en Claude Design.
+Marca roja `#DD0909`, tipografía Public Sans.
 
 ---
 
-## 🧱 Cómo está hecho (sin compilación)
+## Qué incluye
 
-Es un **sitio estático**: React + Babel corren directamente en el navegador, así
-que **no necesita Node.js ni un paso de build**. Se despliega tal cual en Vercel.
+| Carpeta | Para qué sirve |
+|---|---|
+| **Objetivos** | Metas del estudio con barra de avance (las de facturación se calculan solas) |
+| **Siniestros** | Panel con KPIs, agenda de gestiones por vencimiento, historial editable por caso, adjuntos, exportación de la ficha a PDF y sincronización con Google Calendar |
+| **Facturación** | Carga mensual por compañía y matriz de crecimiento anual |
+| **Comercial** | Pedidos de cotización de hogar que llegan del link público |
+| **Renovaciones** | Pólizas próximas a vencer e historial |
+| **Pendientes** | Tareas del estudio por prioridad y vencimiento |
+| **Administración** | Usuarios, roles y aprobación de cuentas nuevas |
+
+### Páginas públicas (sin login)
+
+- **`/denuncia`** — el asegurado carga su siniestro. Elige ramo y qué pasó, y el
+  formulario le pide **las fotos que corresponden a ese caso** (para un choque:
+  registro, cédula verde y daños de ambos; para robo de ruedas: denuncia
+  policial, la rueda colocada y cómo quedó el auto). Entra al portal al instante,
+  en *Siniestros → Solicitudes recibidas*, y se convierte en siniestro con un clic.
+- **`/cotizar-hogar`** — pedido de cotización de seguro de hogar. Llega a
+  *Comercial → Cotizaciones de hogar*.
+
+Quien completa esos formularios **solo puede enviar**: no puede leer ninguna
+información del portal ni de otras solicitudes.
+
+---
+
+## Accesos y roles
+
+Se entra con **email y contraseña**. Hay dos roles:
+
+- **Organizador** — ve y administra todo, incluidas Facturación, Objetivos y la
+  gestión de usuarios.
+- **Empleado** — trabaja Siniestros, Renovaciones, Pendientes y Comercial.
+
+Cualquiera puede registrarse desde la pantalla de acceso, pero la cuenta queda
+**pendiente** y no ve nada hasta que un organizador la aprueba en
+*Administración → Usuarios y roles*.
+
+> Las credenciales no están en este repositorio. Pedíselas al administrador.
+
+---
+
+## Cómo está hecho
+
+Es un **sitio estático**: React y Babel corren en el navegador, así que no hay
+Node, ni dependencias, ni paso de compilación. Se despliega tal cual en Vercel y
+guarda todo en Supabase (base de datos, login, archivos y avisos en tiempo real).
 
 | Archivo | Qué hace |
 |---|---|
-| `index.html` | Página principal + todos los estilos CSS |
-| `data.jsx` | Modelo de datos, constantes y datos de ejemplo (seed) |
-| `ui.jsx` | Componentes de UI (sidebar, topbar, KPIs, tabla, agenda) |
-| `modals.jsx` | Modales de alta / edición / detalle / confirmación |
-| `detail.jsx` | Pantalla completa de detalle |
-| `calendar.jsx` | Integración Google Calendar y exportación `.ics` |
-| `tweaks-panel.jsx` | Panel de ajustes de tema (opcional) |
-| `app.jsx` | Lógica principal + conexión con Supabase |
-| `config.js` | **Tus claves de Supabase** (las cargás vos) |
-| `db.js` | Acceso a datos sobre Supabase |
-| `supabase/schema.sql` | Crea la tabla y carga los datos iniciales |
+| `index.html` | Página principal y todos los estilos |
+| `config.js` | Claves públicas de Supabase |
+| `db.js` | Único punto de acceso a la base |
+| `data.jsx` | Constantes de negocio y utilidades de fecha |
+| `ui.jsx` | Menú, barra superior, tablas y componentes comunes |
+| `app.jsx` | Sesión, permisos y navegación |
+| `auth.jsx` | Ingreso, registro y cuenta pendiente |
+| `modals.jsx`, `detail.jsx` | Alta/edición y ficha del siniestro |
+| `solicitudes.jsx`, `facturas.jsx`, `comercial.jsx`, `renovaciones.jsx`, `pendientes.jsx`, `objetivos.jsx`, `usuarios.jsx` | Un archivo por carpeta del menú |
+| `denuncia.html`, `cotizar-hogar.html` | Las dos páginas públicas |
+| `supabase/*.sql` | Esquema de cada tabla, como referencia |
 
-> **Modo demo:** si `config.js` está vacío, el portal arranca con los datos de
-> ejemplo del Excel (no guarda nada). Apenas cargás las claves de Supabase y
-> recargás, pasa a **guardar todo en la base**.
-
----
-
-## 🚀 Puesta en marcha (3 pasos)
-
-El orden recomendado es: **1) Supabase → 2) GitHub → 3) Vercel**.
-
-### 1) Supabase (base de datos)
-
-1. Entrá a <https://supabase.com> y creá una cuenta (botón **Start your project**).
-2. **New project** → ponele un nombre (ej. `siniestros-saraceni`), elegí una
-   contraseña de base de datos y la región más cercana (ej. *São Paulo*). Esperá
-   ~1 minuto a que se cree.
-3. En el menú izquierdo, **SQL Editor → New query**. Abrí el archivo
-   [`supabase/schema.sql`](supabase/schema.sql) de este repo, **copiá todo su
-   contenido**, pegalo y presioná **Run**. Eso crea la tabla `siniestros` y carga
-   los 12 siniestros reales.
-4. Ahora copiá tus credenciales: **Settings → API**.
-   - **Project URL** → algo como `https://abcdxyz.supabase.co`
-   - **Project API keys → `anon` `public`** → una clave larga que empieza con `eyJ...`
-5. Pegá esos dos valores en [`config.js`](config.js):
-   ```js
-   window.SUPABASE_URL = "https://abcdxyz.supabase.co";
-   window.SUPABASE_ANON_KEY = "eyJ...tu-clave-anon...";
-   ```
-   > La clave `anon` es **pública** (va en el navegador): es seguro versionarla.
-   > **No** pegues acá la `service_role` (esa es secreta).
-
-### 2) GitHub (repositorio)
-
-El repo ya está inicializado localmente con un commit. Para subirlo:
-
-1. Entrá a <https://github.com> e iniciá sesión.
-2. Arriba a la derecha **+ → New repository**. Nombre: `siniestros-saraceni`.
-   Dejalo **Private** si querés. **No** marques "Add a README" (ya tenemos uno).
-   **Create repository**.
-3. GitHub te muestra una URL. Conectá y subí desde tu PC (PowerShell, en la
-   carpeta del proyecto):
-   ```powershell
-   git remote add origin https://github.com/TU_USUARIO/siniestros-saraceni.git
-   git branch -M main
-   git push -u origin main
-   ```
-   Te va a pedir iniciar sesión en GitHub la primera vez.
-
-### 3) Vercel (publicación)
-
-1. Entrá a <https://vercel.com> y **Sign up con GitHub** (así Vercel ve tus repos).
-2. **Add New… → Project** → elegí el repo `siniestros-saraceni` → **Import**.
-3. No hace falta configurar nada: es un sitio estático. Dejá todo por defecto y
-   **Deploy**.
-4. En ~30 segundos tenés una URL pública (ej. `https://siniestros-saraceni.vercel.app`).
-   Cada vez que hagas `git push`, Vercel actualiza el sitio solo.
-
-¡Listo! El portal queda online y guardando en Supabase.
+Si vas a modificar el código, leé primero [`CLAUDE.md`](CLAUDE.md): explica las
+convenciones del proyecto y varias trampas conocidas.
 
 ---
 
-## 🔒 Seguridad — Login activado
+## Publicación
 
-El portal **requiere iniciar sesión** (Supabase Auth, email + contraseña) y la
-base de datos está cerrada con RLS a **usuarios autenticados**: sin login, la
-clave pública `anon` no puede leer ni escribir nada.
+- Rama **`test`** → preview privado en Vercel, para probar antes de publicar.
+- Rama **`main`** → producción.
 
-- **Pantalla de acceso** (`auth.jsx`) al entrar; la sesión queda recordada en el
-  navegador hasta que tocás **Cerrar sesión** (ícono arriba a la derecha).
-- Las credenciales **no** están en este repo. Pedíselas al administrador.
+Cada `git push` actualiza el sitio automáticamente. El trabajo se hace siempre
+en `test`, y pasa a producción con un merge cuando está aprobado.
 
-### Gestionar usuarios
-- **Ver / borrar usuarios:** Supabase → **Authentication → Users**.
-- **Agregar un usuario:** Authentication → Users → **Add user** → *Create new user*
-  (marcá *Auto Confirm User* para que pueda entrar sin verificar email).
-- **Cambiar una contraseña:** en ese mismo usuario → *Reset password* / *Update*.
-
-> Recomendado igualmente mantener la URL en círculo reducido.
+⚠️ **Ambos ambientes comparten la misma base de datos.** Un cambio de estructura
+o un borrado impacta en los dos al instante.
 
 ---
 
-## 🖥️ Probar en tu PC (opcional)
+## Probarlo en tu PC
 
-Como los archivos `.jsx` se cargan por separado, **no** alcanza con abrir
-`index.html` haciendo doble clic (el navegador lo bloquea por `file://`). Tenés
-que servirlo por HTTP. Opciones:
+Los archivos `.jsx` se cargan por separado, así que no alcanza con abrir
+`index.html` haciendo doble clic. Hay que servirlo por HTTP:
 
-- **VS Code** → instalá la extensión *Live Server* → clic derecho sobre
-  `index.html` → *Open with Live Server*.
-- O, si tenés Python: en la carpeta del proyecto, `python -m http.server 5500` y
-  abrí <http://localhost:5500>.
+- **VS Code** → extensión *Live Server* → clic derecho en `index.html` →
+  *Open with Live Server*.
+- O con Python: `python -m http.server 5500` y entrar a http://localhost:5500
 
-(De todos modos, la forma más cómoda de verlo es directamente en la URL de Vercel.)
-
----
-
-## ✏️ Editar los datos
-
-Una vez conectado Supabase, todo se edita **desde el propio portal** (botón
-*Registrar siniestro*, *Editar*, *Eliminar*). También podés ver/editar la tabla
-directamente en Supabase → **Table Editor → siniestros**.
+De todos modos, lo más cómodo es usar directamente la URL de Vercel.
