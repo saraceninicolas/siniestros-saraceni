@@ -521,6 +521,20 @@ function App() {
       {modal?.type === "pass" && <ChangePassModal onClose={() => setModal(null)} onDone={() => { setModal(null); flash("Contraseña actualizada"); }} />}
 
       <Toast toast={toast} />
+      <DemoCinta />
+    </div>
+  );
+}
+
+// Cartel fijo de la demo: que quede claro que nada de esto se guarda.
+function DemoCinta() {
+  const [oculta, setOculta] = React.useState(false);
+  if (!window.DEMO || oculta) return null;
+  return (
+    <div className="demo-cinta">
+      <b>MODO DEMOSTRACIÓN</b>
+      <span>Datos de ejemplo. Podés cargar, editar y borrar libremente: nada se guarda y todo vuelve a empezar al recargar la página.</span>
+      <button className="demo-cinta-x" title="Ocultar" onClick={() => setOculta(true)}>×</button>
     </div>
   );
 }

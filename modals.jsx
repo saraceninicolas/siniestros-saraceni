@@ -314,7 +314,7 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit, usuarios })
           <input type="file" accept="image/*,application/pdf" multiple style={{ display: "none" }}
             onChange={onPickFiles} disabled={subiendo || !filesReady} />
         </label>
-        {!filesReady && <span className="adj-note">Los adjuntos requieren Supabase configurado (modo demo no sube archivos).</span>}
+        {!filesReady && <span className="adj-note">En la demostración no se pueden subir archivos: en el sistema real se adjuntan fotos, presupuestos y PDF.</span>}
       </div>
     </ModalShell>
   );

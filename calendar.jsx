@@ -13,7 +13,7 @@ function _escICS(s) {
 }
 
 // Texto descriptivo común para el evento
-function _eventTitle(item) { return `Saraceni · ${item.cliente} — ${item.gestionAR || "Gestión"}`; }
+function _eventTitle(item) { return ` ·  — ${item.gestionAR || "Gestión"}`; }
 function _eventDetails(item) {
   const lines = [
     `Gestión a realizar: ${item.gestionAR || "—"}`,
@@ -27,7 +27,7 @@ function _eventDetails(item) {
     item.obs ? `Obs: ${item.obs}` : "",
     item.ticket ? `Ticket: ${item.ticket}` : "",
     "",
-    "— Generado por el Portal de Siniestros de Saraceni Seguros",
+    "— Generado por el Portal de gestiones de " + MARCA.nombreCompleto,
   ];
   return lines.filter((l) => l !== "").join("\n");
 }
@@ -51,9 +51,9 @@ function buildICS(items, leadDays = 1) {
   const trigger = leadDays > 0 ? `-P${leadDays}D` : "PT0S";
   const out = [
     "BEGIN:VCALENDAR", "VERSION:2.0",
-    "PRODID:-//Saraceni Seguros//Portal Siniestros//ES",
+    "PRODID:-//" + MARCA.nombre + "//Portal Siniestros//ES",
     "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
-    "X-WR-CALNAME:Gestiones Saraceni",
+    "X-WR-CALNAME:Gestiones " + MARCA.nombre,
   ];
   items.forEach((item) => {
     if (!item.fechaLimite) return;

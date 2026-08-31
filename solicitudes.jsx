@@ -138,7 +138,10 @@ function SolicitudesView({ solicitudes, onConvertir, onDescartar, onReabrir }) {
   const [verHist, setVerHist] = React.useState(false);
   const nuevas = solicitudes.filter((s) => s.estado === "nueva");
   const resto = solicitudes.filter((s) => s.estado !== "nueva");
-  const linkPublico = window.location.origin + "/denuncia";
+  // Abierto como archivo suelto (file://) el origin es "null": mostramos un
+  // ejemplo en vez de un link roto.
+  const baseLink = (window.location.origin && window.location.origin !== "null") ? window.location.origin : "https://tu-portal.com.ar";
+  const linkPublico = baseLink + "/denuncia";
   const copiarLink = () => {
     try { navigator.clipboard.writeText(linkPublico); } catch (e) { /* noop */ }
   };

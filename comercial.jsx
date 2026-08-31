@@ -210,7 +210,8 @@ function CotizacionesView({ data, onCotizar, onDescartar, onReabrir, onNotas }) 
   const [verHist, setVerHist] = React.useState(false);
   const nuevas = data.filter((c) => c.estado === "nueva");
   const resto = data.filter((c) => c.estado !== "nueva");
-  const linkPublico = window.location.origin + "/cotizar-hogar";
+  const baseLinkCot = (window.location.origin && window.location.origin !== "null") ? window.location.origin : "https://tu-portal.com.ar";
+  const linkPublico = baseLinkCot + "/cotizar-hogar";
   const copiar = () => { try { navigator.clipboard.writeText(linkPublico); } catch (e) { /* noop */ } };
 
   return (

@@ -47,7 +47,7 @@ function exportSiniestroPDF(item) {
     .foot{margin-top:20px;font-size:10px;color:#8B93A1}
     @media print{body{margin:14mm}}
   </style></head><body>
-    <div class="brand">SARACENI · BROKER DE SEGUROS</div>
+    <div class="brand">${esc((MARCA.nombre + " · " + MARCA.bajada).toUpperCase())}</div>
     <h1>Ficha de siniestro — ${esc(item.cliente)}</h1>
     <div class="sub">N° ${esc(item.nroSiniestro)} · ${esc(item.id)}</div>
     <div class="badges">
@@ -73,7 +73,7 @@ function exportSiniestroPDF(item) {
     ${item.ticket ? `<p class="obs">Ticket: ${esc(item.ticket)}</p>` : ""}
     <h2>Historial de gestiones realizadas</h2>
     <table class="hist"><thead><tr><th>Fecha</th><th>Gestión realizada</th><th>Puesto</th></tr></thead><tbody>${rows}</tbody></table>
-    <div class="foot">Generado el ${new Date().toLocaleString("es-AR")} desde el Portal de Siniestros de Saraceni · Última modificación por ${esc(item.ultimaModPor || "—")}.</div>
+    <div class="foot">Generado el ${new Date().toLocaleString("es-AR")} desde el Portal de gestiones de ${esc(MARCA.nombre)} · Última modificación por ${esc(item.ultimaModPor || "—")}.</div>
   </body></html>`);
   w.document.close(); w.focus();
   setTimeout(() => { try { w.print(); } catch (e) { /* noop */ } }, 350);

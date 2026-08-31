@@ -427,13 +427,21 @@ function CiaMarca({ nombre }) {
   const tono = tonoCia(nombre);
   return <span className="fact-marca" style={{ background: tono + "1A", color: tono }}>{(nombre || "?").trim().charAt(0)}</span>;
 }
-function FactDelta({ v, sub }) {
+// `v` es siempre la variación real. `invertido` solo da vuelta el color, para
+// los indicadores donde subir es malo (el pendiente de cobro).
+function FactDelta({ v, sub, invertido }) {
   if (v == null) return <span className="fact-delta nulo">{sub || "sin comparación"}</span>;
-  const cls = v > 0.5 ? "sube" : v < -0.5 ? "baja" : "igual";
+  const bueno = invertido ? -v : v;
+  const cls = bueno > 0.5 ? "sube" : bueno < -0.5 ? "baja" : "igual";
+  // Arriba del 300% el porcentaje deja de decir nada ("+751,97%"): se muestra
+  // cuántas veces se multiplicó, que es como uno lo diría en voz alta.
+  const txt = Math.abs(v) >= 300
+    ? (1 + v / 100).toFixed(1).replace(".", ",") + "×"
+    : pct1(v);
   return (
     <span className={"fact-delta " + cls}>
       {sub && <span className="fact-delta-sub">{sub}</span>}
-      <b>{v > 0 ? "↑" : v < 0 ? "↓" : "→"} {pct1(v)}</b>
+      <b>{v > 0 ? "↑" : v < 0 ? "↓" : "→"} {txt}</b>
     </span>
   );
 }
@@ -618,7 +626,7 @@ function FactEstadisticas({ companias, movs, anio, mes, onAnio, onMes, onNav }) 
             <div className="kpi-foot">
               {c.hint ? <span className="kpi-hint">{c.hint}</span>
                 : <><span className="kpi-hint">vs {mesPrevLabel}</span>
-                  <FactDelta v={c.invertir && c.delta != null ? -c.delta : c.delta} /></>}
+                  <FactDelta v={c.delta} invertido={c.invertir} /></>}
             </div>
           </div>
         ))}

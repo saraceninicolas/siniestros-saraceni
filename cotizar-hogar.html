@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Cotizar seguro de hogar · Saraceni Seguros</title>
+<title>Cotizar seguro de hogar · SF&A Asesores de Seguros</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
-:root{ --brand:#DD0909; --brand-d:#bb0707; --bg:#F5F6F8; --surface:#fff; --surface-2:#FBFBFC;
+:root{ --brand:#1F4E79; --brand-d:#163A5C; --bg:#F5F6F8; --surface:#fff; --surface-2:#FBFBFC;
   --ink:#191C22; --ink-2:#5A6271; --muted:#8B93A1; --line:#E7E9ED; --line-2:#EFF1F4; }
 *{ box-sizing:border-box; }
 body{ margin:0; font-family:"Public Sans",system-ui,sans-serif; font-size:17px; background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; }
@@ -32,7 +32,7 @@ label span{ font-size:13px; font-weight:600; color:var(--ink-2); }
 label span i{ color:var(--brand); font-style:normal; }
 input,select,textarea{ border:1px solid var(--line); border-radius:9px; padding:9px 12px; font-size:16px;
   font-family:inherit; color:var(--ink); background:#fff; outline:none; width:100%; transition:.15s; }
-input:focus,select:focus,textarea:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(221,9,9,.09); }
+input:focus,select:focus,textarea:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(31,78,121,.12); }
 textarea{ resize:vertical; min-height:62px; }
 .hp{ position:absolute; left:-9999px; top:-9999px; height:1px; width:1px; overflow:hidden; }
 .hint{ font-size:12px; color:var(--muted); margin-top:-1px; line-height:1.35; }
@@ -43,7 +43,7 @@ textarea{ resize:vertical; min-height:62px; }
   border:1.5px solid var(--line); border-radius:8px; padding:7px 11px; background:#fff;
   font-size:14px; font-weight:600; color:var(--ink-2); cursor:pointer; transition:.14s; user-select:none; }
 .chk:hover{ border-color:#d3d7dd; }
-.chk.on{ border-color:var(--brand); color:var(--brand); background:#fdf3f3; }
+.chk.on{ border-color:var(--brand); color:var(--brand); background:#EEF4FA; }
 .chk input{ width:16px; height:16px; margin:0; accent-color:var(--brand); cursor:pointer; flex:none; }
 .chk span{ font-size:14px; font-weight:600; color:inherit; }
 /* ---- elección casa / departamento ---- */
@@ -52,7 +52,7 @@ textarea{ resize:vertical; min-height:62px; }
   border:1.5px solid var(--line); border-radius:8px; padding:7px 13px; background:#fff;
   font-size:14px; font-weight:600; color:var(--ink-2); cursor:pointer; transition:.14s; user-select:none; }
 .radio-opt:hover{ border-color:#d3d7dd; }
-.radio-opt.on{ border-color:var(--brand); color:var(--brand); background:#fdf3f3; }
+.radio-opt.on{ border-color:var(--brand); color:var(--brand); background:#EEF4FA; }
 .radio-opt input{ width:16px; height:16px; margin:0; accent-color:var(--brand); cursor:pointer; flex:none; }
 .radio-opt span{ font-size:14px; font-weight:600; color:inherit; }
 /* ---- bloque que se despliega al tildar una cobertura ---- */
@@ -86,7 +86,7 @@ textarea{ resize:vertical; min-height:62px; }
 <div class="wrap">
   <div class="card">
     <div class="head">
-      <span class="logo"><img src="assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></span>
+      <span class="logo"><img src="assets/sfa-logo.jpg" alt="SF&A Asesores de Seguros" /></span>
       <h1>Cotizá tu seguro de hogar</h1>
       <p class="sub">Completá estos datos y te preparamos una cotización a medida. Te contactamos con la propuesta a la brevedad.</p>
     </div>
@@ -192,14 +192,14 @@ textarea{ resize:vertical; min-height:62px; }
       <span class="ref" id="refcode"></span>
     </div>
   </div>
-  <div class="foot">SARACENI · BROKER DE SEGUROS</div>
+  <div class="foot">SF&A · ASESORES DE SEGUROS</div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js"></script>
+<!-- DEMO: sin Supabase ni credenciales; el envio se simula -->
+<script src="demo-envio.js"></script>
 <script>
 (function () {
-  var sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+  var sb = window.DEMO_SB;
   var $ = function (id) { return document.getElementById(id); };
 
   // ---- casillas: destacan el recuadro y despliegan su bloque de datos ----

@@ -125,7 +125,7 @@ function Sidebar({ active, onNav, station, counts, open: drawerOpen, rol }) {
   return (
     <aside className={"sb" + (drawerOpen ? " is-open" : "")}>
       <div className="sb-brand">
-        <div className="sb-logo"><img src="assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></div>
+        <div className="sb-logo"><img src={MARCA.logo} alt={MARCA.nombreCompleto} /></div>
         <div className="sb-sub"><span className="sb-sub-dot" />Portal de gestiones</div>
       </div>
       <nav className="sb-nav">
@@ -166,8 +166,8 @@ function Sidebar({ active, onNav, station, counts, open: drawerOpen, rol }) {
         <div className="sb-station-note">{rol === "organizador" ? "Organizador" : rol === "empleado" ? "Empleado" : "Sesión activa"}</div>
       </div>
       <div className="sb-foot">
-        <span className="sb-foot-mark">SARACENI</span>
-        <span className="sb-foot-meta">Broker de Seguros · v1.0</span>
+        <span className="sb-foot-mark">{MARCA.nombre}</span>
+        <span className="sb-foot-meta">{MARCA.bajada} · v1.0</span>
       </div>
     </aside>
   );
@@ -468,7 +468,7 @@ function ModuleScreen({ info }) {
       <div className="ph-ico"><Ico name="folder" size={26} /></div>
       <span className="module-ph-tag"><span className="module-ph-dot" />En preparación</span>
       <h2>{i.title}</h2>
-      <p>Parte del portal de gestiones de Saraceni. Desde acá vas a administrar {i.title.toLowerCase()} dentro de {i.section}, con el mismo seguimiento diario que usás para los siniestros.</p>
+      <p>Parte del portal de gestiones de {MARCA.nombre}. Desde acá vas a administrar {i.title.toLowerCase()} dentro de {i.section}, con el mismo seguimiento diario que usás para los siniestros.</p>
     </div>
   );
 }

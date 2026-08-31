@@ -46,7 +46,7 @@ function LoginScreen({ onSignIn }) {
   return (
     <div className="login">
       <form className="login-card" onSubmit={submit}>
-        <div className="login-logo"><img src="assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></div>
+        <div className="login-logo"><img src={MARCA.logo} alt={MARCA.nombreCompleto} /></div>
         <h1 className="login-title">Portal de Siniestros</h1>
         <p className="login-sub">{mode === "signup" ? "Creá tu cuenta con tu email" : "Ingresá para continuar"}</p>
 
@@ -80,7 +80,8 @@ function LoginScreen({ onSignIn }) {
           {busy ? "Un momento…" : mode === "signup" ? "Crear cuenta" : "Ingresar"}
         </button>
 
-        <div className="login-foot">SARACENI · Broker de Seguros</div>
+        <div className="login-foot">{MARCA.nombre} · {MARCA.bajada}</div>
+        {window.DEMO && <div className="demo-hint">Es una demostración: entrá con cualquier mail y contraseña.</div>}
       </form>
     </div>
   );
@@ -92,7 +93,7 @@ function PendingScreen({ perfil, email, onLogout, onRefresh }) {
   return (
     <div className="login">
       <div className="login-card">
-        <div className="login-logo"><img src="assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></div>
+        <div className="login-logo"><img src={MARCA.logo} alt={MARCA.nombreCompleto} /></div>
         <h1 className="login-title">{suspendida ? "Acceso suspendido" : "Cuenta pendiente de aprobación"}</h1>
         <p className="login-sub" style={{ marginBottom: 14 }}>
           {suspendida
@@ -104,7 +105,7 @@ function PendingScreen({ perfil, email, onLogout, onRefresh }) {
         <button className="btn-ghost" type="button" style={{ width: "100%", justifyContent: "center", marginTop: 8 }} onClick={onLogout}>
           <Ico name="logout" size={15} />Salir
         </button>
-        <div className="login-foot">SARACENI · Broker de Seguros</div>
+        <div className="login-foot">{MARCA.nombre} · {MARCA.bajada}</div>
       </div>
     </div>
   );
