@@ -22,21 +22,21 @@ var MARCA = window.MARCA = {
   nombreCompleto: "Aicardi Broker de Seguros",
   bajada: "Broker de Seguros",
   logo: "assets/aicardi-logo.jpg",
-  // Menú lateral claro, como el fondo del logo. Usa el tema "claro" del portal.
+  // Menú lateral amarillo. Es un fondo CLARO, así que usa el tema "claro".
   sidebarTema: "claro",
 
   colores: {
-    "--brand": "#F5C518",
-    "--brand-d": "#E0B310",
+    "--brand": "#FED403",
+    "--brand-d": "#E8C000",
     "--brand-ink": "#2B2B2D",              // texto sobre amarillo
     "--brand-txt": "#8A6D00",              // texto dorado sobre blanco
-    "--brand-soft": "#FFFBEB",
-    "--brand-line": "#F2E3B4",
-    "--brand-ring": "rgba(245,197,24,.28)",
+    "--brand-soft": "#FFFAE3",
+    "--brand-line": "#F7E29B",
+    "--brand-ring": "rgba(254,212,3,.32)",
     // Menú lateral entero en amarillo, con letras negras. Es un fondo CLARO,
     // así que usa el tema "claro" del portal y las tintas van oscuras: los
     // grises que traen los temas oscuros acá no se leerían.
-    "--sb-bg": "#F5C518",
+    "--sb-bg": "#FED403",
     "--sb-ink": "#1C1D20",                 // negro de los items y las carpetas
     "--sb-ink-dim": "#4A400C",             // secundario, oscuro para que lea sobre amarillo
     "--sb-active": "#FFFFFF",              // el item activo y el hover, en blanco
@@ -72,7 +72,7 @@ var MARCA = window.MARCA = {
     ".sb-subitem{ color:var(--sb-ink); }",
     ".sb-group-label{ opacity:1; }",
     // lo que era del color de marca quedaría amarillo sobre amarillo
-    ".sb-count{ background:#1C1D20; color:#F5C518; }",
+    ".sb-count{ background:#1C1D20; color:#FED403; }",
     ".sb-sub-dot{ background:#1C1D20; }",
     ".sb-folder.is-open .sb-folder-head .sb-item-ico,",
     ".sb-folder-head.has-active .sb-item-ico,",
