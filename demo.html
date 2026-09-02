@@ -1133,10 +1133,14 @@ var MARCA = window.MARCA = {
     "--brand-soft": "#FFFBEB",
     "--brand-line": "#F2E3B4",
     "--brand-ring": "rgba(245,197,24,.28)",
-    // menú lateral blanco con gris del logo
+    // menú lateral blanco con gris del logo.
+    // Ojo con los grises: estos tonos vienen de temas de menú OSCURO, donde un
+    // gris claro se lee bien. Sobre blanco hay que oscurecerlos o el menú queda
+    // ilegible (el "tenue" original daba 2,6:1 de contraste, muy por debajo del
+    // 4,5:1 que se considera mínimo).
     "--sb-bg": "#FFFFFF",
-    "--sb-ink": "#4A4B4D",
-    "--sb-ink-dim": "#9A9B9E",
+    "--sb-ink": "#33353A",
+    "--sb-ink-dim": "#6B6D72",
     "--sb-active": "#FFF7DC",
     // fondo general apenas cálido, para que el blanco de las tarjetas resalte
     "--bg": "#F7F6F3",
@@ -1163,6 +1167,12 @@ var MARCA = window.MARCA = {
     ".login-err{ color:#C0241D; background:#FDF3F3; border-color:#F3C9C9; }",
     // el logo tiene mucho blanco propio: sin sombra ni borde se integra mejor
     ".sb-logo{ box-shadow:none; border:1px solid var(--line); }",
+    // franja amarilla del borde izquierdo, bien marcada
+    ".sb::after{ width:4px; opacity:1; }",
+    // los items del menú van con la tinta fuerte, no con la tenue
+    ".sb-subitem{ color:var(--sb-ink); }",
+    // las etiquetas chicas ya usan un gris tenue: sin bajarles todavía más la opacidad
+    ".sb-group-label{ opacity:1; }",
   ].join("\n");
   document.head.appendChild(css);
 })();
