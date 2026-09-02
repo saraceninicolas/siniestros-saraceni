@@ -33,15 +33,13 @@ var MARCA = window.MARCA = {
     "--brand-soft": "#FFFBEB",
     "--brand-line": "#F2E3B4",
     "--brand-ring": "rgba(245,197,24,.28)",
-    // menú lateral blanco con gris del logo.
-    // Ojo con los grises: estos tonos vienen de temas de menú OSCURO, donde un
-    // gris claro se lee bien. Sobre blanco hay que oscurecerlos o el menú queda
-    // ilegible (el "tenue" original daba 2,6:1 de contraste, muy por debajo del
-    // 4,5:1 que se considera mínimo).
-    "--sb-bg": "#FFFFFF",
-    "--sb-ink": "#33353A",
-    "--sb-ink-dim": "#6B6D72",
-    "--sb-active": "#FFF7DC",
+    // Menú lateral entero en amarillo, con letras negras. Es un fondo CLARO,
+    // así que usa el tema "claro" del portal y las tintas van oscuras: los
+    // grises que traen los temas oscuros acá no se leerían.
+    "--sb-bg": "#F5C518",
+    "--sb-ink": "#1C1D20",                 // negro de los items y las carpetas
+    "--sb-ink-dim": "#4A400C",             // secundario, oscuro para que lea sobre amarillo
+    "--sb-active": "#FFFFFF",              // el item activo y el hover, en blanco
     // fondo general apenas cálido, para que el blanco de las tarjetas resalte
     "--bg": "#F7F6F3",
     "--line": "#E7E5DF",
@@ -65,14 +63,26 @@ var MARCA = window.MARCA = {
     ".row-open.danger:hover{ background:#FDF3F3; color:#C0241D; }",
     ".confirm-ico{ background:#FDF3F3; color:#C0241D; }",
     ".login-err{ color:#C0241D; background:#FDF3F3; border-color:#F3C9C9; }",
-    // el logo tiene mucho blanco propio: sin sombra ni borde se integra mejor
-    ".sb-logo{ box-shadow:none; border:1px solid var(--line); }",
-    // franja amarilla del borde izquierdo, bien marcada
-    ".sb::after{ width:4px; opacity:1; }",
-    // los items del menú van con la tinta fuerte, no con la tenue
+    // ---- menú amarillo ----
+    // el logo va en su placa blanca, que sobre el amarillo resalta sola
+    ".sb-logo{ box-shadow:none; border:none; }",
+    // la franja de marca era amarilla: sobre el menú amarillo desaparecía
+    ".sb::after{ display:none; }",
+    // los items van con la tinta fuerte, no con la tenue
     ".sb-subitem{ color:var(--sb-ink); }",
-    // las etiquetas chicas ya usan un gris tenue: sin bajarles todavía más la opacidad
     ".sb-group-label{ opacity:1; }",
+    // lo que era del color de marca quedaría amarillo sobre amarillo
+    ".sb-count{ background:#1C1D20; color:#F5C518; }",
+    ".sb-sub-dot{ background:#1C1D20; }",
+    ".sb-folder.is-open .sb-folder-head .sb-item-ico,",
+    ".sb-folder-head.has-active .sb-item-ico,",
+    ".sb-item.is-active .sb-item-ico{ color:#1C1D20; }",
+    // separadores: los grises claros no se ven sobre amarillo
+    ".sb-brand{ border-bottom-color:rgba(0,0,0,.14); }",
+    ".sb-foot{ border-top-color:rgba(0,0,0,.14); }",
+    ".sb-folder-kids-inner{ border-left-color:rgba(0,0,0,.16); }",
+    // el bloque del usuario, como tarjeta blanca sobre el amarillo
+    ".sb-station{ background:#fff; border-color:rgba(0,0,0,.10); }",
   ].join("\n");
   document.head.appendChild(css);
 })();
