@@ -42,6 +42,8 @@ const Icons = {
   menu:   ["M4 7h16", "M4 12h16", "M4 17h16"],
   bell:   ["M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9", "M10.3 21a2 2 0 0 0 3.4 0"],
   chart:  ["M3 21h18", "M6 21v-6", "M12 21V4", "M18 21v-10"],
+  mega:   ["M4 10v4a1 1 0 0 0 1 1h3l5 4V5L8 9H5a1 1 0 0 0-1 1z", "M17 9a4 4 0 0 1 0 6"],
+  trend:  ["M3 17l6-6 4 4 7-7", "M15 8h5v5"],
 };
 const Ico = ({ name, ...rest }) => <Icon d={Icons[name]} {...rest} />;
 

@@ -472,7 +472,8 @@ function App() {
               : PENDIENTES_KEYS.includes(active)
               ? <PendientesModule active={active} station={quien} query={query} usuarios={usuariosActivos} />
               : OBJETIVOS_KEYS.includes(active)
-              ? <ObjetivosModule active={active} station={quien} query={query} />
+              ? <ObjetivosModule active={active} station={quien} query={query} usuarios={usuariosActivos}
+                  onNav={(k) => { setActive(k); setDetailId(null); }} />
               : <ModuleScreen info={NAV_LOOKUP[active]} />}
           </div>
         ) : detailItem ? (

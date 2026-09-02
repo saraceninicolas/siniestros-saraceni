@@ -442,13 +442,29 @@ async function dbMaxN() {
   }
 
   // ============================ OBJETIVOS ============================
+  // Los objetivos ganaron área, periodicidad, rango de fechas y responsables.
+  // `mes`/`anio`/`tipo` se siguen leyendo y escribiendo: son las columnas que usa
+  // la versión anterior del módulo, y las dos conviven sobre la misma tabla.
+  const finDeMes = (anio, mes) => new Date(anio, mes, 0).getDate();
   function fromRowO(r) {
+    const periodicidad = r.periodicidad || (r.mes == null ? "anual" : "mensual");
+    const desde = r.fecha_desde || (r.mes == null
+      ? r.anio + "-01-01"
+      : r.anio + "-" + String(r.mes).padStart(2, "0") + "-01");
+    const hasta = r.fecha_hasta || (r.mes == null
+      ? r.anio + "-12-31"
+      : r.anio + "-" + String(r.mes).padStart(2, "0") + "-" + String(finDeMes(r.anio, r.mes)).padStart(2, "0"));
     return {
       _dbId: r.id, id: r.codigo, n: r.n,
       titulo: r.titulo || "", tipo: r.tipo || "manual",
+      descripcion: r.descripcion || "",
+      area: r.area || (r.tipo === "facturacion" ? "facturacion" : "otro"),
+      periodicidad, fechaDesde: desde, fechaHasta: hasta,
       mes: r.mes, anio: r.anio,
       meta: r.meta, valorActual: r.valor_actual,
       unidad: r.unidad || "$", notas: r.notas || "",
+      responsable: r.responsable || "", equipo: r.equipo || "",
+      colaboradores: Array.isArray(r.colaboradores) ? r.colaboradores : [],
       ultimaModPor: r.ultima_mod_por || "",
       ultimaModFecha: r.ultima_mod_fecha || new Date().toISOString(),
       eliminado: !!r.eliminado,
@@ -458,11 +474,17 @@ async function dbMaxN() {
     return {
       codigo: it.id, n: it.n,
       titulo: it.titulo, tipo: it.tipo || "manual",
+      descripcion: orNull(it.descripcion),
+      area: orNull(it.area) || "otro",
+      periodicidad: orNull(it.periodicidad) || "mensual",
+      fecha_desde: orNull(it.fechaDesde), fecha_hasta: orNull(it.fechaHasta),
       mes: it.mes === "" || it.mes == null ? null : Number(it.mes),
       anio: Number(it.anio),
       meta: numOrNull(it.meta) || 0,
       valor_actual: numOrNull(it.valorActual),
       unidad: orNull(it.unidad) || "$", notas: orNull(it.notas),
+      responsable: orNull(it.responsable), equipo: orNull(it.equipo),
+      colaboradores: Array.isArray(it.colaboradores) ? it.colaboradores : [],
       ultima_mod_por: orNull(it.ultimaModPor),
       ultima_mod_fecha: it.ultimaModFecha || new Date().toISOString(),
       eliminado: !!it.eliminado,

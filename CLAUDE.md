@@ -26,7 +26,7 @@ Consecuencias prácticas:
 - **El orden de carga en `index.html` importa.** Un archivo solo puede usar lo
   que ya cargó antes. Orden actual:
   `config.js → db.js → data.jsx → auth.jsx → ui.jsx → charts.jsx →
-  estadisticas.jsx → modals.jsx → detail.jsx → solicitudes.jsx → usuarios.jsx →
+  estadisticas.jsx → objetivos-datos.jsx → objetivos-form.jsx → modals.jsx → detail.jsx → solicitudes.jsx → usuarios.jsx →
   facturas.jsx → renovaciones.jsx → comercial.jsx → pendientes.jsx →
   objetivos.jsx → calendar.jsx → app.jsx`
 - **Todos los archivos comparten un mismo scope global.** Dos `const` de nivel
@@ -49,6 +49,8 @@ Consecuencias prácticas:
 | `ui.jsx` | Íconos, sidebar, topbar, tabla de siniestros, agenda, **menú de navegación** |
 | `charts.jsx` | Gráficos en SVG hechos a mano (barras, dona, anillo, barras horizontales). No hay librería de gráficos: se dibujan acá y miden el ancho del contenedor para que el texto del eje no escale |
 | `estadisticas.jsx` | Estadísticas de siniestros: demora promedio por ramo, por hecho y el cruce entre los dos |
+| `objetivos-datos.jsx` | Objetivos: áreas, períodos y cálculo del avance. Sin interfaz |
+| `objetivos-form.jsx` | Objetivos: asistente de 5 pasos para crear o editar |
 | `app.jsx` | Orquestador: sesión, perfil/rol, ruteo por `active`, estado global |
 | `auth.jsx` | Login, registro y pantalla de "cuenta pendiente" |
 | `modals.jsx` / `detail.jsx` | Alta/edición y ficha completa de siniestro (+ PDF) |
