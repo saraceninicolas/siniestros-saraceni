@@ -39,7 +39,7 @@ window.DEMO = true;
     document.body.appendChild(cinta);
     const css = document.createElement("style");
     css.textContent = ".demo-cinta-publica{position:fixed;left:0;right:0;bottom:0;z-index:90;display:flex;" +
-      "align-items:center;justify-content:center;gap:10px;padding:9px 16px;background:#1F4E79;color:#fff;" +
+      "align-items:center;justify-content:center;gap:10px;padding:9px 16px;background:#F5C518;color:#2B2B2D;" +
       "font-size:12.5px;font-weight:600;font-family:inherit;text-align:center;box-shadow:0 -2px 10px rgba(16,20,28,.16)}" +
       ".demo-cinta-publica b{font-weight:800;letter-spacing:.03em}" +
       "body{padding-bottom:52px}";

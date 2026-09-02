@@ -12,7 +12,9 @@
 set -e
 cd "$(dirname "$0")"
 OUT="demo.html"
-LOGO_B64=$(base64 -w0 assets/sfa-logo.jpg)
+# El logo sale de marca.js, así este script sirve para cualquier marca
+LOGO=$(grep -o 'logo: "[^"]*"' marca.js | sed 's/logo: "//; s/"//')
+LOGO_B64=$(base64 -w0 "$LOGO")
 LOGO_URI="data:image/jpeg;base64,$LOGO_B64"
 
 # 1) El HTML hasta el cierre del <head>, con el logo embebido
@@ -23,7 +25,7 @@ sed -n '1,/^<\/head>$/p' index.html \
 # 2) marca.js y la base falsa, en línea (y el logo como data URI)
 {
   echo '<script>'
-  sed "s|\"assets/sfa-logo.jpg\"|\"$LOGO_URI\"|" marca.js
+  sed "s|\"$LOGO\"|\"$LOGO_URI\"|" marca.js
   echo '</script>'
   echo '<body>'
   echo '<div id="root"><div class="boot"><div class="boot-inner"><div class="boot-spin"></div>Cargando…</div></div></div>'

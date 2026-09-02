@@ -60,7 +60,7 @@ function buildICS(items, leadDays = 1) {
     const start = _icsDate(item.fechaLimite);
     out.push(
       "BEGIN:VEVENT",
-      `UID:${item.id}-${start}@saraceni`,
+      `UID:${item.id}-${start}@portal`,
       `DTSTAMP:${stamp}`,
       `DTSTART:${start}T100000`,
       `DTEND:${start}T110000`,
@@ -101,7 +101,7 @@ function CalendarSync({ data, onClose, onAgendar }) {
   const [lead, setLead] = React.useState(1);
 
   const exportAll = () => {
-    downloadICS("gestiones-saraceni.ics", buildICS(pendientes, lead));
+    downloadICS("gestiones-" + MARCA.nombre.toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".ics", buildICS(pendientes, lead));
     onAgendar && onAgendar(pendientes.map((d) => d.id));
   };
   const exportOne = (item) => {
