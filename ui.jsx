@@ -193,6 +193,11 @@ function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpe
         {query && <button className="tb-search-clear" onClick={() => onQuery("")}><Ico name="close" size={14} /></button>}
       </div>
       <div className="tb-actions">
+        {window.AMBIENTE === "test" && (
+          <span className="tb-ambiente" title="Estás en el ambiente de prueba: los datos que cargues acá NO afectan al portal real">
+            <Ico name="alert" size={13} />AMBIENTE DE PRUEBA
+          </span>
+        )}
         <div className="tb-date"><Ico name="clock" size={14} /><span style={{ textTransform: "capitalize" }}>{HOY}</span></div>
         <div className="tb-sep" />
         {isSiniestros && <button className="btn-ghost tb-icon" title="Sincronizar con Google Calendar" onClick={onOpenSync}><Ico name="agenda" size={18} /></button>}
