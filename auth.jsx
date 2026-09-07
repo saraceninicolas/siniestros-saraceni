@@ -49,6 +49,12 @@ function LoginScreen({ onSignIn }) {
         <div className="login-logo"><img src="assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></div>
         <h1 className="login-title">Portal de Siniestros</h1>
         <p className="login-sub">{mode === "signup" ? "Creá tu cuenta con tu email" : "Ingresá para continuar"}</p>
+        {window.AMBIENTE === "test" && (
+          <div className="login-ambiente">
+            <Ico name="alert" size={14} />
+            <span><b>Ambiente de prueba.</b> Esta pantalla usa una base separada: lo que cargues acá no toca el portal real.</span>
+          </div>
+        )}
 
         <div className="login-tabs">
           <button type="button" className={"login-tab" + (mode === "login" ? " is-on" : "")} onClick={() => switchMode("login")}>Ingresar</button>
