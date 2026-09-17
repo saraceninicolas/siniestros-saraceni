@@ -215,6 +215,11 @@ function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpe
 }
 
 // ---------- KPIs ----------
+// Las tarjetas se definen como objetos con `key` adentro y después se hacen
+// spread. React avisa si la `key` viaja en el spread —y en React 19 deja de
+// funcionar—, así que se saca antes: la key va aparte y explícita.
+function sinKey(obj) { const { key, ...resto } = obj; return resto; }
+
 // Tarjeta de KPI. Si recibe `onClick` se vuelve un filtro: se dibuja como
 // <button> de verdad —no un div con onClick— para que ande con teclado y lo
 // anuncien los lectores de pantalla.
@@ -266,7 +271,7 @@ function Kpis({ data, foco, onFoco }) {
   return (
     <div className="kpis">
       {cards.map((c) => (
-        <KpiCard key={c.key} {...c}
+        <KpiCard key={c.key} {...sinKey(c)}
           activo={foco === c.key}
           onClick={onFoco ? () => onFoco(c.key) : undefined} />
       ))}
@@ -513,7 +518,7 @@ function ModuleScreen({ info }) {
 }
 
 Object.assign(window, {
-  Ico, Icons, Badge, UrgBadge, RamoTag, Sidebar, Topbar, KpiCard, Kpis, Toolbar, ClaimsTable, Agenda,
+  Ico, Icons, Badge, UrgBadge, RamoTag, Sidebar, Topbar, KpiCard, Kpis, sinKey, Toolbar, ClaimsTable, Agenda,
   ModuleScreen, PORTAL_NAV, NAV_LOOKUP, SINIESTROS_KEYS, FACTURACION_KEYS, RENOVACION_KEYS, COMERCIAL_KEYS,
   PENDIENTES_KEYS, OBJETIVOS_KEYS, ADMIN_KEYS, ORG_ONLY_KEYS,
 });

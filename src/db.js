@@ -37,6 +37,8 @@
       n: r.n,
       estado: r.estado,
       cliente: r.cliente,
+      clienteDoc: r.cliente_doc || "",
+      aseguradoId: r.asegurado_id || null,
       dominio: r.dominio || "",
       referencia: r.referencia || "",
       cia: r.cia,
@@ -83,6 +85,8 @@
       n: it.n,
       estado: it.estado,
       cliente: it.cliente,
+      cliente_doc: orNull(it.clienteDoc),
+      asegurado_id: it.aseguradoId || null,
       dominio: orNull(it.dominio),
       referencia: orNull(it.referencia),
       cia: it.cia,
@@ -688,6 +692,84 @@ async function dbMaxN() {
     return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
   }
 
+  // ============================ ASEGURADOS ============================
+  // Una ficha por persona. El duplicado lo impide la base con un índice único
+  // sobre el documento normalizado (ver supabase/migrations/…_asegurados.sql),
+  // así que acá no hace falta ninguna precaución extra: si el documento ya
+  // existe, `asegBuscarOCrear` devuelve el id de la ficha que ya estaba.
+  function fromRowA(r) {
+    return {
+      id: r.id, nombre: r.nombre || "", documento: r.documento || "",
+      documentoNorm: r.documento_norm || "", nombreNorm: r.nombre_norm || "",
+      email: r.email || "", telefono: r.telefono || "", notas: r.notas || "",
+      creado: r.created_at || null,
+    };
+  }
+
+  async function asegList() {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("asegurados").select("*").order("nombre");
+    if (error) throw error;
+    return (data || []).map(fromRowA);
+  }
+
+  // Busca por documento o por nombre para el autocompletado del formulario.
+  // El documento va primero y exacto: es el que identifica sin ambigüedad.
+  async function asegBuscar(texto) {
+    const c = client(); if (!c) return [];
+    const q = String(texto || "").trim();
+    if (q.length < 2) return [];
+    const soloDigitos = q.replace(/[^0-9]/g, "");
+    const partes = [`nombre.ilike.%${q}%`];
+    if (soloDigitos.length >= 4) partes.push(`documento.ilike.%${soloDigitos}%`);
+    const { data, error } = await c.from("asegurados").select("*").or(partes.join(",")).limit(8);
+    if (error) { console.error(error); return []; }
+    return (data || []).map(fromRowA);
+  }
+
+  // Coincidencia exacta por documento: es lo que dispara el autocompletado.
+  async function asegPorDocumento(doc) {
+    const c = client(); if (!c) return null;
+    const norm = String(doc || "").replace(/[oO]/g, "0").replace(/[iIlL]/g, "1").replace(/[^0-9]/g, "");
+    if (norm.length < 6) return null;
+    // Mismo criterio que doc_normalizado() en Postgres: de un CUIT sale el DNI.
+    const buscado = norm.length === 11 ? norm.slice(2, 10).replace(/^0+/, "") : norm.replace(/^0+/, "");
+    const { data, error } = await c.from("asegurados").select("*").eq("documento_norm", buscado).maybeSingle();
+    if (error) { console.error(error); return null; }
+    return data ? fromRowA(data) : null;
+  }
+
+  // Cuántos siniestros tiene: es lo que hace útil mostrar que "ya existe".
+  async function asegSiniestros(aseguradoId) {
+    const c = client(); if (!c) return [];
+    const { data, error } = await c.from("siniestros")
+      .select("codigo,cliente,ramo,hecho,estado,fecha_denuncia,cia,nro_siniestro")
+      .eq("asegurado_id", aseguradoId).eq("eliminado", false)
+      .order("fecha_denuncia", { ascending: false });
+    if (error) { console.error(error); return []; }
+    return data || [];
+  }
+
+  async function asegBuscarOCrear({ nombre, documento, email, telefono }) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.rpc("asegurado_buscar_o_crear", {
+      p_nombre: nombre || null, p_documento: documento || null,
+      p_email: email || null, p_telefono: telefono || null,
+    });
+    if (error) throw error;
+    return data;   // id del asegurado
+  }
+
+  async function asegUpdate(a) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("asegurados")
+      .update({ nombre: a.nombre, documento: orNull(a.documento), email: orNull(a.email),
+                telefono: orNull(a.telefono), notas: orNull(a.notas), updated_at: new Date().toISOString() })
+      .eq("id", a.id).select().single();
+    if (error) throw error;
+    return fromRowA(data);
+  }
+
   // ============================ ARCHIVOS (Storage) ============================
   const BUCKET = "adjuntos";
   async function fileUpload(file) {
@@ -751,6 +833,10 @@ async function dbMaxN() {
     obj: {
       list: objList, create: objCreate, update: objUpdate,
       remove: objRemove, maxN: objMaxN, subscribe: objSubscribe,
+    },
+    aseg: {
+      list: asegList, buscar: asegBuscar, porDocumento: asegPorDocumento,
+      buscarOCrear: asegBuscarOCrear, update: asegUpdate, siniestros: asegSiniestros,
     },
     sol: { list: solList, update: solUpdate, subscribe: solSubscribe },
     cot: { list: cotList, update: cotUpdate, subscribe: cotSubscribe },

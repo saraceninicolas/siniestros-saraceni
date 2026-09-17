@@ -269,6 +269,24 @@ function App() {
   const usuariosActivos = perfiles.filter((p) => p.estado === "activo");
   const usuariosPend = perfiles.filter((p) => p.estado === "pendiente").length;
 
+  // Engancha el siniestro a una ficha de asegurado. Si ya hay una elegida en el
+  // formulario se respeta; si no, busca por documento y la crea si no existe.
+  // La base impide el duplicado con un indice unico, asi que dos cargas del
+  // mismo cliente terminan en la misma ficha aunque el nombre este escrito
+  // distinto. Si algo falla, el siniestro se guarda igual: la ficha es una
+  // mejora, no puede ser lo que impida registrar un siniestro.
+  const engancharAsegurado = async (data) => {
+    if (!usingDb || !window.DB.aseg) return data;
+    if (data.aseguradoId) return data;
+    const nombre = (data.cliente || "").trim();
+    const doc = (data.clienteDoc || "").trim();
+    if (!nombre && !doc) return data;
+    try {
+      const id = await window.DB.aseg.buscarOCrear({ nombre, documento: doc });
+      return { ...data, aseguradoId: id };
+    } catch (e) { console.error("No se pudo enganchar el asegurado:", e); return data; }
+  };
+
   const handleCreate = async (data) => {
   // Aviso si ya existe un siniestro activo con el mismo número
   const nro = (data.nroSiniestro || "").trim();
@@ -281,7 +299,8 @@ function App() {
   } else {
     n = siniestros.reduce((m, s) => Math.max(m, s.n || 0), 0) + 1;
   }
-  let item = { ...data, id: sinId(n), n, ultimaModPor: quien, ultimaModFecha: nowIso(), eliminado: false };
+  const conFicha = await engancharAsegurado(data);
+  let item = { ...conFicha, id: sinId(n), n, ultimaModPor: quien, ultimaModFecha: nowIso(), eliminado: false };
   if (usingDb) {
     try { item = await window.DB.create(item); }
     catch (e) { console.error(e); flash("Error al guardar en Supabase", true); return; }
@@ -355,7 +374,8 @@ function App() {
     } catch (e) { console.error(e); flash("Error al reabrir", true); }
   };
   const handleUpdate = async (data) => {
-    let updated = { ...data, ultimaModPor: quien, ultimaModFecha: nowIso() };
+    const conFicha = await engancharAsegurado(data);
+    let updated = { ...conFicha, ultimaModPor: quien, ultimaModFecha: nowIso() };
     if (usingDb) {
       try { updated = await window.DB.update(updated); }
       catch (e) { console.error(e); flash("Error al actualizar en Supabase", true); return; }

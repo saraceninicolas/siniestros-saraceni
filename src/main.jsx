@@ -37,6 +37,7 @@ import "./auth.jsx";
 import "./ui.jsx";
 import "./charts.jsx";
 import "./estadisticas.jsx";
+import "./asegurados.jsx";
 import "./modals.jsx";
 import "./adjuntos.jsx";
 import "./detail.jsx";

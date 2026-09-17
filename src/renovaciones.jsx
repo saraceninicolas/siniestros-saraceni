@@ -70,7 +70,7 @@ function RenovKpis({ data, foco, onFoco }) {
   return (
     <div className="kpis">
       {cards.map((c) => (
-        <KpiCard key={c.key} {...c}
+        <KpiCard key={c.key} {...sinKey(c)}
           activo={foco === c.key}
           onClick={onFoco ? () => onFoco(c.key) : undefined} />
       ))}

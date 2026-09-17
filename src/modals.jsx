@@ -39,6 +39,7 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit, usuarios })
     poliza: "", nroSiniestro: "", fechaOcurrido: "", fechaDenuncia: "", fechaLimite: "", fechaInspeccion: "",
     gestionAR: "", gestionReal: "", gestiones: [], gestor: "", gestorEmail: "", gestorTel: "", obs: "", ticket: "",
     franquiciaPct: "", franquiciaMonto: "", adjuntos: [], enCalendario: false, asignadoA: null,
+    clienteDoc: "", aseguradoId: null,
   };
   const [f, setF] = React.useState(() => {
     const base = initial ? { ...blank, ...initial } : blank;
@@ -137,10 +138,10 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit, usuarios })
       }>
       <FormSection label="Datos del siniestro" />
       <div className="form-grid">
-        <Field label="Cliente" required full>
-          <input className={"input" + (touched && !f.cliente.trim() ? " err" : "")} value={f.cliente}
-            onChange={(e) => set("cliente", e.target.value)} placeholder="Nombre / razón social" />
-        </Field>
+        <BuscadorAsegurado
+          nombre={f.cliente} documento={f.clienteDoc || ""} aseguradoId={f.aseguradoId || null}
+          conError={touched && !f.cliente.trim()}
+          onCambio={(datos) => setF((p) => ({ ...p, ...datos }))} />
         <Field label="Dominio / bien afectado">
           <input className="input mono" value={f.dominio} onChange={(e) => set("dominio", e.target.value.toUpperCase())}
             placeholder="Ej: AB123CD o Notebook Lenovo" />
@@ -437,7 +438,10 @@ function Toast({ toast }) {
   );
 }
 
-Object.assign(window, { ClaimFormModal, DetailModal, ConfirmDelete, Toast });
+// `Field` y `FormSection` van a window porque los usa asegurados.jsx.
+// Con Vite cada archivo es un módulo aparte: lo que no se expone acá no existe
+// para los demás, aunque antes —con todo en el scope global— sí se veía.
+Object.assign(window, { ClaimFormModal, DetailModal, ConfirmDelete, Toast, Field, FormSection });
 
 // Marca este archivo como modulo ES. Sin esto el compilador lo toma por
 // script (no tiene ningun import/export todavia) y compila el JSX a require(),

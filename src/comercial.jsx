@@ -172,7 +172,7 @@ function ComercialPanel({ data }) {
     <div>
       <div className="kpis">
         {cards.map((c) => (
-          <KpiCard key={c.label} {...c}
+          <KpiCard key={c.label} {...sinKey(c)}
             activo={c.key && foco === c.key}
             onClick={c.key ? () => setFoco(foco === c.key ? null : c.key) : undefined} />
         ))}
