@@ -206,6 +206,7 @@ textarea{ resize:vertical; min-height:110px; }
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
+<script src="imagenes.js"></script>
 <script>
 (function () {
   var sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
@@ -498,6 +499,20 @@ textarea{ resize:vertical; min-height:110px; }
         if (fotos[m.id]) aSubir.push({ file: fotos[m.id], etiqueta: m.txt + (m.sub ? " · " + m.sub : "") });
       });
       files.forEach(function (f) { aSubir.push({ file: f, etiqueta: "" }); });
+
+      // Las fotos de celular llegan de 3 a 5 MB. Se achican acá, antes de que
+      // el archivo viaje: sube mucho más rápido con datos móviles, que es como
+      // se carga la mayoría de las denuncias.
+      // Si imagenes.js no cargó por lo que sea, se suben los originales: nunca
+      // se pierde una denuncia por no poder optimizar una foto.
+      if (aSubir.length && window.achicarVarias) {
+        btn.textContent = "Preparando las fotos…";
+        try {
+          var originales = aSubir.map(function (a) { return a.file; });
+          var livianos = await window.achicarVarias(originales);
+          for (var k = 0; k < aSubir.length; k++) aSubir[k].file = livianos[k];
+        } catch (e) { console.warn("[denuncia] se suben los originales:", e); }
+      }
 
       var adjuntos = [];
       for (var i = 0; i < aSubir.length; i++) {

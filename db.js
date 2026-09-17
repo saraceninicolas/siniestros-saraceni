@@ -687,11 +687,17 @@ async function dbMaxN() {
   const BUCKET = "adjuntos";
   async function fileUpload(file) {
     const c = client(); if (!c) throw new Error("Supabase no configurado");
+    // Único punto por donde el portal sube archivos: se achica acá para que
+    // ninguna pantalla se olvide de hacerlo. Los PDF pasan intactos.
+    const original = file;
+    if (window.achicarImagen) file = await window.achicarImagen(file);
     const safe = (file.name || "archivo").replace(/[^a-zA-Z0-9._-]/g, "_");
     const path = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${safe}`;
     const { error } = await c.storage.from(BUCKET).upload(path, file, { upsert: false, contentType: file.type || undefined });
     if (error) throw error;
-    return { name: file.name || safe, path, tipo: file.type || "", size: file.size || 0 };
+    // El nombre que ve el usuario es el que eligió, aunque el archivo guardado
+    // haya cambiado de extensión al convertirse a WebP.
+    return { name: original.name || safe, path, tipo: file.type || "", size: file.size || 0 };
   }
   async function fileSignedUrl(path, secs, bucket) {
     const c = client(); if (!c) return null;

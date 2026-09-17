@@ -33,8 +33,12 @@ function SolCard({ s, onConvertir, onDescartar, onReabrir }) {
     let alive = true;
     (async () => {
       if (!window.DB || !window.DB.files || !(s.adjuntos || []).length) return;
+      // En paralelo: una solicitud con 5 fotos encadenaba 5 viajes al servidor
+      // antes de mostrar nada.
       const m = {};
-      for (const a of s.adjuntos) { try { m[a.path] = await window.DB.files.signedUrl(a.path, 3600, "solicitudes"); } catch (e) { /* noop */ } }
+      await Promise.all(s.adjuntos.map(async (a) => {
+        try { m[a.path] = await window.DB.files.signedUrl(a.path, 3600, "solicitudes"); } catch (e) { /* noop */ }
+      }));
       if (alive) setUrls(m);
     })();
     return () => { alive = false; };
@@ -108,7 +112,7 @@ function SolCard({ s, onConvertir, onDescartar, onReabrir }) {
               <a className="adj-card" key={a.path || i} href={url || "#"} target="_blank" rel="noreferrer"
                 onClick={(e) => { if (!url) e.preventDefault(); }}>
                 {isImg && url
-                  ? <img className="adj-thumb" src={url} alt={a.name} />
+                  ? <img className="adj-thumb" src={url} alt={a.name} loading="lazy" decoding="async" />
                   : <span className="adj-thumb adj-thumb-file"><Ico name="doc" size={24} /></span>}
                 {/* si vino de un marco, mostramos qué foto es en vez del nombre del archivo */}
                 <span className="adj-card-name" title={a.etiqueta ? a.etiqueta + " — " + a.name : a.name}>
