@@ -10,69 +10,89 @@ públicas para que los clientes carguen denuncias y pidan cotizaciones.
 
 ---
 
-## Stack: sin build, sin Node
+## Stack: Vite + React (migración a medio camino)
 
-No hay `npm`, ni bundler, ni paso de compilación. `index.html` carga React y
-Babel Standalone desde CDN y todos los `.jsx` se transpilan **en el navegador**:
-
-```html
-<script type="text/babel" src="ui.jsx"></script>
+```bash
+npm install     # una vez
+npm run dev     # servidor local en :5173, con recarga en caliente
+npm run build   # compila a dist/
+npm run preview # sirve dist/ en :4173, para probar lo compilado
+npm test        # tests (vitest)
 ```
 
-Consecuencias prácticas:
+⚠️ **La migración a módulos ES está en el PASO 1 de 2.** Leer `src/main.jsx`
+antes de tocar nada: explica el plan completo.
 
-- **No hay imports/exports.** Cada archivo declara funciones en el scope global
-  y al final hace `Object.assign(window, { ... })` con lo que expone.
-- **El orden de carga en `index.html` importa.** Un archivo solo puede usar lo
-  que ya cargó antes. Orden actual:
-  `config.js → imagenes.js → db.js → data.jsx → auth.jsx → ui.jsx →
-  charts.jsx → estadisticas.jsx → modals.jsx → detail.jsx → solicitudes.jsx →
-  usuarios.jsx → facturas.jsx → renovaciones.jsx → comercial.jsx →
-  pendientes.jsx → objetivos-datos.jsx → objetivos-form.jsx → objetivos.jsx →
-  calendar.jsx → app.jsx`
-- **Todos los archivos comparten un mismo scope global.** Dos `const` de nivel
-  superior con el mismo nombre en archivos distintos rompen todo con
-  "Identifier has already been declared": los nombres nuevos van prefijados
-  (`CH_`, `est`, `obj`, `fact`).
+- **Paso 1 (actual):** Vite compila y empaqueta, pero los módulos se siguen
+  hablando por `window` como antes. `src/andamio.js` pone React y Supabase en
+  `window`; `src/main.jsx` importa los módulos en el mismo orden que tenían los
+  viejos `<script>`.
+- **Paso 2 (pendiente):** pasar archivo por archivo a `import`/`export` de
+  verdad, con el portal andando en todo momento. Ahí se borran el andamio, los
+  `Object.assign(window, …)` y los `export {};` del final de cada `.jsx`.
+
+Mientras dure el paso 1 siguen valiendo las reglas viejas:
+
+- **Todos los archivos comparten el scope global.** Dos `const` de nivel
+  superior con el mismo nombre rompen todo con "Identifier has already been
+  declared": los nombres nuevos van prefijados (`CH_`, `est`, `obj`, `fact`).
+- **El orden de los imports en `src/main.jsx` importa.** Un archivo solo puede
+  usar lo que ya se evaluó antes. Al agregar un archivo nuevo hay que sumarlo
+  ahí, no a `index.html`.
+- **Cada `.jsx` termina con `export {};`.** No es decorativo: el compilador
+  decide si un archivo es módulo ES o script mirando si tiene algún
+  `import`/`export`. Sin eso lo toma por script y compila el JSX a `require()`,
+  que en el navegador no existe.
 - **Cuidado con el orden dentro de un archivo**: las `function` se hoistean pero
   las `var`/`const` no. Si una función se *ejecuta* arriba y usa un `var`
   declarado abajo, recibe `undefined` (ya pasó dos veces).
-- Al agregar un archivo nuevo hay que sumarlo al `index.html`.
+- **Los `import` de ES se hoistean**: se evalúan antes que cualquier línea del
+  cuerpo del archivo que los importa. Por eso el andamio vive en su propio
+  archivo y no dentro de `main.jsx`.
 
 ## Mapa de archivos
 
 | Archivo | Qué hace |
 |---|---|
-| `index.html` | HTML raíz + **todo el CSS** del portal + carga de scripts |
-| `config.js` | Elige **a qué base** se conecta el portal, según el dominio |
-| `imagenes.js` | Achica las fotos antes de subirlas (1600px, WebP). Ante cualquier problema devuelve el original: optimizar nunca puede hacer fallar una carga |
-| `db.js` | Única capa de datos. Todo Supabase pasa por acá |
-| `data.jsx` | Constantes de negocio (ramos, compañías, estados) y helpers de fecha |
-| `ui.jsx` | Íconos, sidebar, topbar, tabla de siniestros, agenda, **menú de navegación** |
-| `charts.jsx` | Gráficos en SVG hechos a mano (barras, dona, anillo, barras horizontales). No hay librería de gráficos: se dibujan acá y miden el ancho del contenedor para que el texto del eje no escale |
-| `estadisticas.jsx` | Estadísticas de siniestros: demora promedio por ramo, por hecho y el cruce entre los dos |
-| `objetivos-datos.jsx` | Objetivos: áreas, períodos y cálculo del avance. Sin interfaz |
-| `objetivos-form.jsx` | Objetivos: asistente de 5 pasos para crear o editar |
-| `app.jsx` | Orquestador: sesión, perfil/rol, ruteo por `active`, estado global |
-| `auth.jsx` | Login, registro y pantalla de "cuenta pendiente" |
-| `modals.jsx` / `detail.jsx` | Alta/edición y ficha completa de siniestro (+ PDF) |
-| `solicitudes.jsx` `facturas.jsx` `renovaciones.jsx` `comercial.jsx` `pendientes.jsx` `objetivos.jsx` `usuarios.jsx` | Un módulo por carpeta del menú |
+| `index.html` | HTML raíz. Ya NO tiene el CSS ni la lista de scripts: solo carga `src/main.jsx` |
+| `vite.config.js` | Build. Tres entradas: el portal y las dos páginas públicas |
+| `src/main.jsx` | **Punto de entrada.** Importa los módulos en orden. Explica la migración |
+| `src/andamio.js` | Temporal: pone React y Supabase en `window` (paso 1) |
+| `src/publico.js` | Entrada de las dos páginas públicas |
+| `src/estilos/tokens.css` | **Las variables de diseño.** Acá vive todo lo que cambia entre una marca y otra |
+| `src/estilos/portal.css` | El resto del CSS del portal |
+| `src/config.js` | Elige **a qué base** se conecta el portal, según el dominio |
+| `src/imagenes.js` | Achica las fotos antes de subirlas (1600px, WebP). Ante cualquier problema devuelve el original: optimizar nunca puede hacer fallar una carga |
+| `src/db.js` | Única capa de datos. Todo Supabase pasa por acá |
+| `src/data.jsx` | Constantes de negocio (ramos, compañías, estados) y helpers de fecha |
+| `src/ui.jsx` | Íconos, sidebar, topbar, tabla de siniestros, agenda, **menú de navegación** |
+| `src/charts.jsx` | Gráficos en SVG hechos a mano (barras, dona, anillo, barras horizontales). No hay librería de gráficos: se dibujan acá y miden el ancho del contenedor para que el texto del eje no escale |
+| `src/estadisticas.jsx` | Estadísticas de siniestros: demora promedio por ramo, por hecho y el cruce entre los dos |
+| `src/objetivos-datos.jsx` | Objetivos: áreas, períodos y cálculo del avance. Sin interfaz |
+| `src/objetivos-form.jsx` | Objetivos: asistente de 5 pasos para crear o editar |
+| `src/app.jsx` | Orquestador: sesión, perfil/rol, ruteo por `active`, estado global |
+| `src/auth.jsx` | Login, registro y pantalla de "cuenta pendiente" |
+| `src/modals.jsx` / `src/detail.jsx` | Alta/edición y ficha completa de siniestro (+ PDF) |
+| `src/solicitudes.jsx` `src/facturas.jsx` `src/renovaciones.jsx` `src/comercial.jsx` `src/pendientes.jsx` `src/objetivos.jsx` `src/usuarios.jsx` | Un módulo por carpeta del menú |
 | `denuncia.html` / `cotizar-hogar.html` | Páginas **públicas** standalone (no cargan el portal) |
 | `supabase/*.sql` | Esquema de referencia de cada tabla (documentación, no se ejecuta solo) |
 | `supabase/migrations/` | **Historial** de cambios de esquema. Archivos numerados que no se editan una vez aplicados. El README dice qué migración está en cada ambiente |
 
 ## Patrón para agregar un módulo
 
-1. **Tabla + RLS** en Supabase (ver más abajo) y dejarla documentada en `supabase/`.
-2. **`db.js`**: un namespace con `list/create/update/remove/subscribe` y el mapeo
-   `snake_case` (Postgres) ↔ `camelCase` (app). Los helpers `orNull` y
+1. **Tabla + RLS** en Supabase y una migración en `supabase/migrations/`.
+2. **`src/db.js`**: un namespace con `list/create/update/remove/subscribe` y el
+   mapeo `snake_case` (Postgres) ↔ `camelCase` (app). Los helpers `orNull` y
    `numOrNull` viven arriba, fuera de los módulos: **no duplicarlos ni moverlos
    adentro de un bloque**.
-3. **`<modulo>.jsx`**: componentes + un orquestador `XModule({ active, station, query })`.
-4. **`ui.jsx`**: entrada en `PORTAL_NAV` y su constante `X_KEYS`.
+3. **`src/<modulo>.jsx`**: componentes + un orquestador
+   `XModule({ active, station, query })`. Termina con `Object.assign(window, …)`
+   y `export {};` (mientras dure el paso 1 de la migración).
+4. **`src/ui.jsx`**: entrada en `PORTAL_NAV` y su constante `X_KEYS`.
    `org: true` en la carpeta = solo organizadores.
-5. **`app.jsx`**: ruteo en la cascada de `active`.
-6. **`index.html`**: `<script type="text/babel" src="...">` + su CSS.
+5. **`src/app.jsx`**: ruteo en la cascada de `active`.
+6. **`src/main.jsx`**: el `import` en la posición correcta del orden.
+7. **`src/estilos/portal.css`**: su CSS. Si agrega un color, va en `tokens.css`.
 
 ## Roles y seguridad (RLS)
 
@@ -112,7 +132,8 @@ Cada rama tiene su **proyecto de Vercel y su base de Supabase**, separados:
 | `test` | https://siniestros-saraceni-test.vercel.app | `ykqnthxwawmoadvoywgl` (datos inventados) |
 | `main` | https://siniestros-saraceni.vercel.app | `yscvpdogjgfvllizbyxp` (datos reales) |
 
-- Push a la rama = deploy automático. No hay build step.
+- Push a la rama = deploy automático. **Vercel corre `npm run build`** y publica
+  `dist/` (configurado en `vercel.json`).
 - **Trabajar siempre en `test`.** Pasar a producción solo cuando lo piden, con
   `git checkout main && git merge test && git push origin main`.
 - `vercel.json` tiene `cleanUrls`, por eso `/denuncia` sirve `denuncia.html`.
@@ -141,10 +162,14 @@ base real, preguntar.
   código. Varios bugs (canal duplicado, orden de declaración, función borrada,
   policy faltante, un `revoke` que no revocaba) solo aparecieron al usar la
   pantalla de verdad o al consultar la base.
-- **No hay servidor local**: la máquina no tiene Node ni Python (el `python` que
-  aparece en el PATH es el stub de la Microsoft Store). El navegador no ejecuta
-  JS sobre `file://` en el panel de vista previa. Para probar algo que necesite
-  correr de verdad, se sube a `test` y se verifica en su URL.
+- **Ahora sí hay servidor local**: `npm run dev` (:5173). Ya no hace falta
+  desplegar en test para probar. Igual conviene verificar lo **compilado** antes
+  de dar algo por bueno —`npm run build && npm run preview` (:4173)—, porque el
+  servidor de desarrollo y la build no son idénticos.
+- La máquina no tiene Python: el `python` del PATH es el stub de la Microsoft
+  Store. Para scripts sueltos, usar Node.
+- El panel de vista previa del navegador no ejecuta JS sobre `file://` (lo carga
+  como `data:`): probar contra `localhost`, no abriendo el archivo.
 
 ## Datos que vienen de Excel
 
