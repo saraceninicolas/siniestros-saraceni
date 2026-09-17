@@ -23,6 +23,15 @@ create table if not exists public.solicitudes (
   tercero_dominio  text,
   tercero_cia      text,
   tercero_poliza   text,
+  -- Terceros del segundo en adelante (choque múltiple). Del principal se piden
+  -- los datos de póliza, que es lo que hace falta para reclamar; de los demás
+  -- alcanza con identificarlos: [{nombre, dni}]
+  terceros_extra   jsonb not null default '[]'::jsonb,
+  -- Quién iba al volante. Si no era el asegurado, la compañía pide sus datos
+  -- y su registro (el marco de foto se marca como obligatorio en el formulario)
+  conductor_distinto boolean not null default false,
+  conductor_nombre text,
+  conductor_dni    text,
   fecha_hecho      date,
   hora_hecho       text,
   ubicacion        text,

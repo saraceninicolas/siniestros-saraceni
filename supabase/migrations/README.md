@@ -28,3 +28,4 @@ Siempre **test primero**, se verifica, y recién después producción.
 |---|---|---|
 | `20260917_0001_borrar_tabla_facturas.sql` | aplicada | pendiente |
 | `20260917_0002_revocar_execute_triggers.sql` | aplicada | pendiente |
+| `20260918_0003_denuncia_conductor_y_terceros.sql` | aplicada | pendiente |

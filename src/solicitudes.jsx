@@ -69,6 +69,16 @@ function SolCard({ s, onConvertir, onDescartar, onReabrir }) {
         <D k="Email" v={s.email} />
       </div>
 
+      {s.conductorDistinto && (
+        <>
+          <div className="sol-sub">Conductor <span className="sol-aviso">no es el asegurado</span></div>
+          <div className="sol-grid-datos">
+            <D k="Nombre" v={s.conductorNombre} />
+            <D k="DNI" v={s.conductorDni} mono />
+          </div>
+        </>
+      )}
+
       {(s.terceroNombre || s.terceroDni || s.terceroDominio || s.terceroCia || s.terceroPoliza) && (
         <>
           <div className="sol-sub">Tercero</div>
@@ -79,6 +89,20 @@ function SolCard({ s, onConvertir, onDescartar, onReabrir }) {
             <D k="Patente" v={s.terceroDominio} mono />
             <D k="Compañía" v={s.terceroCia} />
             <D k="N° de póliza" v={s.terceroPoliza} mono />
+          </div>
+        </>
+      )}
+
+      {(s.tercerosExtra || []).length > 0 && (
+        <>
+          <div className="sol-sub">Otras personas involucradas <span className="sol-aviso">{s.tercerosExtra.length}</span></div>
+          <div className="sol-grid-datos">
+            {/* El nombre va como valor y nunca falta: `D` se esconde sola si el
+                valor está vacío, y un tercero sin DNI desaparecería de la lista. */}
+            {s.tercerosExtra.map((p, i) => (
+              <D key={i} k={"Persona " + (i + 2)}
+                v={p.nombre + (p.dni ? " · DNI " + p.dni : "")} />
+            ))}
           </div>
         </>
       )}

@@ -533,6 +533,11 @@ async function dbMaxN() {
       tipoSiniestro: r.tipo_siniestro || "",
       terceroNombre: r.tercero_nombre || "", terceroDni: r.tercero_dni || "", terceroCelular: r.tercero_celular || "",
       terceroDominio: r.tercero_dominio || "", terceroCia: r.tercero_cia || "", terceroPoliza: r.tercero_poliza || "",
+      // Columnas nuevas: las solicitudes cargadas antes de la migración no las
+      // traen, de ahí los valores por defecto.
+      tercerosExtra: Array.isArray(r.terceros_extra) ? r.terceros_extra : [],
+      conductorDistinto: !!r.conductor_distinto,
+      conductorNombre: r.conductor_nombre || "", conductorDni: r.conductor_dni || "",
       fechaHecho: r.fecha_hecho || "", horaHecho: r.hora_hecho || "",
       ubicacion: r.ubicacion || "", localidad: r.localidad || "",
       lesionados: r.lesionados || "", relato: r.relato || "",

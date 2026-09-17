@@ -99,6 +99,24 @@ textarea{ resize:vertical; min-height:110px; }
 .hint{ font-size:12.5px; color:var(--muted); line-height:1.4; margin-top:1px; }
 .marcos-tit span{ font-weight:500; color:var(--muted); font-size:12.5px; }
 @media (max-width:460px){ .marcos{ grid-template-columns:1fr; } }
+/* ---- casilla tildable ---- */
+.tilde{ display:flex; flex-direction:row; align-items:center; gap:10px; margin:14px 0 4px;
+  padding:11px 14px; border:1px solid var(--line); border-radius:10px; background:var(--surface-2); cursor:pointer; }
+.tilde:hover{ border-color:var(--brand); }
+.tilde input{ width:19px; height:19px; accent-color:var(--brand); flex:none; margin:0; cursor:pointer; }
+.tilde span{ font-size:14.5px; font-weight:600; color:var(--ink-2); }
+/* ---- personas agregadas (terceros extra) ---- */
+.persona{ display:grid; grid-template-columns:1fr 150px 40px; gap:10px; align-items:end; margin-bottom:10px; }
+.persona .quitar{ height:44px; border:1px solid var(--line); border-radius:10px; background:#fff;
+  color:var(--muted); font-size:19px; cursor:pointer; line-height:1; }
+.persona .quitar:hover{ border-color:var(--brand); color:var(--brand); }
+@media (max-width:560px){ .persona{ grid-template-columns:1fr 1fr; } .persona .quitar{ grid-column:2; justify-self:end; width:44px; } }
+/* ---- marco de foto obligatorio ---- */
+.marco.req{ border-color:var(--brand); }
+.marco.req.cargado{ border-color:#15803D; }
+.marco-oblig{ position:absolute; top:6px; left:8px; font-size:10px; font-weight:800; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--brand); }
+.marco.cargado .marco-oblig{ display:none; }
 
 </style>
 </head>
@@ -120,7 +138,6 @@ textarea{ resize:vertical; min-height:110px; }
             <option value="AUTO">Auto</option>
             <option value="HOGAR">Hogar</option>
             <option value="ICO">Int. Comercio</option>
-            <option value="INT_CONSORCIO">Int. Consorcio</option>
           </select></label>
         <label class="full" id="campoTipo" style="display:none"><span>¿Qué pasó? <i>*</i></span>
           <select id="tipo">
@@ -145,16 +162,46 @@ textarea{ resize:vertical; min-height:110px; }
         <label><span>N° de póliza</span><input id="poliza" placeholder="Si lo tenés a mano" /></label>
       </div>
 
+      <!-- Solo auto: quién iba al volante. Si no era el asegurado, la compañía
+           pide sus datos y su registro, y sin eso la gestión se traba. -->
+      <div id="seccionConductor" style="display:none">
+        <div class="full" style="margin-top:4px">
+          <span class="sino-label">¿Quién manejaba?</span>
+          <div class="sino">
+            <button type="button" class="sino-btn on" id="cond_aseg">El asegurado</button>
+            <button type="button" class="sino-btn" id="cond_otro">Otra persona</button>
+          </div>
+        </div>
+        <div class="grid" id="datosConductor" style="display:none; margin-top:12px">
+          <label class="full"><span>Nombre y apellido del conductor <i>*</i></span>
+            <input id="c_nombre" placeholder="Quién manejaba en el momento del hecho" /></label>
+          <label><span>DNI del conductor <i>*</i></span>
+            <input id="c_dni" inputmode="numeric" placeholder="Sin puntos" /></label>
+        </div>
+      </div>
+
       <div id="seccionTercero" style="display:none">
-        <div class="sect">Datos del tercero <span class="opt">(si corresponde)</span></div>
+        <div class="sect">Datos del tercero</div>
         <div class="grid">
           <label class="full"><span>Nombre y apellido / Razón social</span>
             <input id="t_nombre" placeholder="Del otro involucrado" /></label>
           <label><span>DNI / CUIT</span><input id="t_dni" inputmode="numeric" placeholder="Sin puntos" /></label>
           <label><span>Número de celular</span><input id="t_cel" type="tel" placeholder="11 5555-5555" /></label>
-          <label><span>Patente</span><input id="t_dominio" placeholder="Ej: CD456EF" style="text-transform:uppercase" /></label>
+          <label id="campoTDominio"><span>Patente</span><input id="t_dominio" placeholder="Ej: CD456EF" style="text-transform:uppercase" /></label>
           <label><span>Compañía</span><input id="t_cia" placeholder="Aseguradora del tercero" /></label>
           <label><span>N° de póliza</span><input id="t_poliza" placeholder="Si lo tenés" /></label>
+        </div>
+
+        <!-- Choque múltiple: del segundo tercero en adelante alcanza con
+             identificarlos. Los datos de póliza del principal ya están arriba. -->
+        <label class="tilde">
+          <input type="checkbox" id="masTerceros" />
+          <span>Hubo más de un tercero involucrado</span>
+        </label>
+        <div id="listaTerceros" style="display:none">
+          <div class="marcos-tit">Otras personas involucradas</div>
+          <div id="terceros"></div>
+          <button type="button" class="file-btn" id="addTercero" style="margin-top:8px">＋ Agregar otra persona</button>
         </div>
       </div>
 
@@ -221,16 +268,92 @@ textarea{ resize:vertical; min-height:110px; }
   function updateRamoUI() {
     var esAuto = $("ramo").value === "AUTO";
     $("campoDominio").style.display = esAuto ? "" : "none";
-    $("seccionTercero").style.display = esAuto ? "" : "none";
+    $("seccionConductor").style.display = esAuto ? "" : "none";
     if (!esAuto) {
       $("dominio").value = "";
-      ["t_nombre", "t_dni", "t_cel", "t_dominio", "t_cia", "t_poliza"].forEach(function (id) { $(id).value = ""; });
+      elegirConductor(false);
     }
     ["reqUbicacion", "reqLocalidad"].forEach(function (id) { $(id).style.display = esAuto ? "inline" : "none"; });
     renderTipos();     // los tipos de siniestro dependen del ramo
-    renderMarcos();    // y las fotos, del tipo elegido
+    updateTerceroUI(); // y si se piden datos del tercero, del tipo
+    renderMarcos();    // y las fotos, también
   }
   $("ramo").addEventListener("change", updateRamoUI);
+
+  // ---- ¿hay tercero? ----
+  // Antes la sección aparecía con solo elegir Auto, así que en un daño propio
+  // el asegurado veía seis campos que no tenían nada que ver con su caso.
+  // Ahora sale del tipo de siniestro: solo choque y daños a terceros la piden.
+  function updateTerceroUI() {
+    var t = tipoElegido();
+    var hay = !!(t && t.terceros);
+    $("seccionTercero").style.display = hay ? "" : "none";
+    // La patente del tercero solo tiene sentido si el ramo es Auto.
+    $("campoTDominio").style.display = $("ramo").value === "AUTO" ? "" : "none";
+    if (!hay) {
+      ["t_nombre", "t_dni", "t_cel", "t_dominio", "t_cia", "t_poliza"].forEach(function (id) { $(id).value = ""; });
+      $("masTerceros").checked = false;
+      terceros = [];
+      renderTerceros();
+    }
+  }
+
+  // ---- terceros adicionales (choque múltiple) ----
+  var terceros = [];   // [{nombre, dni}]
+  function renderTerceros() {
+    $("listaTerceros").style.display = $("masTerceros").checked ? "" : "none";
+    var cont = $("terceros");
+    cont.innerHTML = "";
+    terceros.forEach(function (p, i) {
+      var fila = document.createElement("div");
+      fila.className = "persona";
+      var lNom = document.createElement("label");
+      lNom.innerHTML = '<span>Nombre y apellido</span>';
+      var iNom = document.createElement("input");
+      iNom.value = p.nombre; iNom.placeholder = "Nombre completo";
+      iNom.addEventListener("input", function () { terceros[i].nombre = iNom.value; });
+      lNom.appendChild(iNom);
+
+      var lDni = document.createElement("label");
+      lDni.innerHTML = '<span>DNI</span>';
+      var iDni = document.createElement("input");
+      iDni.value = p.dni; iDni.placeholder = "Sin puntos"; iDni.inputMode = "numeric";
+      iDni.addEventListener("input", function () { terceros[i].dni = iDni.value; });
+      lDni.appendChild(iDni);
+
+      var quitar = document.createElement("button");
+      quitar.type = "button"; quitar.className = "quitar"; quitar.textContent = "×";
+      quitar.title = "Quitar esta persona";
+      quitar.addEventListener("click", function () { terceros.splice(i, 1); renderTerceros(); });
+
+      fila.appendChild(lNom); fila.appendChild(lDni); fila.appendChild(quitar);
+      cont.appendChild(fila);
+    });
+  }
+  $("masTerceros").addEventListener("change", function () {
+    // Al tildar aparece ya una fila vacía: si no, el primer clic no muestra nada
+    // y parece que la casilla no hizo efecto.
+    if (this.checked && !terceros.length) terceros.push({ nombre: "", dni: "" });
+    if (!this.checked) terceros = [];
+    renderTerceros();
+  });
+  $("addTercero").addEventListener("click", function () {
+    terceros.push({ nombre: "", dni: "" });
+    renderTerceros();
+  });
+
+  // ---- ¿quién manejaba? ----
+  var conductorDistinto = false;
+  function elegirConductor(distinto) {
+    conductorDistinto = distinto;
+    $("cond_aseg").classList.toggle("on", !distinto);
+    $("cond_otro").classList.toggle("on", distinto);
+    $("datosConductor").style.display = distinto ? "" : "none";
+    if (!distinto) { $("c_nombre").value = ""; $("c_dni").value = ""; }
+    renderMarcos();   // cambia de quién es el registro que pedimos
+  }
+  $("cond_aseg").addEventListener("click", function () { elegirConductor(false); });
+  $("cond_otro").addEventListener("click", function () { elegirConductor(true); });
 
   // ---- marcos de fotos: una casilla por cada foto que pedimos ----
   // Cambian según el ramo: para auto pedimos la documentación del asegurado y
@@ -238,43 +361,47 @@ textarea{ resize:vertical; min-height:110px; }
   // Catálogo de tipos de siniestro por ramo. Cada uno define qué fotos pedimos.
   var TIPOS = {
     AUTO: [
-      { id: "CHOQUE", txt: "Choque / daños con otro vehículo", marcos: [
-        { id: "reg_aseg", ico: "registro", txt: "Registro del conductor", sub: "Asegurado" },
-        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "Asegurado" },
-        { id: "dan_aseg", ico: "danio", txt: "Daños con patente visible", sub: "Asegurado" },
-        { id: "reg_terc", ico: "registro", txt: "Registro del conductor", sub: "Tercero" },
-        { id: "ced_terc", ico: "cedula", txt: "Cédula verde", sub: "Tercero" },
-        { id: "dan_terc", ico: "danio", txt: "Daños con patente visible", sub: "Tercero" } ] },
-      { id: "DANIO_PROPIO", txt: "Daño propio (sin terceros)", marcos: [
+      { id: "CHOQUE", txt: "Choque / daños con otro vehículo", terceros: true, marcos: [
+        { id: "reg_aseg", ico: "registro", txt: "Registro del conductor", sub: "", req: true },
+        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "Del asegurado", req: true },
+        { id: "dan_aseg", ico: "danio", txt: "Daños con patente visible", sub: "Del asegurado" },
+        { id: "reg_terc", ico: "registro", txt: "Registro del conductor", sub: "Del tercero" },
+        { id: "ced_terc", ico: "cedula", txt: "Cédula verde", sub: "Del tercero" },
+        { id: "dan_terc", ico: "danio", txt: "Daños con patente visible", sub: "Del tercero" } ] },
+      { id: "DANIO_PROPIO", txt: "Daño propio (sin terceros)", terceros: false, marcos: [
         { id: "dan_gral", ico: "danio", txt: "Daños", sub: "Vista general con patente" },
         { id: "dan_det",  ico: "danio", txt: "Daños", sub: "Detalle de cerca" },
-        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "" },
-        { id: "reg_aseg", ico: "registro", txt: "Registro del conductor", sub: "" } ] },
-      { id: "CRISTALES", txt: "Cristales (parabrisas, luneta, ventanilla)", marcos: [
+        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "", req: true },
+        { id: "reg_aseg", ico: "registro", txt: "Registro del conductor", sub: "", req: true } ] },
+      { id: "CRISTALES", txt: "Cristales (parabrisas, luneta, ventanilla)", terceros: false, marcos: [
         { id: "cristal",  ico: "cristal", txt: "Cristal dañado", sub: "De cerca, se vea el daño" },
         { id: "cristal2", ico: "cristal", txt: "Cristal dañado", sub: "Desde adentro del auto" },
         { id: "veh_pat",  ico: "auto", txt: "Vehículo completo", sub: "Se vea la patente" },
-        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "" } ] },
-      { id: "ROBO_RUEDAS", txt: "Robo de ruedas", marcos: [
+        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "", req: true },
+        { id: "reg_aseg", ico: "registro", txt: "Registro del conductor", sub: "", req: true } ] },
+      { id: "ROBO_RUEDAS", txt: "Robo de ruedas", terceros: false, marcos: [
         { id: "denuncia", ico: "policia", txt: "Denuncia policial", sub: "Foto o PDF" },
         { id: "rueda_ok", ico: "rueda", txt: "Una rueda colocada", sub: "Se vea rodado y marca" },
         { id: "sin_rueda", ico: "auto", txt: "Auto como quedó", sub: "Sin la rueda robada" },
-        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "" } ] },
-      { id: "ROBO_TOTAL", txt: "Robo total del vehículo", marcos: [
+        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "", req: true },
+        { id: "reg_aseg", ico: "registro", txt: "Registro del conductor", sub: "", req: true } ] },
+      { id: "ROBO_TOTAL", txt: "Robo total del vehículo", terceros: false, marcos: [
         { id: "denuncia", ico: "policia", txt: "Denuncia policial", sub: "Foto o PDF" },
-        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "" },
-        { id: "reg_aseg", ico: "registro", txt: "Registro del conductor", sub: "" },
+        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "", req: true },
+        { id: "reg_aseg", ico: "registro", txt: "Registro del conductor", sub: "", req: true },
         { id: "llaves",   ico: "llave", txt: "Llaves del vehículo", sub: "Todos los juegos" } ] },
-      { id: "GRANIZO", txt: "Granizo", marcos: [
+      { id: "GRANIZO", txt: "Granizo", terceros: false, marcos: [
         { id: "gr_techo", ico: "granizo", txt: "Daños en el techo", sub: "" },
         { id: "gr_capot", ico: "granizo", txt: "Daños en el capot", sub: "" },
         { id: "veh_pat",  ico: "auto", txt: "Vehículo completo", sub: "Se vea la patente" },
-        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "" } ] },
-      { id: "INCENDIO", txt: "Incendio", marcos: [
+        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "", req: true },
+        { id: "reg_aseg", ico: "registro", txt: "Registro del conductor", sub: "", req: true } ] },
+      { id: "INCENDIO", txt: "Incendio", terceros: false, marcos: [
         { id: "inc_gral", ico: "fuego", txt: "Daños", sub: "Vista general" },
         { id: "inc_det",  ico: "fuego", txt: "Daños", sub: "Detalle del foco" },
         { id: "denuncia", ico: "policia", txt: "Denuncia policial o de bomberos", sub: "" },
-        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "" } ] },
+        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "", req: true },
+        { id: "reg_aseg", ico: "registro", txt: "Registro del conductor", sub: "", req: true } ] },
     ],
     HOGAR: [
       { id: "ROBO", txt: "Robo", marcos: [
@@ -302,9 +429,8 @@ textarea{ resize:vertical; min-height:110px; }
         { id: "lugar",    ico: "casa", txt: "Lugar del hecho", sub: "Vista general" } ] },
     ],
   };
-  // Comercio y consorcio comparten el catálogo de hogar
+  // Comercio comparte el catálogo de hogar
   TIPOS.ICO = TIPOS.HOGAR;
-  TIPOS.INT_CONSORCIO = TIPOS.HOGAR;
 
   var fotos = {};   // { idMarco: File }
 
@@ -341,9 +467,17 @@ textarea{ resize:vertical; min-height:110px; }
     return tiposDelRamo().filter(function (x) { return x.id === t; })[0] || null;
   }
   // Los marcos salen del tipo de siniestro; sin tipo elegido, no hay fotos que pedir.
+  // Si manejaba otra persona, el registro que hace falta es el de ELLA y no el
+  // del asegurado, así que se aclara en el recuadro para que no se confundan.
   function marcosDelRamo() {
     var t = tipoElegido();
-    return t ? t.marcos : [];
+    if (!t) return [];
+    return t.marcos.map(function (m) {
+      if (m.id === "reg_aseg" && conductorDistinto) {
+        return { id: m.id, ico: m.ico, txt: "Registro del conductor", sub: "De quien manejaba, no del asegurado", req: m.req };
+      }
+      return m;
+    });
   }
   // Al cambiar de ramo se recarga la lista de tipos
   function renderTipos() {
@@ -362,14 +496,19 @@ textarea{ resize:vertical; min-height:110px; }
     else fotos = {};   // cambió el set de fotos: arrancamos limpio
     $("campoTipo").style.display = tipos.length ? "" : "none";
   }
-  $("tipo").addEventListener("change", function () { fotos = {}; renderMarcos(); });
+  $("tipo").addEventListener("change", function () { fotos = {}; updateTerceroUI(); renderMarcos(); });
 
   function renderMarcos() {
     var cont = $("marcos");
     cont.innerHTML = "";
     marcosDelRamo().forEach(function (m) {
       var lbl = document.createElement("label");
-      lbl.className = "marco" + (fotos[m.id] ? " cargado" : "");
+      lbl.className = "marco" + (fotos[m.id] ? " cargado" : "") + (m.req ? " req" : "");
+      if (m.req) {
+        var oblig = document.createElement("span");
+        oblig.className = "marco-oblig"; oblig.textContent = "Obligatoria";
+        lbl.appendChild(oblig);
+      }
       var input = document.createElement("input");
       input.type = "file"; input.accept = "image/*"; input.setAttribute("capture", "environment");
       input.addEventListener("change", function (e) {
@@ -486,8 +625,28 @@ textarea{ resize:vertical; min-height:110px; }
       if (!$("dominio").value.trim()) faltan.push("patente");
       if (!$("ubicacion").value.trim()) faltan.push("ubicación");
       if (!$("localidad").value.trim()) faltan.push("localidad");
+      if (conductorDistinto) {
+        if (!$("c_nombre").value.trim()) faltan.push("nombre del conductor");
+        if (!$("c_dni").value.trim()) faltan.push("DNI del conductor");
+      }
       if (faltan.length) { showErr("Para siniestros de auto son obligatorios: " + faltan.join(", ") + "."); return; }
+
+      // Cédula y registro: sin esas dos la compañía no abre el siniestro, así
+      // que se frenan acá y no después, cuando ya llamó a la oficina.
+      var sinFoto = marcosDelRamo().filter(function (m) { return m.req && !fotos[m.id]; });
+      if (sinFoto.length) {
+        showErr((sinFoto.length === 1 ? "Falta una foto obligatoria" : "Faltan fotos obligatorias") + ": " +
+          sinFoto.map(function (m) { return m.txt.toLowerCase() + (m.sub ? " (" + m.sub.toLowerCase() + ")" : ""); }).join(", ") +
+          ". Son las que pide la compañía para abrir el siniestro.");
+        var primero = document.querySelectorAll(".marco.req")[0];
+        if (primero) primero.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
     }
+
+    // Una persona agregada sin nombre no sirve de nada: o se completa o se quita.
+    var terceroIncompleto = terceros.some(function (p) { return !String(p.nombre || "").trim(); });
+    if (terceroIncompleto) { showErr("Completá el nombre de las personas que agregaste, o quitalas con la ×."); return; }
     var btn = $("send"); btn.disabled = true; btn.textContent = "Enviando…";
     try {
       // Primero las fotos de los marcos (cada una viaja con su etiqueta) y
@@ -538,6 +697,12 @@ textarea{ resize:vertical; min-height:110px; }
         tercero_dominio: $("t_dominio").value.trim().toUpperCase() || null,
         tercero_cia: $("t_cia").value.trim() || null,
         tercero_poliza: $("t_poliza").value.trim() || null,
+        terceros_extra: terceros
+          .filter(function (p) { return String(p.nombre || "").trim(); })
+          .map(function (p) { return { nombre: p.nombre.trim(), dni: String(p.dni || "").trim() }; }),
+        conductor_distinto: conductorDistinto,
+        conductor_nombre: conductorDistinto ? ($("c_nombre").value.trim() || null) : null,
+        conductor_dni: conductorDistinto ? ($("c_dni").value.trim() || null) : null,
         fecha_hecho: fecha || null,
         hora_hecho: $("hora").value || null,
         ubicacion: $("ubicacion").value.trim() || null,
