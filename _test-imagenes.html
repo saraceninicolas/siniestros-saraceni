@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Prueba de achicado</title>
+<style>body{font:14px system-ui;margin:24px} td{padding:4px 12px;border-bottom:1px solid #eee}
+.ok{color:#15803D;font-weight:700}.bad{color:#B91C1C;font-weight:700}</style></head>
+<body>
+<h1>Prueba de imagenes.js</h1>
+<table id="t"><tbody></tbody></table>
+<script src="imagenes.js"></script>
+<script>
+(async function () {
+  const tb = document.querySelector("#t tbody");
+  function fila(caso, detalle, ok) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = '<td>' + caso + '</td><td>' + detalle + '</td>' +
+      '<td class="' + (ok ? 'ok' : 'bad') + '">' + (ok ? 'OK' : 'FALLA') + '</td>';
+    tb.appendChild(tr);
+  }
+
+  // Genera un JPEG "de cámara": ruido de colores para que no comprima a nada.
+  function fotoFalsa(w, h, nombre) {
+    return new Promise(function (res) {
+      const c = document.createElement("canvas");
+      c.width = w; c.height = h;
+      const ctx = c.getContext("2d");
+      const img = ctx.createImageData(w, h);
+      for (let i = 0; i < img.data.length; i += 4) {
+        img.data[i] = Math.random()*255; img.data[i+1] = Math.random()*255;
+        img.data[i+2] = Math.random()*255; img.data[i+3] = 255;
+      }
+      ctx.putImageData(img, 0, 0);
+      c.toBlob(function (b) { res(new File([b], nombre, { type: "image/jpeg" })); }, "image/jpeg", 0.92);
+    });
+  }
+
+  // 1. Foto grande de celular
+  const grande = await fotoFalsa(4032, 3024, "IMG_4821.jpg");
+  const chica = await window.achicarImagen(grande);
+  const lado = await new Promise(function (r) {
+    const i = new Image(); i.onload = function () { r(Math.max(i.width, i.height)); };
+    i.src = URL.createObjectURL(chica);
+  });
+  fila("Foto 4032x3024 (" + window.pesoLegible(grande.size) + ")",
+       "quedó en " + window.pesoLegible(chica.size) + " · lado largo " + lado + "px · " + chica.type +
+       " · " + (grande.size / chica.size).toFixed(1) + "x mas liviana",
+       chica.size < grande.size && lado === 1600);
+
+  // 2. Imagen ya chica: no se toca
+  const mini = await fotoFalsa(120, 120, "mini.jpg");
+  const mini2 = await window.achicarImagen(mini);
+  fila("Imagen chica (" + window.pesoLegible(mini.size) + ")",
+       mini2 === mini ? "devuelta intacta" : "fue recomprimida (no deberia)", mini2 === mini);
+
+  // 3. PDF: no se toca nunca
+  const pdf = new File([new Blob(["%PDF-1.4 falso"])], "poliza.pdf", { type: "application/pdf" });
+  const pdf2 = await window.achicarImagen(pdf);
+  fila("PDF", pdf2 === pdf ? "devuelto intacto" : "fue modificado (no deberia)", pdf2 === pdf);
+
+  // 4. Archivo roto: NO puede romper la carga
+  const roto = new File([new Blob(["esto no es una imagen"])], "roto.jpg", { type: "image/jpeg" });
+  let cayo = false, roto2 = null;
+  try { roto2 = await window.achicarImagen(roto); } catch (e) { cayo = true; }
+  fila("Imagen corrupta", cayo ? "tiro excepcion (romperia la denuncia)" : "devolvio el original sin tirar error",
+       !cayo && roto2 === roto);
+
+  // 5. Varias en paralelo
+  const v = await window.achicarVarias([await fotoFalsa(3000,2000,"a.jpg"), pdf, roto]);
+  fila("achicarVarias (3 archivos mezclados)", "devolvio " + v.length + " archivos", v.length === 3);
+
+  // 6. El nombre cambia de extension al convertir
+  fila("Nombre del archivo", grande.name + " → " + chica.name,
+       /\.(webp|jpg)$/.test(chica.name));
+})();
+</script>
+</body></html>
