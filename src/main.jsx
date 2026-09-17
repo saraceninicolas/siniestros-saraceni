@@ -38,6 +38,7 @@ import "./ui.jsx";
 import "./charts.jsx";
 import "./estadisticas.jsx";
 import "./modals.jsx";
+import "./adjuntos.jsx";
 import "./detail.jsx";
 import "./solicitudes.jsx";
 import "./usuarios.jsx";

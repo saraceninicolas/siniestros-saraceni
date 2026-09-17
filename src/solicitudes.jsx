@@ -104,23 +104,9 @@ function SolCard({ s, onConvertir, onDescartar, onReabrir }) {
       {s.relato && <div className="sol-relato">{s.relato}</div>}
 
       {(s.adjuntos || []).length > 0 && (
-        <div className="adj-grid" style={{ marginTop: 10 }}>
-          {s.adjuntos.map((a, i) => {
-            const url = urls[a.path];
-            const isImg = a.tipo && a.tipo.indexOf("image") >= 0;
-            return (
-              <a className="adj-card" key={a.path || i} href={url || "#"} target="_blank" rel="noreferrer"
-                onClick={(e) => { if (!url) e.preventDefault(); }}>
-                {isImg && url
-                  ? <img className="adj-thumb" src={url} alt={a.name} loading="lazy" decoding="async" />
-                  : <span className="adj-thumb adj-thumb-file"><Ico name="doc" size={24} /></span>}
-                {/* si vino de un marco, mostramos qué foto es en vez del nombre del archivo */}
-                <span className="adj-card-name" title={a.etiqueta ? a.etiqueta + " — " + a.name : a.name}>
-                  {a.etiqueta || a.name}
-                </span>
-              </a>
-            );
-          })}
+        <div style={{ marginTop: 10 }}>
+          <AdjuntosGrid adjuntos={s.adjuntos} urls={urls}
+            nombreZip={[s.id, s.nombre].filter(Boolean).join(" ")} />
         </div>
       )}
 
