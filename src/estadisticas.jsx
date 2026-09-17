@@ -270,3 +270,8 @@ function EstadisticasSiniestros({ data }) {
 }
 
 Object.assign(window, { EstadisticasSiniestros, estDemora, estInicio, estCierre });
+
+// Marca este archivo como modulo ES. Sin esto el compilador lo toma por
+// script (no tiene ningun import/export todavia) y compila el JSX a require(),
+// que en el navegador no existe. Se va cuando el archivo tenga imports de verdad.
+export {};

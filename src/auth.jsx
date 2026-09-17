@@ -46,7 +46,7 @@ function LoginScreen({ onSignIn }) {
   return (
     <div className="login">
       <form className="login-card" onSubmit={submit}>
-        <div className="login-logo"><img src="assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></div>
+        <div className="login-logo"><img src="/assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></div>
         <h1 className="login-title">Portal de Siniestros</h1>
         <p className="login-sub">{mode === "signup" ? "Creá tu cuenta con tu email" : "Ingresá para continuar"}</p>
         {window.AMBIENTE === "test" && (
@@ -98,7 +98,7 @@ function PendingScreen({ perfil, email, onLogout, onRefresh }) {
   return (
     <div className="login">
       <div className="login-card">
-        <div className="login-logo"><img src="assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></div>
+        <div className="login-logo"><img src="/assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></div>
         <h1 className="login-title">{suspendida ? "Acceso suspendido" : "Cuenta pendiente de aprobación"}</h1>
         <p className="login-sub" style={{ marginBottom: 14 }}>
           {suspendida
@@ -166,3 +166,8 @@ function ChangePassModal({ onClose, onDone }) {
 }
 
 Object.assign(window, { LoginScreen, PendingScreen, ChangePassModal });
+
+// Marca este archivo como modulo ES. Sin esto el compilador lo toma por
+// script (no tiene ningun import/export todavia) y compila el JSX a require(),
+// que en el navegador no existe. Se va cuando el archivo tenga imports de verdad.
+export {};

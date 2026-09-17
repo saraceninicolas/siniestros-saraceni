@@ -1,0 +1,35 @@
+/* tokens.css — Las variables de diseño del portal.
+ *
+ * Separado del resto del CSS a propósito: acá vive TODO lo que cambia entre
+ * una marca y otra. Cambiar estos valores tiñe el portal entero sin tocar
+ * ninguna regla. Es la base para que cada broker tenga sus colores sin
+ * bifurcar una rama, que es como se venía haciendo en las demos.
+ *
+ * Los roles de marca importan: `--brand` es el relleno, `--brand-ink` el
+ * texto ARRIBA de ese relleno, y `--brand-txt` el color de marca usado como
+ * texto sobre blanco. Con un amarillo, blanco-sobre-marca y marca-sobre-blanco
+ * son ilegibles: por eso son variables distintas y no la misma.
+ */
+
+:root{
+  --brand:#DD0909; --brand-d:#bb0707;
+  /* Roles derivados de la marca. Con los valores de siempre, para que el portal
+     se vea igual; existen para que el CSS no tenga colores clavados.
+     -ink = texto sobre el color · -txt = texto del color · -soft/-line/-ring */
+  --brand-ink:#fff; --brand-txt:#DD0909; --brand-soft:#fdf3f3;
+  --brand-line:#f3c9c9; --brand-ring:rgba(221,9,9,.09);
+  --bg:#F5F6F8; --surface:#FFFFFF; --surface-2:#FBFBFC;
+  --ink:#191C22; --ink-2:#5A6271; --muted:#8B93A1;
+  --line:#E7E9ED; --line-2:#EFF1F4;
+  --sb-bg:#1C1313; --sb-ink:#C9CFD9; --sb-ink-dim:#A18A8A; --sb-active:#2A1E1E;
+  --font-scale:1;
+  --radius:12px; --radius-sm:9px;
+  --row-pad:13px;
+  --shadow-sm:0 1px 2px rgba(16,20,28,.05),0 1px 3px rgba(16,20,28,.04);
+  --shadow-md:0 4px 16px rgba(16,20,28,.08),0 2px 6px rgba(16,20,28,.05);
+  --shadow-lg:0 18px 50px rgba(16,20,28,.22),0 6px 18px rgba(16,20,28,.12);
+}
+html[data-sidebar="rojo"]{ --sb-bg:#9c0808; --sb-ink:#ffd9d9; --sb-ink-dim:#f0a3a3; --sb-active:#7d0606; }
+html[data-sidebar="claro"]{ --sb-bg:#FFFFFF; --sb-ink:#3A414D; --sb-ink-dim:#8B93A1; --sb-active:#F4F1F1; }
+html[data-density="compact"]{ --row-pad:9px; }
+html[data-density="comfy"]{ --row-pad:18px; }

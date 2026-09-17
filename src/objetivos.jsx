@@ -575,3 +575,8 @@ function ObjetivosModule({ active, station, query, usuarios, onNav }) {
 Object.assign(window, {
   ObjetivosModule, ObjKpis, ObjPorArea, ObjProximos, ObjTabla, ObjFiltros, ObjBadge, ObjBarra, ObjSkeleton,
 });
+
+// Marca este archivo como modulo ES. Sin esto el compilador lo toma por
+// script (no tiene ningun import/export todavia) y compila el JSX a require(),
+// que en el navegador no existe. Se va cuando el archivo tenga imports de verdad.
+export {};
