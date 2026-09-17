@@ -25,10 +25,11 @@ Consecuencias prácticas:
   y al final hace `Object.assign(window, { ... })` con lo que expone.
 - **El orden de carga en `index.html` importa.** Un archivo solo puede usar lo
   que ya cargó antes. Orden actual:
-  `config.js → db.js → data.jsx → auth.jsx → ui.jsx → charts.jsx →
-  estadisticas.jsx → objetivos-datos.jsx → objetivos-form.jsx → modals.jsx → detail.jsx → solicitudes.jsx → usuarios.jsx →
-  facturas.jsx → renovaciones.jsx → comercial.jsx → pendientes.jsx →
-  objetivos.jsx → calendar.jsx → app.jsx`
+  `config.js → imagenes.js → db.js → data.jsx → auth.jsx → ui.jsx →
+  charts.jsx → estadisticas.jsx → modals.jsx → detail.jsx → solicitudes.jsx →
+  usuarios.jsx → facturas.jsx → renovaciones.jsx → comercial.jsx →
+  pendientes.jsx → objetivos-datos.jsx → objetivos-form.jsx → objetivos.jsx →
+  calendar.jsx → app.jsx`
 - **Todos los archivos comparten un mismo scope global.** Dos `const` de nivel
   superior con el mismo nombre en archivos distintos rompen todo con
   "Identifier has already been declared": los nombres nuevos van prefijados
@@ -43,7 +44,8 @@ Consecuencias prácticas:
 | Archivo | Qué hace |
 |---|---|
 | `index.html` | HTML raíz + **todo el CSS** del portal + carga de scripts |
-| `config.js` | URL y anon key de Supabase |
+| `config.js` | Elige **a qué base** se conecta el portal, según el dominio |
+| `imagenes.js` | Achica las fotos antes de subirlas (1600px, WebP). Ante cualquier problema devuelve el original: optimizar nunca puede hacer fallar una carga |
 | `db.js` | Única capa de datos. Todo Supabase pasa por acá |
 | `data.jsx` | Constantes de negocio (ramos, compañías, estados) y helpers de fecha |
 | `ui.jsx` | Íconos, sidebar, topbar, tabla de siniestros, agenda, **menú de navegación** |
@@ -57,6 +59,7 @@ Consecuencias prácticas:
 | `solicitudes.jsx` `facturas.jsx` `renovaciones.jsx` `comercial.jsx` `pendientes.jsx` `objetivos.jsx` `usuarios.jsx` | Un módulo por carpeta del menú |
 | `denuncia.html` / `cotizar-hogar.html` | Páginas **públicas** standalone (no cargan el portal) |
 | `supabase/*.sql` | Esquema de referencia de cada tabla (documentación, no se ejecuta solo) |
+| `supabase/migrations/` | **Historial** de cambios de esquema. Archivos numerados que no se editan una vez aplicados. El README dice qué migración está en cada ambiente |
 
 ## Patrón para agregar un módulo
 
@@ -102,16 +105,30 @@ c.channel("cotizaciones-realtime-" + Math.random().toString(36).slice(2, 8))
 
 ## Despliegue
 
-- `test` → preview en Vercel (protegido, requiere link temporal para verlo).
-- `main` → producción: https://siniestros-saraceni.vercel.app
+Cada rama tiene su **proyecto de Vercel y su base de Supabase**, separados:
+
+| Rama | Sitio | Base de datos |
+|---|---|---|
+| `test` | https://siniestros-saraceni-test.vercel.app | `ykqnthxwawmoadvoywgl` (datos inventados) |
+| `main` | https://siniestros-saraceni.vercel.app | `yscvpdogjgfvllizbyxp` (datos reales) |
+
 - Push a la rama = deploy automático. No hay build step.
 - **Trabajar siempre en `test`.** Pasar a producción solo cuando lo piden, con
   `git checkout main && git merge test && git push origin main`.
 - `vercel.json` tiene `cleanUrls`, por eso `/denuncia` sirve `denuncia.html`.
+- **Vercel ignora las rutas que empiezan con `_`**: un archivo `_algo.html` da
+  404 por más que esté desplegado.
 
-⚠️ **Hay una sola base de datos para test y producción.** Cualquier migración
-impacta en los dos ambientes al instante; el código es lo único que queda
-aislado por rama. Tenerlo en cuenta antes de un `alter table` o un `delete`.
+**Qué base usa cada sitio lo decide `config.js` por el dominio**, no una
+variable de entorno: sin build no hay quién las inyecte. La regla es
+deliberadamente cerrada —solo el dominio exacto de producción usa la base
+real, todo lo demás cae en test— así que una URL nueva que nadie previó
+escribe en test, nunca al revés.
+
+⚠️ **Las migraciones ya no impactan en los dos ambientes.** Van primero a test,
+se verifican, y recién después a producción. El estado de cada una se anota en
+`supabase/migrations/README.md`. Antes de un `alter table` o un `delete` en la
+base real, preguntar.
 
 ## Convenciones
 
@@ -122,7 +139,12 @@ aislado por rama. Tenerlo en cuenta antes de un `alter table` o un `delete`.
 - Fechas en `YYYY-MM-DD` (columnas `date`), y se muestran con los helpers de `data.jsx`.
 - Antes de dar algo por terminado: **probarlo en el navegador**, no solo leer el
   código. Varios bugs (canal duplicado, orden de declaración, función borrada,
-  policy faltante) solo aparecieron al usar la pantalla de verdad.
+  policy faltante, un `revoke` que no revocaba) solo aparecieron al usar la
+  pantalla de verdad o al consultar la base.
+- **No hay servidor local**: la máquina no tiene Node ni Python (el `python` que
+  aparece en el PATH es el stub de la Microsoft Store). El navegador no ejecuta
+  JS sobre `file://` en el panel de vista previa. Para probar algo que necesite
+  correr de verdad, se sube a `test` y se verifica en su URL.
 
 ## Datos que vienen de Excel
 
