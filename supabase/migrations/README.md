@@ -30,3 +30,4 @@ Siempre **test primero**, se verifica, y recién después producción.
 | `20260917_0002_revocar_execute_triggers.sql` | aplicada | pendiente |
 | `20260918_0003_denuncia_conductor_y_terceros.sql` | aplicada | pendiente |
 | `20260918_0004_asegurados.sql` | aplicada | pendiente |
+| `20260918_0005_unificar_asegurados.sql` | aplicada | pendiente |

@@ -43,6 +43,7 @@ import "./adjuntos.jsx";
 import "./detail.jsx";
 import "./solicitudes.jsx";
 import "./usuarios.jsx";
+import "./duplicados.jsx";
 import "./facturas.jsx";
 import "./renovaciones.jsx";
 import "./comercial.jsx";

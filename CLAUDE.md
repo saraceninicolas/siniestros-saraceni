@@ -72,6 +72,9 @@ Mientras dure el paso 1 siguen valiendo las reglas viejas:
 | `src/objetivos-form.jsx` | Objetivos: asistente de 5 pasos para crear o editar |
 | `src/app.jsx` | Orquestador: sesión, perfil/rol, ruteo por `active`, estado global |
 | `src/auth.jsx` | Login, registro y pantalla de "cuenta pendiente" |
+| `src/asegurados.jsx` | Buscador de asegurado con autocompletado por documento o nombre |
+| `src/duplicados.jsx` | Revisión y unificación de asegurados duplicados (solo organizador) |
+| `src/adjuntos.jsx` | Grilla de adjuntos, visor de fotos y descarga en zip |
 | `src/modals.jsx` / `src/detail.jsx` | Alta/edición y ficha completa de siniestro (+ PDF) |
 | `src/solicitudes.jsx` `src/facturas.jsx` `src/renovaciones.jsx` `src/comercial.jsx` `src/pendientes.jsx` `src/objetivos.jsx` `src/usuarios.jsx` | Un módulo por carpeta del menú |
 | `denuncia.html` / `cotizar-hogar.html` | Páginas **públicas** standalone (no cargan el portal) |

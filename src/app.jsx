@@ -510,7 +510,9 @@ function App() {
 
         {!isSiniestros ? (
           <div className="content">
-            {ADMIN_KEYS.includes(active) && rol === "organizador"
+            {active === "asegurados-dup" && rol === "organizador"
+              ? <DuplicadosView quien={quien} onAviso={flash} />
+              : ADMIN_KEYS.includes(active) && rol === "organizador"
               ? <UsuariosView perfiles={perfiles} me={perfil} onUpdate={actualizarUsuario} />
               : FACTURACION_KEYS.includes(active)
               ? <FacturacionModule active={active} station={quien} query={query} onNav={(k) => { setActive(k); setDetailId(null); }} />

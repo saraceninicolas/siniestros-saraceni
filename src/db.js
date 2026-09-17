@@ -720,8 +720,13 @@ async function dbMaxN() {
     const q = String(texto || "").trim();
     if (q.length < 2) return [];
     const soloDigitos = q.replace(/[^0-9]/g, "");
-    const partes = [`nombre.ilike.%${q}%`];
-    if (soloDigitos.length >= 4) partes.push(`documento.ilike.%${soloDigitos}%`);
+    // PostgREST separa las condiciones de `.or()` con comas, así que un nombre
+    // como "Fernandez, Marta Elena" le parte la consulta al medio y devuelve
+    // error 400. Hay que entrecomillar el valor. Y `%` y `_` son comodines de
+    // LIKE: si no se escapan, buscar "100%" trae cualquier cosa.
+    const seguro = (v) => '"' + String(v).replace(/["\\]/g, "").replace(/[%_]/g, "\\$&") + '"';
+    const partes = [`nombre.ilike.${seguro("%" + q + "%")}`];
+    if (soloDigitos.length >= 4) partes.push(`documento.ilike.${seguro("%" + soloDigitos + "%")}`);
     const { data, error } = await c.from("asegurados").select("*").or(partes.join(",")).limit(8);
     if (error) { console.error(error); return []; }
     return (data || []).map(fromRowA);
@@ -758,6 +763,62 @@ async function dbMaxN() {
     });
     if (error) throw error;
     return data;   // id del asegurado
+  }
+
+  // ---- posibles duplicados ----
+  // La lista trae las dos fichas con sus datos y cuántos siniestros tiene cada
+  // una: sin eso no se puede decidir cuál conservar.
+  async function dupList() {
+    const c = client(); if (!c) return [];
+    const { data, error } = await c.from("asegurados_duplicados")
+      .select("*, a:a_id(id,nombre,documento,email,telefono,created_at), b:b_id(id,nombre,documento,email,telefono,created_at)")
+      .eq("estado", "pendiente")
+      .order("parecido", { ascending: false });
+    if (error) { console.error(error); return []; }
+    const filas = data || [];
+    // Cuántos siniestros tiene cada ficha involucrada, en una sola consulta.
+    const ids = [...new Set(filas.flatMap((f) => [f.a_id, f.b_id]))];
+    const cuenta = {};
+    if (ids.length) {
+      const { data: ss } = await c.from("siniestros")
+        .select("asegurado_id").in("asegurado_id", ids).eq("eliminado", false);
+      (ss || []).forEach((s) => { cuenta[s.asegurado_id] = (cuenta[s.asegurado_id] || 0) + 1; });
+    }
+    return filas.map((f) => ({
+      id: f.id, parecido: Number(f.parecido), creado: f.created_at,
+      a: { ...f.a, siniestros: cuenta[f.a_id] || 0 },
+      b: { ...f.b, siniestros: cuenta[f.b_id] || 0 },
+    }));
+  }
+
+  async function dupBuscar(umbral) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.rpc("asegurados_buscar_parecidos", { umbral: umbral || 0.7 });
+    if (error) throw error;
+    return data;   // cuántos pares nuevos encontró
+  }
+
+  async function dupUnificar(idFinal, idAbsorbido, quien) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.rpc("asegurados_unificar", {
+      id_final: idFinal, id_absorbido: idAbsorbido, p_quien: quien || null });
+    if (error) throw error;
+    return data;
+  }
+
+  async function dupDistintos(a, b, quien) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { error } = await c.rpc("asegurados_no_son_duplicados", { a, b, p_quien: quien || null });
+    if (error) throw error;
+  }
+
+  // Engancha los siniestros viejos, que no tienen documento. Con `simular` en
+  // true no escribe nada: devuelve qué agruparía.
+  async function asegEnganchar(simular) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.rpc("asegurados_enganchar_siniestros", { solo_simular: simular !== false });
+    if (error) throw error;
+    return data || [];
   }
 
   async function asegUpdate(a) {
@@ -837,6 +898,8 @@ async function dbMaxN() {
     aseg: {
       list: asegList, buscar: asegBuscar, porDocumento: asegPorDocumento,
       buscarOCrear: asegBuscarOCrear, update: asegUpdate, siniestros: asegSiniestros,
+      enganchar: asegEnganchar,
+      dup: { list: dupList, buscar: dupBuscar, unificar: dupUnificar, distintos: dupDistintos },
     },
     sol: { list: solList, update: solUpdate, subscribe: solSubscribe },
     cot: { list: cotList, update: cotUpdate, subscribe: cotSubscribe },
