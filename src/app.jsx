@@ -11,6 +11,7 @@ function App() {
   const [estadoFilter, setEstadoFilter] = React.useState("Todos");
   const [ramoFilter, setRamoFilter] = React.useState("Todos");
   const [ciaFilter, setCiaFilter] = React.useState("Todos");
+  const [urgFilter, setUrgFilter] = React.useState("Todas");  // Todas | porVencer | vencidas
   const [selectedId, setSelectedId] = React.useState(null);
   const [detailId, setDetailId] = React.useState(null);
   const [solicitudes, setSolicitudes] = React.useState([]);
@@ -197,6 +198,8 @@ function App() {
       if (estadoFilter !== "Todos" && s.estado !== estadoFilter) return false;
       if (ramoFilter !== "Todos" && s.ramo !== ramoFilter) return false;
       if (ciaFilter !== "Todos" && s.cia !== ciaFilter) return false;
+      if (urgFilter === "porVencer" && !["hoy", "proximo"].includes(urgenciaDe(s))) return false;
+      if (urgFilter === "vencidas" && urgenciaDe(s) !== "vencido") return false;
       if (q) {
         const hay = [s.cliente, s.poliza, s.nroSiniestro, s.id, s.cia, s.gestor, s.gestionAR, s.dominio, s.referencia].join(" ").toLowerCase();
         if (!hay.includes(q)) return false;
@@ -212,7 +215,33 @@ function App() {
       }
       return new Date(b.ultimaModFecha) - new Date(a.ultimaModFecha);
     });
-  }, [activos, query, estadoFilter, ramoFilter, ciaFilter]);
+  }, [activos, query, estadoFilter, ramoFilter, ciaFilter, urgFilter]);
+
+  // Qué tarjeta de KPI está aplicada. Se DEDUCE de los filtros en vez de
+  // guardarse aparte: si se guardara, tocar el desplegable de estado dejaría
+  // la tarjeta resaltada mintiendo sobre lo que se está viendo.
+  const focoKpi = React.useMemo(() => {
+    if (estadoFilter === "Terminado" && urgFilter === "Todas" && ramoFilter === "Todos" && ciaFilter === "Todos") return "terminados";
+    if (estadoFilter === "Abierto") {
+      if (urgFilter === "porVencer") return "porVencer";
+      if (urgFilter === "vencidas") return "vencidas";
+      if (ramoFilter === "Todos" && ciaFilter === "Todos") return "activos";
+    }
+    return null;
+  }, [estadoFilter, urgFilter, ramoFilter, ciaFilter]);
+
+  // Clic en una tarjeta: aplica ese recorte, o lo saca si ya estaba puesto.
+  const aplicarFocoKpi = (k) => {
+    setRamoFilter("Todos"); setCiaFilter("Todos");
+    if (focoKpi === k) { setEstadoFilter("Todos"); setUrgFilter("Todas"); return; }
+    if (k === "terminados") { setEstadoFilter("Terminado"); setUrgFilter("Todas"); return; }
+    setEstadoFilter("Abierto");
+    setUrgFilter(k === "activos" ? "Todas" : k);
+  };
+
+  // Los filtros de la barra mandan sobre el recorte de urgencia: si no, el
+  // usuario elige "Terminado" a mano y la lista sale vacía sin motivo visible.
+  const cambiarEstado = (s) => { setEstadoFilter(s); setUrgFilter("Todas"); };
 
   const agendaData = React.useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -497,19 +526,19 @@ function App() {
           </div>
         ) : (
           <div className="content">
-            {active === "dashboard" && <Kpis data={activos} />}
+            {active === "dashboard" && <Kpis data={activos} foco={focoKpi} onFoco={aplicarFocoKpi} />}
             <div className="panel">
               <Toolbar
                 title={active === "siniestros" ? "Todos los siniestros" : "Siniestros"}
                 count={rows.length}
-                estadoFilter={estadoFilter} onEstado={setEstadoFilter}
+                estadoFilter={estadoFilter} onEstado={cambiarEstado}
                 ramoFilter={ramoFilter} onRamo={setRamoFilter}
                 ciaFilter={ciaFilter} onCia={setCiaFilter}
                 selected={selected}
                 onEdit={() => selected && openEdit(selected)}
                 onDelete={() => selected && askDelete(selected)} />
               <ClaimsTable rows={rows} selectedId={selectedId} onSelect={setSelectedId} onOpen={openDetail}
-                multi={clientesMulti} onClientFilter={(cliente) => { setQuery(cliente); setEstadoFilter("Todos"); }} />
+                multi={clientesMulti} onClientFilter={(cliente) => { setQuery(cliente); cambiarEstado("Todos"); }} />
             </div>
           </div>
         )}

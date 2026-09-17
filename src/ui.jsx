@@ -214,32 +214,63 @@ function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpe
 }
 
 // ---------- KPIs ----------
-function KpiCard({ label, value, hint, tone, icon }) {
-  return (
-    <div className="kpi">
+// Tarjeta de KPI. Si recibe `onClick` se vuelve un filtro: se dibuja como
+// <button> de verdad —no un div con onClick— para que ande con teclado y lo
+// anuncien los lectores de pantalla.
+function KpiCard({ label, value, hint, tone, icon, onClick, activo }) {
+  const dentro = (
+    <>
       <span className="kpi-stripe" style={{ background: tone.fg }} />
       <div className="kpi-top">
         <span className="kpi-ico" style={{ background: tone.bg, color: tone.fg }}><Ico name={icon} size={17} /></span>
         <span className="kpi-label">{label}</span>
       </div>
       <div className="kpi-mid"><span className="kpi-value">{value}</span></div>
-      <div className="kpi-foot"><span className="kpi-hint">{hint}</span></div>
-    </div>
+      <div className="kpi-foot">
+        <span className="kpi-hint">{activo ? "filtrando — clic para quitar" : hint}</span>
+      </div>
+    </>
+  );
+  if (!onClick) return <div className="kpi">{dentro}</div>;
+  return (
+    <button
+      type="button"
+      className={"kpi kpi-filtro" + (activo ? " is-activo" : "")}
+      style={activo ? { "--kpi-tono": tone.fg } : null}
+      aria-pressed={!!activo}
+      title={activo ? "Quitar este filtro" : "Ver solo estos"}
+      onClick={onClick}
+    >
+      {dentro}
+    </button>
   );
 }
-function Kpis({ data }) {
+
+// Las cuatro tarjetas del panel de siniestros. `foco` dice cuál está aplicada
+// y sale de los filtros actuales, no de un estado propio: así no pueden quedar
+// en desacuerdo si el usuario toca los desplegables de la barra.
+const SIN_FOCOS = ["activos", "porVencer", "vencidas", "terminados"];
+function Kpis({ data, foco, onFoco }) {
   const total = data.length;
   const abiertos = data.filter((d) => d.estado === "Abierto");
   const terminados = data.filter((d) => d.estado === "Terminado").length;
   const vencidas = abiertos.filter((d) => urgenciaDe(d) === "vencido").length;
   const porVencer = abiertos.filter((d) => ["hoy", "proximo"].includes(urgenciaDe(d))).length;
   const cards = [
-    { label: "Siniestros activos", value: abiertos.length, hint: `${total} en total`, tone: ESTADOS["Abierto"], icon: "folder" },
-    { label: "Gestiones por vencer", value: porVencer, hint: "vencen en ≤ 3 días", tone: URGENCIA.proximo, icon: "clock" },
-    { label: "Gestiones vencidas", value: vencidas, hint: "requieren acción", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "alert" },
-    { label: "Terminados", value: terminados, hint: "cerrados", tone: ESTADOS["Terminado"], icon: "check" },
+    { key: "activos", label: "Siniestros activos", value: abiertos.length, hint: `${total} en total`, tone: ESTADOS["Abierto"], icon: "folder" },
+    { key: "porVencer", label: "Gestiones por vencer", value: porVencer, hint: "vencen en ≤ 3 días", tone: URGENCIA.proximo, icon: "clock" },
+    { key: "vencidas", label: "Gestiones vencidas", value: vencidas, hint: "requieren acción", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "alert" },
+    { key: "terminados", label: "Terminados", value: terminados, hint: "cerrados", tone: ESTADOS["Terminado"], icon: "check" },
   ];
-  return <div className="kpis">{cards.map((c) => <KpiCard key={c.label} {...c} />)}</div>;
+  return (
+    <div className="kpis">
+      {cards.map((c) => (
+        <KpiCard key={c.key} {...c}
+          activo={foco === c.key}
+          onClick={onFoco ? () => onFoco(c.key) : undefined} />
+      ))}
+    </div>
+  );
 }
 
 // ---------- toolbar ----------
@@ -481,7 +512,7 @@ function ModuleScreen({ info }) {
 }
 
 Object.assign(window, {
-  Ico, Icons, Badge, UrgBadge, RamoTag, Sidebar, Topbar, Kpis, Toolbar, ClaimsTable, Agenda,
+  Ico, Icons, Badge, UrgBadge, RamoTag, Sidebar, Topbar, KpiCard, Kpis, Toolbar, ClaimsTable, Agenda,
   ModuleScreen, PORTAL_NAV, NAV_LOOKUP, SINIESTROS_KEYS, FACTURACION_KEYS, RENOVACION_KEYS, COMERCIAL_KEYS,
   PENDIENTES_KEYS, OBJETIVOS_KEYS, ADMIN_KEYS, ORG_ONLY_KEYS,
 });

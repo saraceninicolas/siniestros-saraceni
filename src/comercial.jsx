@@ -143,6 +143,9 @@ function CotCard({ c, onCotizar, onDescartar, onReabrir, onNotas }) {
 
 // ---------- panel de control ----------
 function ComercialPanel({ data }) {
+  // La cuarta tarjeta es un porcentaje, no un subconjunto: no se puede filtrar
+  // por ella, así que queda sin clic. Mejor que un botón que no hace nada.
+  const [foco, setFoco] = React.useState(null);
   const nuevas = data.filter((c) => c.estado === "nueva");
   const cotizadas = data.filter((c) => c.estado === "cotizada");
   const descartadas = data.filter((c) => c.estado === "descartada");
@@ -152,29 +155,33 @@ function ComercialPanel({ data }) {
   const delMes = data.filter((c) => (c.creado || "").slice(0, 7) === hoy.slice(0, 7)).length;
 
   const cards = [
-    { label: "Pedidos sin responder", value: nuevas.length, hint: "esperando cotización", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "mail" },
-    { label: "Cotizadas", value: cotizadas.length, hint: "propuesta enviada", tone: { bg: "#E6F4EA", fg: "#15803D" }, icon: "check" },
-    { label: "Pedidos del mes", value: delMes, hint: "entraron este mes", tone: { bg: "#E8F0FE", fg: "#1D4ED8" }, icon: "grid" },
+    { key: "nuevas", label: "Pedidos sin responder", value: nuevas.length, hint: "esperando cotización", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "mail" },
+    { key: "cotizadas", label: "Cotizadas", value: cotizadas.length, hint: "propuesta enviada", tone: { bg: "#E6F4EA", fg: "#15803D" }, icon: "check" },
+    { key: "delMes", label: "Pedidos del mes", value: delMes, hint: "entraron este mes", tone: { bg: "#E8F0FE", fg: "#1D4ED8" }, icon: "grid" },
     { label: "Cotizadas / cerradas", value: conversion + "%", hint: cerradas + " cerradas en total", tone: { bg: "#FDF1DC", fg: "#B45309" }, icon: "target" },
   ];
+
+  const filas = React.useMemo(() => {
+    if (foco === "nuevas") return data.filter((c) => c.estado === "nueva");
+    if (foco === "cotizadas") return data.filter((c) => c.estado === "cotizada");
+    if (foco === "delMes") return data.filter((c) => (c.creado || "").slice(0, 7) === hoy.slice(0, 7));
+    return data;
+  }, [data, foco, hoy]);
 
   return (
     <div>
       <div className="kpis">
         {cards.map((c) => (
-          <div className="kpi" key={c.label}>
-            <span className="kpi-stripe" style={{ background: c.tone.fg }} />
-            <div className="kpi-top"><span className="kpi-ico" style={{ background: c.tone.bg, color: c.tone.fg }}><Ico name={c.icon} size={17} /></span><span className="kpi-label">{c.label}</span></div>
-            <div className="kpi-mid"><span className="kpi-value">{c.value}</span></div>
-            <div className="kpi-foot"><span className="kpi-hint">{c.hint}</span></div>
-          </div>
+          <KpiCard key={c.label} {...c}
+            activo={c.key && foco === c.key}
+            onClick={c.key ? () => setFoco(foco === c.key ? null : c.key) : undefined} />
         ))}
       </div>
       <div className="panel">
         <div className="toolbar">
-          <div className="toolbar-left"><span className="toolbar-title">Últimos pedidos de cotización</span><span className="toolbar-count">{data.length}</span></div>
+          <div className="toolbar-left"><span className="toolbar-title">Últimos pedidos de cotización</span><span className="toolbar-count">{filas.length}</span></div>
         </div>
-        {data.length === 0 ? (
+        {filas.length === 0 ? (
           <div className="empty"><div className="empty-ico"><Ico name="mail" size={26} /></div>
             <div className="empty-title">Todavía no llegaron pedidos</div>
             <div className="empty-sub">Compartí el link de cotización con tus clientes y los pedidos aparecen acá al instante.</div></div>
@@ -183,7 +190,7 @@ function ComercialPanel({ data }) {
             <table className="table">
               <thead><tr><th>Recibido</th><th>Interesado</th><th>Vivienda</th><th>Contacto</th><th>Estado</th><th>N°</th></tr></thead>
               <tbody>
-                {data.slice(0, 25).map((c) => (
+                {filas.slice(0, 25).map((c) => (
                   <tr key={c._dbId}>
                     <td className="cell-sub">{c.creado ? fmtDate(c.creado.slice(0, 10)) : "—"}</td>
                     <td><div className="cell-strong">{c.nombre}</div><div className="cell-sub mono">{c.documento}</div></td>

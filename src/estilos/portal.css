@@ -219,6 +219,15 @@ html[data-sidebar="claro"] .sb-subitem.is-active{ color:var(--ink); }
 .kpi{ position:relative; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
   padding:16px 18px 15px; box-shadow:var(--shadow-sm); overflow:hidden; transition:.16s; }
 .kpi:hover{ box-shadow:var(--shadow-md); transform:translateY(-1px); }
+/* Tarjeta que además filtra. Es un <button>, así que hay que deshacer los
+   estilos que el navegador le pone solo. --kpi-tono lo fija el componente con
+   el color de esa tarjeta: el resaltado sale del color del KPI y no de la
+   marca, para que se entienda cuál de los cuatro está aplicado. */
+.kpi-filtro{ font:inherit; color:inherit; text-align:left; width:100%; display:block; cursor:pointer;
+  -webkit-appearance:none; appearance:none; }
+.kpi-filtro:focus-visible{ outline:2px solid var(--brand); outline-offset:2px; }
+.kpi-filtro.is-activo{ border-color:var(--kpi-tono); box-shadow:0 0 0 3px color-mix(in srgb, var(--kpi-tono) 18%, transparent); }
+.kpi-filtro.is-activo .kpi-hint{ color:var(--kpi-tono); font-weight:700; }
 .kpi-stripe{ position:absolute; top:0; left:0; width:100%; height:3px; opacity:.85; }
 .kpi-top{ display:flex; align-items:center; gap:10px; }
 .kpi-label{ font-size:12.5px; color:var(--ink-2); font-weight:600; }
