@@ -39,4 +39,6 @@ Siempre **test primero**, se verifica, y recién después producción.
 El 2026-09-18, analizando duplicados, se instalaron `pg_trgm` y `unaccent` en
 producción fuera de toda migración (dentro de una consulta que se había
 anunciado como de solo lectura). `pg_trgm` la va a necesitar la 0004 igual;
-`unaccent` no la usa nada. Pendiente: decidir si se borra `unaccent` de prod.
+`unaccent` no la usa nada: **se borró de producción el 2026-09-18** con el ok de
+Hernán, después de verificar en prod que no la usaba ninguna función, índice,
+columna ni vista. `pg_trgm` queda instalada.
