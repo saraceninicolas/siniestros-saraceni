@@ -188,7 +188,7 @@ analizar, se analiza en test.
 
 ## Datos que vienen de Excel
 
-Hernán trabaja con planillas propias y las pasa para importar. No hay Python ni
+Nico trabaja con planillas propias y las pasa para importar. No hay Python ni
 pandas en su máquina: se leen con **PowerShell + Excel COM**.
 
 - Usar `.Value2` y no `.Text` (si no, las fechas salen `#####` y los CUIT en

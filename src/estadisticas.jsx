@@ -1,6 +1,6 @@
 // estadisticas.jsx — Saraceni Seguros · Estadísticas de siniestros
 // ─────────────────────────────────────────────────────────────────────────────
-// Responde la pregunta de Hernán: cuánto demora un caso en promedio, abierto
+// Responde la pregunta de Nico: cuánto demora un caso en promedio, abierto
 // por ramo y por hecho (cristales, robo total, daño parcial…).
 //
 // Cómo se mide la demora (en días HÁBILES, igual que el resto del portal):

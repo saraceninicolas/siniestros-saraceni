@@ -26,19 +26,36 @@ Siempre **test primero**, se verifica, y recién después producción.
 
 | Migración | test | producción |
 |---|---|---|
-| `20260917_0001_borrar_tabla_facturas.sql` | aplicada | pendiente |
-| `20260917_0002_revocar_execute_triggers.sql` | aplicada | pendiente |
-| `20260918_0003_denuncia_conductor_y_terceros.sql` | aplicada | pendiente |
-| `20260918_0004_asegurados.sql` | aplicada | pendiente |
-| `20260918_0005_unificar_asegurados.sql` | aplicada | pendiente |
-| `20260918_0006_endurecer_asegurados.sql` | aplicada | pendiente |
-| `20260918_0007_enganchar_por_documento.sql` | aplicada | pendiente |
+| `20260917_0001_borrar_tabla_facturas.sql` | aplicada | aplicada (2026-09-18) |
+| `20260917_0002_revocar_execute_triggers.sql` | aplicada | aplicada (2026-09-18) |
+| `20260918_0003_denuncia_conductor_y_terceros.sql` | aplicada | aplicada (2026-09-18) |
+| `20260918_0004_asegurados.sql` | aplicada | aplicada (2026-09-18) |
+| `20260918_0005_unificar_asegurados.sql` | aplicada | aplicada (2026-09-18) |
+| `20260918_0006_endurecer_asegurados.sql` | aplicada | aplicada (2026-09-18) |
+| `20260918_0007_enganchar_por_documento.sql` | aplicada | aplicada (2026-09-18) |
 
 ## Nota sobre producción
 
 El 2026-09-18, analizando duplicados, se instalaron `pg_trgm` y `unaccent` en
 producción fuera de toda migración (dentro de una consulta que se había
-anunciado como de solo lectura). `pg_trgm` la va a necesitar la 0004 igual;
+anunciado como de solo lectura). `pg_trgm` la necesitaba la 0004 igual;
 `unaccent` no la usa nada: **se borró de producción el 2026-09-18** con el ok de
-Hernán, después de verificar en prod que no la usaba ninguna función, índice,
+Nico, después de verificar en prod que no la usaba ninguna función, índice,
 columna ni vista. `pg_trgm` queda instalada.
+
+## Pase a producción del 2026-09-18
+
+Las siete se aplicaron en orden, **antes** de pasar el código: todas agregan y
+ninguna cambia lo que usaba el portal viejo, así que el sitio siguió andando
+entre un paso y otro. Antes se verificó en producción que `facturas` tenía 0
+filas y nada la referenciaba, y que las policies de `anon` no llaman a
+`es_activo()`. Después:
+
+- La denuncia se probó insertando como `anon` con el formulario nuevo completo,
+  dentro de un bloque que termina en `raise exception` para que Postgres lo
+  deshaga todo (incluidas las notificaciones del trigger). No quedó rastro.
+- Como visitante sin cuenta: ninguna tabla devuelve filas y las funciones de
+  asegurados, de rol y de trigger responden 401/404.
+- Los avisos del linter son los mismos tres conocidos de test (extensiones en
+  `public`, la API de asegurados es `security definer` a propósito, y la
+  protección de contraseñas filtradas, que es del plan Pro).
