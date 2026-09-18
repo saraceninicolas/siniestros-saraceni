@@ -31,3 +31,12 @@ Siempre **test primero**, se verifica, y recién después producción.
 | `20260918_0003_denuncia_conductor_y_terceros.sql` | aplicada | pendiente |
 | `20260918_0004_asegurados.sql` | aplicada | pendiente |
 | `20260918_0005_unificar_asegurados.sql` | aplicada | pendiente |
+| `20260918_0006_endurecer_asegurados.sql` | aplicada | pendiente |
+| `20260918_0007_enganchar_por_documento.sql` | aplicada | pendiente |
+
+## Nota sobre producción
+
+El 2026-09-18, analizando duplicados, se instalaron `pg_trgm` y `unaccent` en
+producción fuera de toda migración (dentro de una consulta que se había
+anunciado como de solo lectura). `pg_trgm` la va a necesitar la 0004 igual;
+`unaccent` no la usa nada. Pendiente: decidir si se borra `unaccent` de prod.

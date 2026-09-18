@@ -154,6 +154,18 @@ se verifican, y recién después a producción. El estado de cada una se anota e
 `supabase/migrations/README.md`. Antes de un `alter table` o un `delete` en la
 base real, preguntar.
 
+⚠️ **Nunca `TRUNCATE ... CASCADE`, ni siquiera en test.** Vacía ENTERA toda
+tabla que tenga una clave foránea apuntando a la truncada, e ignora el
+`on delete set null` de esa clave. Ya pasó: un `truncate asegurados cascade`
+para limpiar datos de prueba vació `siniestros` y `solicitudes` de test, porque
+las dos apuntan a `asegurados`. En producción hubiera borrado todos los
+siniestros reales. Para limpiar se usa `delete ... where`.
+
+⚠️ **Una consulta "de solo lectura" no lleva `create`.** Al analizar datos de
+producción se corrió `create extension if not exists pg_trgm, unaccent` dentro
+de lo que se había anunciado como lectura. Si hace falta una extensión para
+analizar, se analiza en test.
+
 ## Convenciones
 
 - Todo en **castellano rioplatense**: interfaz, nombres de variables de negocio,

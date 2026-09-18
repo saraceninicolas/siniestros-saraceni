@@ -48,6 +48,8 @@ const TABLAS_PRIVADAS = [
   "fact_companias",
   "fact_mensual",
   "notificaciones",
+  "asegurados",
+  "asegurados_duplicados",
 ];
 
 describe("RLS · un visitante sin cuenta no lee nada", () => {
@@ -79,6 +81,24 @@ describe("RLS · las funciones de trigger no se pueden invocar por REST", () => 
   ])("%s no responde", async (fn) => {
     const r = await comoAnon(`rpc/${fn}`, { method: "POST", body: "{}" });
     expect(r.status).toBe(404);
+  });
+});
+
+describe("RLS · un visitante sin cuenta no toca la API de asegurados", () => {
+  // Son security definer: se saltean RLS y chequean los permisos adentro.
+  // Además de ese chequeo, anon ni siquiera tiene que poder llamarlas.
+  it.each([
+    ["asegurado_buscar_o_crear", { p_nombre: "INTRUSO", p_documento: "11111111" }],
+    ["asegurados_unificar", { id_final: 1, id_absorbido: 2 }],
+    ["asegurados_no_son_duplicados", { a: 1, b: 2 }],
+    ["asegurados_buscar_parecidos", { umbral: 0.7 }],
+    ["asegurados_enganchar_siniestros", { solo_simular: false }],
+    // Los helpers de rol solo los necesitan las policies de usuarios logueados.
+    ["es_activo", {}],
+    ["es_organizador", {}],
+  ])("%s no responde", async (fn, args) => {
+    const r = await comoAnon(`rpc/${fn}`, { method: "POST", body: JSON.stringify(args) });
+    expect(r.status).toBeGreaterThanOrEqual(400);
   });
 });
 
