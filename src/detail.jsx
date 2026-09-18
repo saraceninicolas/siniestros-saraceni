@@ -98,8 +98,12 @@ function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs, onTermina
     let alive = true;
     (async () => {
       if (!window.DB || !window.DB.files || !adjuntos.length) return;
+      // En paralelo: pedirlas de a una hacía esperar un viaje al servidor por
+      // adjunto antes de que apareciera la primera miniatura.
       const map = {};
-      for (const a of adjuntos) { try { map[a.path] = await window.DB.files.signedUrl(a.path, 3600, a.bucket); } catch (e) { /* noop */ } }
+      await Promise.all(adjuntos.map(async (a) => {
+        try { map[a.path] = await window.DB.files.signedUrl(a.path, 3600, a.bucket); } catch (e) { /* noop */ }
+      }));
       if (alive) setAdjUrls(map);
     })();
     return () => { alive = false; };
@@ -264,21 +268,8 @@ function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs, onTermina
         {adjuntos.length > 0 && (
           <section className="ds-card ds-card-wide">
             <div className="ds-card-title"><Ico name="doc" size={15} />Adjuntos <span className="ds-adj-count">{adjuntos.length}</span></div>
-            <div className="adj-grid">
-              {adjuntos.map((a, i) => {
-                const url = adjUrls[a.path];
-                const isImg = a.tipo && a.tipo.indexOf("image") >= 0;
-                return (
-                  <a className="adj-card" key={a.path || i} href={url || "#"} target="_blank" rel="noreferrer"
-                    onClick={(e) => { if (!url) e.preventDefault(); }}>
-                    {isImg && url
-                      ? <img className="adj-thumb" src={url} alt={a.name} />
-                      : <span className="adj-thumb adj-thumb-file"><Ico name="doc" size={24} /></span>}
-                    <span className="adj-card-name" title={a.name}>{a.name}</span>
-                  </a>
-                );
-              })}
-            </div>
+            <AdjuntosGrid adjuntos={adjuntos} urls={adjUrls}
+              nombreZip={[item.id, item.cliente].filter(Boolean).join(" ")} />
           </section>
         )}
       </div>
@@ -291,3 +282,8 @@ function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs, onTermina
 }
 
 Object.assign(window, { DetailScreen });
+
+// Marca este archivo como modulo ES. Sin esto el compilador lo toma por
+// script (no tiene ningun import/export todavia) y compila el JSX a require(),
+// que en el navegador no existe. Se va cuando el archivo tenga imports de verdad.
+export {};

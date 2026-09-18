@@ -1,6 +1,6 @@
 // estadisticas.jsx — Saraceni Seguros · Estadísticas de siniestros
 // ─────────────────────────────────────────────────────────────────────────────
-// Responde la pregunta de Hernán: cuánto demora un caso en promedio, abierto
+// Responde la pregunta de Nico: cuánto demora un caso en promedio, abierto
 // por ramo y por hecho (cristales, robo total, daño parcial…).
 //
 // Cómo se mide la demora (en días HÁBILES, igual que el resto del portal):
@@ -270,3 +270,8 @@ function EstadisticasSiniestros({ data }) {
 }
 
 Object.assign(window, { EstadisticasSiniestros, estDemora, estInicio, estCierre });
+
+// Marca este archivo como modulo ES. Sin esto el compilador lo toma por
+// script (no tiene ningun import/export todavia) y compila el JSX a require(),
+// que en el navegador no existe. Se va cuando el archivo tenga imports de verdad.
+export {};

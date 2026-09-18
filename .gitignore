@@ -18,3 +18,7 @@ Thumbs.db
 
 # Claude Code (config local)
 .claude/
+
+# Build de Vite
+dist/
+.vite/

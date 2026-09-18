@@ -33,8 +33,12 @@ function SolCard({ s, onConvertir, onDescartar, onReabrir }) {
     let alive = true;
     (async () => {
       if (!window.DB || !window.DB.files || !(s.adjuntos || []).length) return;
+      // En paralelo: una solicitud con 5 fotos encadenaba 5 viajes al servidor
+      // antes de mostrar nada.
       const m = {};
-      for (const a of s.adjuntos) { try { m[a.path] = await window.DB.files.signedUrl(a.path, 3600, "solicitudes"); } catch (e) { /* noop */ } }
+      await Promise.all(s.adjuntos.map(async (a) => {
+        try { m[a.path] = await window.DB.files.signedUrl(a.path, 3600, "solicitudes"); } catch (e) { /* noop */ }
+      }));
       if (alive) setUrls(m);
     })();
     return () => { alive = false; };
@@ -65,6 +69,16 @@ function SolCard({ s, onConvertir, onDescartar, onReabrir }) {
         <D k="Email" v={s.email} />
       </div>
 
+      {s.conductorDistinto && (
+        <>
+          <div className="sol-sub">Conductor <span className="sol-aviso">no es el asegurado</span></div>
+          <div className="sol-grid-datos">
+            <D k="Nombre" v={s.conductorNombre} />
+            <D k="DNI" v={s.conductorDni} mono />
+          </div>
+        </>
+      )}
+
       {(s.terceroNombre || s.terceroDni || s.terceroDominio || s.terceroCia || s.terceroPoliza) && (
         <>
           <div className="sol-sub">Tercero</div>
@@ -75,6 +89,20 @@ function SolCard({ s, onConvertir, onDescartar, onReabrir }) {
             <D k="Patente" v={s.terceroDominio} mono />
             <D k="Compañía" v={s.terceroCia} />
             <D k="N° de póliza" v={s.terceroPoliza} mono />
+          </div>
+        </>
+      )}
+
+      {(s.tercerosExtra || []).length > 0 && (
+        <>
+          <div className="sol-sub">Otras personas involucradas <span className="sol-aviso">{s.tercerosExtra.length}</span></div>
+          <div className="sol-grid-datos">
+            {/* El nombre va como valor y nunca falta: `D` se esconde sola si el
+                valor está vacío, y un tercero sin DNI desaparecería de la lista. */}
+            {s.tercerosExtra.map((p, i) => (
+              <D key={i} k={"Persona " + (i + 2)}
+                v={p.nombre + (p.dni ? " · DNI " + p.dni : "")} />
+            ))}
           </div>
         </>
       )}
@@ -100,23 +128,9 @@ function SolCard({ s, onConvertir, onDescartar, onReabrir }) {
       {s.relato && <div className="sol-relato">{s.relato}</div>}
 
       {(s.adjuntos || []).length > 0 && (
-        <div className="adj-grid" style={{ marginTop: 10 }}>
-          {s.adjuntos.map((a, i) => {
-            const url = urls[a.path];
-            const isImg = a.tipo && a.tipo.indexOf("image") >= 0;
-            return (
-              <a className="adj-card" key={a.path || i} href={url || "#"} target="_blank" rel="noreferrer"
-                onClick={(e) => { if (!url) e.preventDefault(); }}>
-                {isImg && url
-                  ? <img className="adj-thumb" src={url} alt={a.name} />
-                  : <span className="adj-thumb adj-thumb-file"><Ico name="doc" size={24} /></span>}
-                {/* si vino de un marco, mostramos qué foto es en vez del nombre del archivo */}
-                <span className="adj-card-name" title={a.etiqueta ? a.etiqueta + " — " + a.name : a.name}>
-                  {a.etiqueta || a.name}
-                </span>
-              </a>
-            );
-          })}
+        <div style={{ marginTop: 10 }}>
+          <AdjuntosGrid adjuntos={s.adjuntos} urls={urls}
+            nombreZip={[s.id, s.nombre].filter(Boolean).join(" ")} />
         </div>
       )}
 
@@ -180,3 +194,8 @@ function SolicitudesView({ solicitudes, onConvertir, onDescartar, onReabrir }) {
 }
 
 Object.assign(window, { SolicitudesView, TIPO_SOL_LABEL, TIPO_SOL_HECHO });
+
+// Marca este archivo como modulo ES. Sin esto el compilador lo toma por
+// script (no tiene ningun import/export todavia) y compila el JSX a require(),
+// que en el navegador no existe. Se va cuando el archivo tenga imports de verdad.
+export {};

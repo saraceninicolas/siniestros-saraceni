@@ -34,26 +34,23 @@ function urgPend(p) {
 }
 
 // ---------- KPIs ----------
-function PendKpis({ data }) {
+function PendKpis({ data, foco, onFoco }) {
   const activas = data.filter((p) => p.estado !== "Hecho");
   const vencidas = activas.filter((p) => urgPend(p) === "vencido").length;
   const porVencer = activas.filter((p) => ["hoy", "proximo"].includes(urgPend(p))).length;
   const hechas = data.filter((p) => p.estado === "Hecho").length;
   const cards = [
-    { label: "Tareas activas", value: activas.length, hint: "pendientes + en curso", tone: { bg: "#FEF3E2", fg: "#B45309" }, icon: "flag" },
-    { label: "Por vencer", value: porVencer, hint: "vencen en ≤ 3 días", tone: { bg: "#E8F0FE", fg: "#1D4ED8" }, icon: "clock" },
-    { label: "Vencidas", value: vencidas, hint: "requieren acción", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "alert" },
-    { label: "Hechas", value: hechas, hint: "completadas", tone: { bg: "#E6F4EA", fg: "#15803D" }, icon: "check" },
+    { key: "activas", label: "Tareas activas", value: activas.length, hint: "pendientes + en curso", tone: { bg: "#FEF3E2", fg: "#B45309" }, icon: "flag" },
+    { key: "porVencer", label: "Por vencer", value: porVencer, hint: "vencen en ≤ 3 días", tone: { bg: "#E8F0FE", fg: "#1D4ED8" }, icon: "clock" },
+    { key: "vencidas", label: "Vencidas", value: vencidas, hint: "requieren acción", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "alert" },
+    { key: "hechas", label: "Hechas", value: hechas, hint: "completadas", tone: { bg: "#E6F4EA", fg: "#15803D" }, icon: "check" },
   ];
   return (
     <div className="kpis">
       {cards.map((c) => (
-        <div className="kpi" key={c.label}>
-          <span className="kpi-stripe" style={{ background: c.tone.fg }} />
-          <div className="kpi-top"><span className="kpi-ico" style={{ background: c.tone.bg, color: c.tone.fg }}><Ico name={c.icon} size={17} /></span><span className="kpi-label">{c.label}</span></div>
-          <div className="kpi-mid"><span className="kpi-value">{c.value}</span></div>
-          <div className="kpi-foot"><span className="kpi-hint">{c.hint}</span></div>
-        </div>
+        <KpiCard key={c.key} {...sinKey(c)}
+          activo={foco === c.key}
+          onClick={onFoco ? () => onFoco(c.key) : undefined} />
       ))}
     </div>
   );
@@ -260,6 +257,7 @@ function PendientesModule({ active, station, query, usuarios }) {
   const [estadoF, setEstadoF] = React.useState("Activas");
   const [prioF, setPrioF] = React.useState("Todos");
   const [catF, setCatF] = React.useState("Todos");
+  const [urgF, setUrgF] = React.useState("Todas");  // Todas | porVencer | vencidas
   const [modal, setModal] = React.useState(null);
   const [toast, setToast] = React.useState(null);
   const tt = React.useRef(null);
@@ -293,13 +291,36 @@ function PendientesModule({ active, station, query, usuarios }) {
       if (estadoF !== "Todos" && estadoF !== "Activas" && p.estado !== estadoF) return false;
       if (prioF !== "Todos" && p.prioridad !== prioF) return false;
       if (catF !== "Todos" && p.categoria !== catF) return false;
+      if (urgF === "porVencer" && !["hoy", "proximo"].includes(urgPend(p))) return false;
+      if (urgF === "vencidas" && urgPend(p) !== "vencido") return false;
       if (q) { const hay = [p.titulo, p.descripcion, p.cliente, p.categoria, p.asignado].join(" ").toLowerCase(); if (!hay.includes(q)) return false; }
       return true;
     }).sort((a, b) => {
       if ((a.estado === "Hecho") !== (b.estado === "Hecho")) return a.estado === "Hecho" ? 1 : -1;
       return (a.fechaLimite || "9999").localeCompare(b.fechaLimite || "9999");
     });
-  }, [activos, query, estadoF, prioF, catF]);
+  }, [activos, query, estadoF, prioF, catF, urgF]);
+
+  // Igual que en Siniestros: el foco se deduce de los filtros, no se guarda.
+  const focoKpi = React.useMemo(() => {
+    if (prioF !== "Todos" || catF !== "Todos") return null;
+    if (estadoF === "Hecho" && urgF === "Todas") return "hechas";
+    if (estadoF === "Activas") {
+      if (urgF === "porVencer") return "porVencer";
+      if (urgF === "vencidas") return "vencidas";
+      return "activas";
+    }
+    return null;
+  }, [estadoF, prioF, catF, urgF]);
+
+  const aplicarFocoKpi = (k) => {
+    setPrioF("Todos"); setCatF("Todos");
+    if (focoKpi === k) { setEstadoF("Todos"); setUrgF("Todas"); return; }
+    if (k === "hechas") { setEstadoF("Hecho"); setUrgF("Todas"); return; }
+    setEstadoF("Activas");
+    setUrgF(k === "activas" ? "Todas" : k);
+  };
+  const cambiarEstadoF = (s) => { setEstadoF(s); setUrgF("Todas"); };
 
   const handleCreate = async (data) => {
     let n;
@@ -333,20 +354,20 @@ function PendientesModule({ active, station, query, usuarios }) {
 
   if (active === "pend-agenda") {
     return (<>
-      <PendKpis data={activos} />
+      <PendKpis data={activos} foco={focoKpi} onFoco={aplicarFocoKpi} />
       <PendAgenda data={activos} onOpen={(p) => setModal({ type: "edit", item: p })} onToggle={toggleHecho} onNew={() => setModal({ type: "new" })} />
       {modals}
     </>);
   }
   return (<>
-    <PendKpis data={activos} />
+    <PendKpis data={activos} foco={focoKpi} onFoco={aplicarFocoKpi} />
     <div className="panel">
       <div className="toolbar">
         <div className="toolbar-left"><span className="toolbar-title">Pendientes</span><span className="toolbar-count">{rows.length}</span></div>
         <div className="toolbar-right">
           <div className="seg">
             {["Activas", "Todos", ...ESTADOS_PEND].map((s) => (
-              <button key={s} className={"seg-btn" + (estadoF === s ? " is-on" : "")} onClick={() => setEstadoF(s)}>{s}</button>
+              <button key={s} className={"seg-btn" + (estadoF === s ? " is-on" : "")} onClick={() => cambiarEstadoF(s)}>{s}</button>
             ))}
           </div>
           <select className="select" value={prioF} onChange={(e) => setPrioF(e.target.value)}>
@@ -368,3 +389,8 @@ function PendientesModule({ active, station, query, usuarios }) {
 }
 
 Object.assign(window, { PendientesModule });
+
+// Marca este archivo como modulo ES. Sin esto el compilador lo toma por
+// script (no tiene ningun import/export todavia) y compila el JSX a require(),
+// que en el navegador no existe. Se va cuando el archivo tenga imports de verdad.
+export {};

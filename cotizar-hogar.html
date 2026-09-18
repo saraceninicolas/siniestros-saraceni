@@ -86,7 +86,7 @@ textarea{ resize:vertical; min-height:62px; }
 <div class="wrap">
   <div class="card">
     <div class="head">
-      <span class="logo"><img src="assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></span>
+      <span class="logo"><img src="/assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></span>
       <h1>Cotizá tu seguro de hogar</h1>
       <p class="sub">Completá estos datos y te preparamos una cotización a medida. Te contactamos con la propuesta a la brevedad.</p>
     </div>
@@ -195,9 +195,8 @@ textarea{ resize:vertical; min-height:62px; }
   <div class="foot">SARACENI · BROKER DE SEGUROS</div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js"></script>
-<script>
+<script type="module" src="/src/publico.js"></script>
+<script type="module">
 (function () {
   var sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
   var $ = function (id) { return document.getElementById(id); };

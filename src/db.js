@@ -37,6 +37,8 @@
       n: r.n,
       estado: r.estado,
       cliente: r.cliente,
+      clienteDoc: r.cliente_doc || "",
+      aseguradoId: r.asegurado_id || null,
       dominio: r.dominio || "",
       referencia: r.referencia || "",
       cia: r.cia,
@@ -83,6 +85,8 @@
       n: it.n,
       estado: it.estado,
       cliente: it.cliente,
+      cliente_doc: orNull(it.clienteDoc),
+      asegurado_id: it.aseguradoId || null,
       dominio: orNull(it.dominio),
       referencia: orNull(it.referencia),
       cia: it.cia,
@@ -442,13 +446,29 @@ async function dbMaxN() {
   }
 
   // ============================ OBJETIVOS ============================
+  // Los objetivos ganaron área, periodicidad, rango de fechas y responsables.
+  // `mes`/`anio`/`tipo` se siguen leyendo y escribiendo: son las columnas que usa
+  // la versión anterior del módulo, y las dos conviven sobre la misma tabla.
+  const finDeMes = (anio, mes) => new Date(anio, mes, 0).getDate();
   function fromRowO(r) {
+    const periodicidad = r.periodicidad || (r.mes == null ? "anual" : "mensual");
+    const desde = r.fecha_desde || (r.mes == null
+      ? r.anio + "-01-01"
+      : r.anio + "-" + String(r.mes).padStart(2, "0") + "-01");
+    const hasta = r.fecha_hasta || (r.mes == null
+      ? r.anio + "-12-31"
+      : r.anio + "-" + String(r.mes).padStart(2, "0") + "-" + String(finDeMes(r.anio, r.mes)).padStart(2, "0"));
     return {
       _dbId: r.id, id: r.codigo, n: r.n,
       titulo: r.titulo || "", tipo: r.tipo || "manual",
+      descripcion: r.descripcion || "",
+      area: r.area || (r.tipo === "facturacion" ? "facturacion" : "otro"),
+      periodicidad, fechaDesde: desde, fechaHasta: hasta,
       mes: r.mes, anio: r.anio,
       meta: r.meta, valorActual: r.valor_actual,
       unidad: r.unidad || "$", notas: r.notas || "",
+      responsable: r.responsable || "", equipo: r.equipo || "",
+      colaboradores: Array.isArray(r.colaboradores) ? r.colaboradores : [],
       ultimaModPor: r.ultima_mod_por || "",
       ultimaModFecha: r.ultima_mod_fecha || new Date().toISOString(),
       eliminado: !!r.eliminado,
@@ -458,11 +478,17 @@ async function dbMaxN() {
     return {
       codigo: it.id, n: it.n,
       titulo: it.titulo, tipo: it.tipo || "manual",
+      descripcion: orNull(it.descripcion),
+      area: orNull(it.area) || "otro",
+      periodicidad: orNull(it.periodicidad) || "mensual",
+      fecha_desde: orNull(it.fechaDesde), fecha_hasta: orNull(it.fechaHasta),
       mes: it.mes === "" || it.mes == null ? null : Number(it.mes),
       anio: Number(it.anio),
       meta: numOrNull(it.meta) || 0,
       valor_actual: numOrNull(it.valorActual),
       unidad: orNull(it.unidad) || "$", notas: orNull(it.notas),
+      responsable: orNull(it.responsable), equipo: orNull(it.equipo),
+      colaboradores: Array.isArray(it.colaboradores) ? it.colaboradores : [],
       ultima_mod_por: orNull(it.ultimaModPor),
       ultima_mod_fecha: it.ultimaModFecha || new Date().toISOString(),
       eliminado: !!it.eliminado,
@@ -511,6 +537,11 @@ async function dbMaxN() {
       tipoSiniestro: r.tipo_siniestro || "",
       terceroNombre: r.tercero_nombre || "", terceroDni: r.tercero_dni || "", terceroCelular: r.tercero_celular || "",
       terceroDominio: r.tercero_dominio || "", terceroCia: r.tercero_cia || "", terceroPoliza: r.tercero_poliza || "",
+      // Columnas nuevas: las solicitudes cargadas antes de la migración no las
+      // traen, de ahí los valores por defecto.
+      tercerosExtra: Array.isArray(r.terceros_extra) ? r.terceros_extra : [],
+      conductorDistinto: !!r.conductor_distinto,
+      conductorNombre: r.conductor_nombre || "", conductorDni: r.conductor_dni || "",
       fechaHecho: r.fecha_hecho || "", horaHecho: r.hora_hecho || "",
       ubicacion: r.ubicacion || "", localidad: r.localidad || "",
       lesionados: r.lesionados || "", relato: r.relato || "",
@@ -661,15 +692,160 @@ async function dbMaxN() {
     return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
   }
 
+  // ============================ ASEGURADOS ============================
+  // Una ficha por persona. El duplicado lo impide la base con un índice único
+  // sobre el documento normalizado (ver supabase/migrations/…_asegurados.sql),
+  // así que acá no hace falta ninguna precaución extra: si el documento ya
+  // existe, `asegBuscarOCrear` devuelve el id de la ficha que ya estaba.
+  function fromRowA(r) {
+    return {
+      id: r.id, nombre: r.nombre || "", documento: r.documento || "",
+      documentoNorm: r.documento_norm || "", nombreNorm: r.nombre_norm || "",
+      email: r.email || "", telefono: r.telefono || "", notas: r.notas || "",
+      creado: r.created_at || null,
+    };
+  }
+
+  async function asegList() {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("asegurados").select("*").order("nombre");
+    if (error) throw error;
+    return (data || []).map(fromRowA);
+  }
+
+  // Busca por documento o por nombre para el autocompletado del formulario.
+  // El documento va primero y exacto: es el que identifica sin ambigüedad.
+  async function asegBuscar(texto) {
+    const c = client(); if (!c) return [];
+    const q = String(texto || "").trim();
+    if (q.length < 2) return [];
+    const soloDigitos = q.replace(/[^0-9]/g, "");
+    // PostgREST separa las condiciones de `.or()` con comas, así que un nombre
+    // como "Fernandez, Marta Elena" le parte la consulta al medio y devuelve
+    // error 400. Hay que entrecomillar el valor. Y `%` y `_` son comodines de
+    // LIKE: si no se escapan, buscar "100%" trae cualquier cosa.
+    const seguro = (v) => '"' + String(v).replace(/["\\]/g, "").replace(/[%_]/g, "\\$&") + '"';
+    const partes = [`nombre.ilike.${seguro("%" + q + "%")}`];
+    if (soloDigitos.length >= 4) partes.push(`documento.ilike.${seguro("%" + soloDigitos + "%")}`);
+    const { data, error } = await c.from("asegurados").select("*").or(partes.join(",")).limit(8);
+    if (error) { console.error(error); return []; }
+    return (data || []).map(fromRowA);
+  }
+
+  // Coincidencia exacta por documento: es lo que dispara el autocompletado.
+  async function asegPorDocumento(doc) {
+    const c = client(); if (!c) return null;
+    const norm = String(doc || "").replace(/[oO]/g, "0").replace(/[iIlL]/g, "1").replace(/[^0-9]/g, "");
+    if (norm.length < 6) return null;
+    // Mismo criterio que doc_normalizado() en Postgres: de un CUIT sale el DNI.
+    const buscado = norm.length === 11 ? norm.slice(2, 10).replace(/^0+/, "") : norm.replace(/^0+/, "");
+    const { data, error } = await c.from("asegurados").select("*").eq("documento_norm", buscado).maybeSingle();
+    if (error) { console.error(error); return null; }
+    return data ? fromRowA(data) : null;
+  }
+
+  // Cuántos siniestros tiene: es lo que hace útil mostrar que "ya existe".
+  async function asegSiniestros(aseguradoId) {
+    const c = client(); if (!c) return [];
+    const { data, error } = await c.from("siniestros")
+      .select("codigo,cliente,ramo,hecho,estado,fecha_denuncia,cia,nro_siniestro")
+      .eq("asegurado_id", aseguradoId).eq("eliminado", false)
+      .order("fecha_denuncia", { ascending: false });
+    if (error) { console.error(error); return []; }
+    return data || [];
+  }
+
+  async function asegBuscarOCrear({ nombre, documento, email, telefono }) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.rpc("asegurado_buscar_o_crear", {
+      p_nombre: nombre || null, p_documento: documento || null,
+      p_email: email || null, p_telefono: telefono || null,
+    });
+    if (error) throw error;
+    return data;   // id del asegurado
+  }
+
+  // ---- posibles duplicados ----
+  // La lista trae las dos fichas con sus datos y cuántos siniestros tiene cada
+  // una: sin eso no se puede decidir cuál conservar.
+  async function dupList() {
+    const c = client(); if (!c) return [];
+    const { data, error } = await c.from("asegurados_duplicados")
+      .select("*, a:a_id(id,nombre,documento,email,telefono,created_at), b:b_id(id,nombre,documento,email,telefono,created_at)")
+      .eq("estado", "pendiente")
+      .order("parecido", { ascending: false });
+    if (error) { console.error(error); return []; }
+    const filas = data || [];
+    // Cuántos siniestros tiene cada ficha involucrada, en una sola consulta.
+    const ids = [...new Set(filas.flatMap((f) => [f.a_id, f.b_id]))];
+    const cuenta = {};
+    if (ids.length) {
+      const { data: ss } = await c.from("siniestros")
+        .select("asegurado_id").in("asegurado_id", ids).eq("eliminado", false);
+      (ss || []).forEach((s) => { cuenta[s.asegurado_id] = (cuenta[s.asegurado_id] || 0) + 1; });
+    }
+    return filas.map((f) => ({
+      id: f.id, parecido: Number(f.parecido), creado: f.created_at,
+      a: { ...f.a, siniestros: cuenta[f.a_id] || 0 },
+      b: { ...f.b, siniestros: cuenta[f.b_id] || 0 },
+    }));
+  }
+
+  async function dupBuscar(umbral) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.rpc("asegurados_buscar_parecidos", { umbral: umbral || 0.7 });
+    if (error) throw error;
+    return data;   // cuántos pares nuevos encontró
+  }
+
+  async function dupUnificar(idFinal, idAbsorbido, quien) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.rpc("asegurados_unificar", {
+      id_final: idFinal, id_absorbido: idAbsorbido, p_quien: quien || null });
+    if (error) throw error;
+    return data;
+  }
+
+  async function dupDistintos(a, b, quien) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { error } = await c.rpc("asegurados_no_son_duplicados", { a, b, p_quien: quien || null });
+    if (error) throw error;
+  }
+
+  // Engancha los siniestros viejos, que no tienen documento. Con `simular` en
+  // true no escribe nada: devuelve qué agruparía.
+  async function asegEnganchar(simular) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.rpc("asegurados_enganchar_siniestros", { solo_simular: simular !== false });
+    if (error) throw error;
+    return data || [];
+  }
+
+  async function asegUpdate(a) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("asegurados")
+      .update({ nombre: a.nombre, documento: orNull(a.documento), email: orNull(a.email),
+                telefono: orNull(a.telefono), notas: orNull(a.notas), updated_at: new Date().toISOString() })
+      .eq("id", a.id).select().single();
+    if (error) throw error;
+    return fromRowA(data);
+  }
+
   // ============================ ARCHIVOS (Storage) ============================
   const BUCKET = "adjuntos";
   async function fileUpload(file) {
     const c = client(); if (!c) throw new Error("Supabase no configurado");
+    // Único punto por donde el portal sube archivos: se achica acá para que
+    // ninguna pantalla se olvide de hacerlo. Los PDF pasan intactos.
+    const original = file;
+    if (window.achicarImagen) file = await window.achicarImagen(file);
     const safe = (file.name || "archivo").replace(/[^a-zA-Z0-9._-]/g, "_");
     const path = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${safe}`;
     const { error } = await c.storage.from(BUCKET).upload(path, file, { upsert: false, contentType: file.type || undefined });
     if (error) throw error;
-    return { name: file.name || safe, path, tipo: file.type || "", size: file.size || 0 };
+    // El nombre que ve el usuario es el que eligió, aunque el archivo guardado
+    // haya cambiado de extensión al convertirse a WebP.
+    return { name: original.name || safe, path, tipo: file.type || "", size: file.size || 0 };
   }
   async function fileSignedUrl(path, secs, bucket) {
     const c = client(); if (!c) return null;
@@ -718,6 +894,12 @@ async function dbMaxN() {
     obj: {
       list: objList, create: objCreate, update: objUpdate,
       remove: objRemove, maxN: objMaxN, subscribe: objSubscribe,
+    },
+    aseg: {
+      list: asegList, buscar: asegBuscar, porDocumento: asegPorDocumento,
+      buscarOCrear: asegBuscarOCrear, update: asegUpdate, siniestros: asegSiniestros,
+      enganchar: asegEnganchar,
+      dup: { list: dupList, buscar: dupBuscar, unificar: dupUnificar, distintos: dupDistintos },
     },
     sol: { list: solList, update: solUpdate, subscribe: solSubscribe },
     cot: { list: cotList, update: cotUpdate, subscribe: cotSubscribe },

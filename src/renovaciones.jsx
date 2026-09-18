@@ -56,26 +56,23 @@ const BUCKETS_R = [
 ];
 
 // ---------- KPIs ----------
-function RenovKpis({ data }) {
+function RenovKpis({ data, foco, onFoco }) {
   const pend = data.filter((r) => RESUELTOS.indexOf(r.estado) < 0);
   const vencidas = pend.filter((r) => urgenciaR(r.finVig) === "vencido").length;
   const esteMes = pend.filter((r) => urgenciaR(r.finVig) === "pronto").length;
   const renovadas = data.filter((r) => r.estado === "Renovada").length;
   const cards = [
-    { label: "Pólizas a renovar", value: pend.length, hint: "pendientes", tone: { bg: "#FEF3E2", fg: "#B45309" }, icon: "refresh" },
-    { label: "Vencen ≤ 30 días", value: esteMes, hint: "próximas", tone: { bg: "#FEF3E2", fg: "#D97706" }, icon: "clock" },
-    { label: "Vencidas", value: vencidas, hint: "requieren acción", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "alert" },
-    { label: "Renovadas", value: renovadas, hint: "cerradas", tone: { bg: "#E6F4EA", fg: "#15803D" }, icon: "check" },
+    { key: "aRenovar", label: "Pólizas a renovar", value: pend.length, hint: "pendientes", tone: { bg: "#FEF3E2", fg: "#B45309" }, icon: "refresh" },
+    { key: "prontas", label: "Vencen ≤ 30 días", value: esteMes, hint: "próximas", tone: { bg: "#FEF3E2", fg: "#D97706" }, icon: "clock" },
+    { key: "vencidas", label: "Vencidas", value: vencidas, hint: "requieren acción", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "alert" },
+    { key: "renovadas", label: "Renovadas", value: renovadas, hint: "cerradas", tone: { bg: "#E6F4EA", fg: "#15803D" }, icon: "check" },
   ];
   return (
     <div className="kpis">
       {cards.map((c) => (
-        <div className="kpi" key={c.label}>
-          <span className="kpi-stripe" style={{ background: c.tone.fg }} />
-          <div className="kpi-top"><span className="kpi-ico" style={{ background: c.tone.bg, color: c.tone.fg }}><Ico name={c.icon} size={17} /></span><span className="kpi-label">{c.label}</span></div>
-          <div className="kpi-mid"><span className="kpi-value">{c.value}</span></div>
-          <div className="kpi-foot"><span className="kpi-hint">{c.hint}</span></div>
-        </div>
+        <KpiCard key={c.key} {...sinKey(c)}
+          activo={foco === c.key}
+          onClick={onFoco ? () => onFoco(c.key) : undefined} />
       ))}
     </div>
   );
@@ -289,6 +286,12 @@ function RenovacionesModule({ active, station, query }) {
   const [asegF, setAsegF] = React.useState("Todos");
   const [seccF, setSeccF] = React.useState("Todos");
   const [anioF, setAnioF] = React.useState("Todos");
+  // Acá el foco SÍ se guarda, a diferencia de Siniestros y Pendientes:
+  // "Pólizas a renovar" son las que no están resueltas, y eso no es un valor
+  // de `estadoF`, así que no se puede deducir de los filtros de la barra.
+  // A cambio, cualquier filtro que se toque en la barra lo limpia, para que
+  // nunca queden diciendo cosas distintas.
+  const [focoR, setFocoR] = React.useState(null);
   const [selectedId, setSelectedId] = React.useState(null);
   const [detailId, setDetailId] = React.useState(null);
   const [modal, setModal] = React.useState(null);
@@ -328,10 +331,23 @@ function RenovacionesModule({ active, station, query }) {
       if (asegF !== "Todos" && r.aseguradora !== asegF) return false;
       if (seccF !== "Todos" && r.seccion !== seccF) return false;
       if (anioF !== "Todos" && String(r.finVig ? new Date(r.finVig + "T00:00:00").getFullYear() : "") !== String(anioF)) return false;
+      // "Pendientes" no es un estado: es todo lo que todavía no se resolvió.
+      // Por eso va como recorte aparte y no como valor de estadoF.
+      if (focoR === "aRenovar" && RESUELTOS.indexOf(r.estado) >= 0) return false;
+      if (focoR === "prontas" && !(RESUELTOS.indexOf(r.estado) < 0 && urgenciaR(r.finVig) === "pronto")) return false;
+      if (focoR === "vencidas" && !(RESUELTOS.indexOf(r.estado) < 0 && urgenciaR(r.finVig) === "vencido")) return false;
+      if (focoR === "renovadas" && r.estado !== "Renovada") return false;
       if (q) { const hay = [r.cliente, r.poliza, r.aseguradora, r.seccion, r.id].join(" ").toLowerCase(); if (!hay.includes(q)) return false; }
       return true;
     }).sort((a, b) => (a.finVig || "").localeCompare(b.finVig || ""));
-  }, [activos, query, estadoF, asegF, seccF, anioF]);
+  }, [activos, query, estadoF, asegF, seccF, anioF, focoR]);
+
+  // Tocar cualquier filtro de la barra saca el foco del KPI.
+  const conFoco = (fn) => (v) => { setFocoR(null); fn(v); };
+  const aplicarFocoR = (k) => {
+    setEstadoF("Todos"); setAsegF("Todos"); setSeccF("Todos"); setAnioF("Todos");
+    setFocoR(focoR === k ? null : k);
+  };
 
   const selected = activos.find((r) => r.id === selectedId) || null;
   const detailItem = activos.find((r) => r.id === detailId) || null;
@@ -382,15 +398,20 @@ function RenovacionesModule({ active, station, query }) {
 
   if (active === "renov-proximas") {
     return (<>
+      {/* Acá los KPIs NO filtran: esta vista ya es una lista recortada y
+          agrupada por urgencia, así que un segundo filtro encima confunde más
+          de lo que ayuda. Donde sí filtran es en Historial, que es la vista
+          que tiene una tabla completa para recortar. */}
       <RenovKpis data={activos} />
       <RenovProximas data={activos} onOpen={(id) => setDetailId(id)} onRenovar={handleRenovar} onNew={() => setModal({ type: "new" })} />
       {modals}
     </>);
   }
   return (<>
+    <RenovKpis data={activos} foco={focoR} onFoco={aplicarFocoR} />
     <div className="panel">
       <RenovToolbar count={rows.length} aseguradoras={aseguradoras} secciones={secciones} anios={anios}
-        asegF={asegF} onAseg={setAsegF} seccF={seccF} onSecc={setSeccF} estadoF={estadoF} onEstado={setEstadoF} anioF={anioF} onAnio={setAnioF}
+        asegF={asegF} onAseg={conFoco(setAsegF)} seccF={seccF} onSecc={conFoco(setSeccF)} estadoF={estadoF} onEstado={conFoco(setEstadoF)} anioF={anioF} onAnio={conFoco(setAnioF)}
         selected={selected} onNew={() => setModal({ type: "new" })} onEdit={() => selected && openEdit(selected)} onDelete={() => selected && askDelete(selected)} />
       <RenovTable rows={rows} selectedId={selectedId} onSelect={setSelectedId} onOpen={(id) => setDetailId(id)} />
     </div>
@@ -399,3 +420,8 @@ function RenovacionesModule({ active, station, query }) {
 }
 
 Object.assign(window, { RenovacionesModule });
+
+// Marca este archivo como modulo ES. Sin esto el compilador lo toma por
+// script (no tiene ningun import/export todavia) y compila el JSX a require(),
+// que en el navegador no existe. Se va cuando el archivo tenga imports de verdad.
+export {};

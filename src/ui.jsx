@@ -30,6 +30,7 @@ const Icons = {
   mail:   ["M3 6h18v12H3z", "M3 7l9 6 9-6"],
   link:   ["M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1", "M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"],
   doc:    ["M6 2h8l4 4v16H6z", "M14 2v4h4"],
+  image:  ["M3 5h18v14H3z", "M3 16l5-5 4 4 3-3 6 6"],
   flag:   ["M5 21V4", "M5 4h11l-2 4 2 4H5"],
   arrowR: ["M5 12h14", "M13 6l6 6-6 6"],
   download:["M12 3v12", "M8 11l4 4 4-4", "M5 21h14"],
@@ -42,6 +43,8 @@ const Icons = {
   menu:   ["M4 7h16", "M4 12h16", "M4 17h16"],
   bell:   ["M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9", "M10.3 21a2 2 0 0 0 3.4 0"],
   chart:  ["M3 21h18", "M6 21v-6", "M12 21V4", "M18 21v-10"],
+  mega:   ["M4 10v4a1 1 0 0 0 1 1h3l5 4V5L8 9H5a1 1 0 0 0-1 1z", "M17 9a4 4 0 0 1 0 6"],
+  trend:  ["M3 17l6-6 4 4 7-7", "M15 8h5v5"],
 };
 const Ico = ({ name, ...rest }) => <Icon d={Icons[name]} {...rest} />;
 
@@ -102,7 +105,8 @@ const PORTAL_NAV = [
     { key: "pend-panel", label: "Panel de control", icon: "grid" },
     { key: "pend-agenda", label: "Agenda por vencimiento", icon: "agenda" } ] },
   { key: "admin", label: "Administración", icon: "user", org: true, children: [
-    { key: "usuarios", label: "Usuarios y roles", icon: "user", count: "usuariosPend" } ] },
+    { key: "usuarios", label: "Usuarios y roles", icon: "user", count: "usuariosPend" },
+    { key: "asegurados-dup", label: "Asegurados duplicados", icon: "search", count: "duplicados" } ] },
 ];
 const NAV_LOOKUP = {};
 PORTAL_NAV.forEach((g) => g.children.forEach((c) => { NAV_LOOKUP[c.key] = { section: g.label, sectionKey: g.key, title: c.label }; }));
@@ -112,7 +116,7 @@ const COMERCIAL_KEYS = ["com-panel", "com-cotizaciones"];
 const RENOVACION_KEYS = ["renov-proximas", "renov-historial"];
 const PENDIENTES_KEYS = ["pend-panel", "pend-agenda"];
 const OBJETIVOS_KEYS = ["obj-panel", "obj-metas"];
-const ADMIN_KEYS = ["usuarios"];
+const ADMIN_KEYS = ["usuarios", "asegurados-dup"];
 // Módulos reservados al organizador (los empleados no los ven ni acceden)
 const ORG_ONLY_KEYS = [...FACTURACION_KEYS, ...OBJETIVOS_KEYS, ...ADMIN_KEYS];
 
@@ -125,7 +129,7 @@ function Sidebar({ active, onNav, station, counts, open: drawerOpen, rol }) {
   return (
     <aside className={"sb" + (drawerOpen ? " is-open" : "")}>
       <div className="sb-brand">
-        <div className="sb-logo"><img src="assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></div>
+        <div className="sb-logo"><img src="/assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></div>
         <div className="sb-sub"><span className="sb-sub-dot" />Portal de gestiones</div>
       </div>
       <nav className="sb-nav">
@@ -191,6 +195,11 @@ function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpe
         {query && <button className="tb-search-clear" onClick={() => onQuery("")}><Ico name="close" size={14} /></button>}
       </div>
       <div className="tb-actions">
+        {window.AMBIENTE === "test" && (
+          <span className="tb-ambiente" title="Estás en el ambiente de prueba: los datos que cargues acá NO afectan al portal real">
+            <Ico name="alert" size={13} />AMBIENTE DE PRUEBA
+          </span>
+        )}
         <div className="tb-date"><Ico name="clock" size={14} /><span style={{ textTransform: "capitalize" }}>{HOY}</span></div>
         <div className="tb-sep" />
         {isSiniestros && <button className="btn-ghost tb-icon" title="Sincronizar con Google Calendar" onClick={onOpenSync}><Ico name="agenda" size={18} /></button>}
@@ -207,32 +216,68 @@ function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpe
 }
 
 // ---------- KPIs ----------
-function KpiCard({ label, value, hint, tone, icon }) {
-  return (
-    <div className="kpi">
+// Las tarjetas se definen como objetos con `key` adentro y después se hacen
+// spread. React avisa si la `key` viaja en el spread —y en React 19 deja de
+// funcionar—, así que se saca antes: la key va aparte y explícita.
+function sinKey(obj) { const { key, ...resto } = obj; return resto; }
+
+// Tarjeta de KPI. Si recibe `onClick` se vuelve un filtro: se dibuja como
+// <button> de verdad —no un div con onClick— para que ande con teclado y lo
+// anuncien los lectores de pantalla.
+function KpiCard({ label, value, hint, tone, icon, onClick, activo }) {
+  const dentro = (
+    <>
       <span className="kpi-stripe" style={{ background: tone.fg }} />
       <div className="kpi-top">
         <span className="kpi-ico" style={{ background: tone.bg, color: tone.fg }}><Ico name={icon} size={17} /></span>
         <span className="kpi-label">{label}</span>
       </div>
       <div className="kpi-mid"><span className="kpi-value">{value}</span></div>
-      <div className="kpi-foot"><span className="kpi-hint">{hint}</span></div>
-    </div>
+      <div className="kpi-foot">
+        <span className="kpi-hint">{activo ? "filtrando — clic para quitar" : hint}</span>
+      </div>
+    </>
+  );
+  if (!onClick) return <div className="kpi">{dentro}</div>;
+  return (
+    <button
+      type="button"
+      className={"kpi kpi-filtro" + (activo ? " is-activo" : "")}
+      style={activo ? { "--kpi-tono": tone.fg } : null}
+      aria-pressed={!!activo}
+      title={activo ? "Quitar este filtro" : "Ver solo estos"}
+      onClick={onClick}
+    >
+      {dentro}
+    </button>
   );
 }
-function Kpis({ data }) {
+
+// Las cuatro tarjetas del panel de siniestros. `foco` dice cuál está aplicada
+// y sale de los filtros actuales, no de un estado propio: así no pueden quedar
+// en desacuerdo si el usuario toca los desplegables de la barra.
+const SIN_FOCOS = ["activos", "porVencer", "vencidas", "terminados"];
+function Kpis({ data, foco, onFoco }) {
   const total = data.length;
   const abiertos = data.filter((d) => d.estado === "Abierto");
   const terminados = data.filter((d) => d.estado === "Terminado").length;
   const vencidas = abiertos.filter((d) => urgenciaDe(d) === "vencido").length;
   const porVencer = abiertos.filter((d) => ["hoy", "proximo"].includes(urgenciaDe(d))).length;
   const cards = [
-    { label: "Siniestros activos", value: abiertos.length, hint: `${total} en total`, tone: ESTADOS["Abierto"], icon: "folder" },
-    { label: "Gestiones por vencer", value: porVencer, hint: "vencen en ≤ 3 días", tone: URGENCIA.proximo, icon: "clock" },
-    { label: "Gestiones vencidas", value: vencidas, hint: "requieren acción", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "alert" },
-    { label: "Terminados", value: terminados, hint: "cerrados", tone: ESTADOS["Terminado"], icon: "check" },
+    { key: "activos", label: "Siniestros activos", value: abiertos.length, hint: `${total} en total`, tone: ESTADOS["Abierto"], icon: "folder" },
+    { key: "porVencer", label: "Gestiones por vencer", value: porVencer, hint: "vencen en ≤ 3 días", tone: URGENCIA.proximo, icon: "clock" },
+    { key: "vencidas", label: "Gestiones vencidas", value: vencidas, hint: "requieren acción", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "alert" },
+    { key: "terminados", label: "Terminados", value: terminados, hint: "cerrados", tone: ESTADOS["Terminado"], icon: "check" },
   ];
-  return <div className="kpis">{cards.map((c) => <KpiCard key={c.label} {...c} />)}</div>;
+  return (
+    <div className="kpis">
+      {cards.map((c) => (
+        <KpiCard key={c.key} {...sinKey(c)}
+          activo={foco === c.key}
+          onClick={onFoco ? () => onFoco(c.key) : undefined} />
+      ))}
+    </div>
+  );
 }
 
 // ---------- toolbar ----------
@@ -474,7 +519,12 @@ function ModuleScreen({ info }) {
 }
 
 Object.assign(window, {
-  Ico, Icons, Badge, UrgBadge, RamoTag, Sidebar, Topbar, Kpis, Toolbar, ClaimsTable, Agenda,
+  Ico, Icons, Badge, UrgBadge, RamoTag, Sidebar, Topbar, KpiCard, Kpis, sinKey, Toolbar, ClaimsTable, Agenda,
   ModuleScreen, PORTAL_NAV, NAV_LOOKUP, SINIESTROS_KEYS, FACTURACION_KEYS, RENOVACION_KEYS, COMERCIAL_KEYS,
   PENDIENTES_KEYS, OBJETIVOS_KEYS, ADMIN_KEYS, ORG_ONLY_KEYS,
 });
+
+// Marca este archivo como modulo ES. Sin esto el compilador lo toma por
+// script (no tiene ningun import/export todavia) y compila el JSX a require(),
+// que en el navegador no existe. Se va cuando el archivo tenga imports de verdad.
+export {};

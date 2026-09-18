@@ -42,8 +42,21 @@ create table if not exists public.objetivos (
   ultima_mod_por   text,
   ultima_mod_fecha timestamptz not null default now(),
   eliminado        boolean not null default false,
-  created_at       timestamptz not null default now()
+  created_at       timestamptz not null default now(),
+  -- Agregado 2026-09 con el rediseño del módulo. Todo nulo o con default, para
+  -- que la versión anterior del módulo siga leyendo la tabla sin cambios:
+  -- `mes`/`anio`/`tipo` se mantienen y se siguen escribiendo.
+  area             text,     -- facturacion|ventas|marketing|crecimiento|renovaciones|clientes|otro
+  periodicidad     text,     -- diario|semanal|mensual|anual
+  fecha_desde      date,     -- rango real del período (reemplaza a mes/anio en el módulo nuevo)
+  fecha_hasta      date,
+  descripcion      text,
+  responsable      text,     -- nombre del perfil responsable
+  equipo           text,     -- Comercial | Siniestros | Administración | Toda la oficina
+  colaboradores    jsonb not null default '[]'::jsonb
 );
+create index if not exists objetivos_area_idx on public.objetivos (area);
+create index if not exists objetivos_periodo_idx on public.objetivos (fecha_desde, fecha_hasta);
 alter table public.objetivos enable row level security;
 drop policy if exists "acceso objetivos autenticado" on public.objetivos;
 create policy "acceso objetivos autenticado" on public.objetivos for all to authenticated using (true) with check (true);

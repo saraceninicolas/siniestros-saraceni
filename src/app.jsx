@@ -11,6 +11,7 @@ function App() {
   const [estadoFilter, setEstadoFilter] = React.useState("Todos");
   const [ramoFilter, setRamoFilter] = React.useState("Todos");
   const [ciaFilter, setCiaFilter] = React.useState("Todos");
+  const [urgFilter, setUrgFilter] = React.useState("Todas");  // Todas | porVencer | vencidas
   const [selectedId, setSelectedId] = React.useState(null);
   const [detailId, setDetailId] = React.useState(null);
   const [solicitudes, setSolicitudes] = React.useState([]);
@@ -197,6 +198,8 @@ function App() {
       if (estadoFilter !== "Todos" && s.estado !== estadoFilter) return false;
       if (ramoFilter !== "Todos" && s.ramo !== ramoFilter) return false;
       if (ciaFilter !== "Todos" && s.cia !== ciaFilter) return false;
+      if (urgFilter === "porVencer" && !["hoy", "proximo"].includes(urgenciaDe(s))) return false;
+      if (urgFilter === "vencidas" && urgenciaDe(s) !== "vencido") return false;
       if (q) {
         const hay = [s.cliente, s.poliza, s.nroSiniestro, s.id, s.cia, s.gestor, s.gestionAR, s.dominio, s.referencia].join(" ").toLowerCase();
         if (!hay.includes(q)) return false;
@@ -212,7 +215,33 @@ function App() {
       }
       return new Date(b.ultimaModFecha) - new Date(a.ultimaModFecha);
     });
-  }, [activos, query, estadoFilter, ramoFilter, ciaFilter]);
+  }, [activos, query, estadoFilter, ramoFilter, ciaFilter, urgFilter]);
+
+  // Qué tarjeta de KPI está aplicada. Se DEDUCE de los filtros en vez de
+  // guardarse aparte: si se guardara, tocar el desplegable de estado dejaría
+  // la tarjeta resaltada mintiendo sobre lo que se está viendo.
+  const focoKpi = React.useMemo(() => {
+    if (estadoFilter === "Terminado" && urgFilter === "Todas" && ramoFilter === "Todos" && ciaFilter === "Todos") return "terminados";
+    if (estadoFilter === "Abierto") {
+      if (urgFilter === "porVencer") return "porVencer";
+      if (urgFilter === "vencidas") return "vencidas";
+      if (ramoFilter === "Todos" && ciaFilter === "Todos") return "activos";
+    }
+    return null;
+  }, [estadoFilter, urgFilter, ramoFilter, ciaFilter]);
+
+  // Clic en una tarjeta: aplica ese recorte, o lo saca si ya estaba puesto.
+  const aplicarFocoKpi = (k) => {
+    setRamoFilter("Todos"); setCiaFilter("Todos");
+    if (focoKpi === k) { setEstadoFilter("Todos"); setUrgFilter("Todas"); return; }
+    if (k === "terminados") { setEstadoFilter("Terminado"); setUrgFilter("Todas"); return; }
+    setEstadoFilter("Abierto");
+    setUrgFilter(k === "activos" ? "Todas" : k);
+  };
+
+  // Los filtros de la barra mandan sobre el recorte de urgencia: si no, el
+  // usuario elige "Terminado" a mano y la lista sale vacía sin motivo visible.
+  const cambiarEstado = (s) => { setEstadoFilter(s); setUrgFilter("Todas"); };
 
   const agendaData = React.useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -240,6 +269,24 @@ function App() {
   const usuariosActivos = perfiles.filter((p) => p.estado === "activo");
   const usuariosPend = perfiles.filter((p) => p.estado === "pendiente").length;
 
+  // Engancha el siniestro a una ficha de asegurado. Si ya hay una elegida en el
+  // formulario se respeta; si no, busca por documento y la crea si no existe.
+  // La base impide el duplicado con un indice unico, asi que dos cargas del
+  // mismo cliente terminan en la misma ficha aunque el nombre este escrito
+  // distinto. Si algo falla, el siniestro se guarda igual: la ficha es una
+  // mejora, no puede ser lo que impida registrar un siniestro.
+  const engancharAsegurado = async (data) => {
+    if (!usingDb || !window.DB.aseg) return data;
+    if (data.aseguradoId) return data;
+    const nombre = (data.cliente || "").trim();
+    const doc = (data.clienteDoc || "").trim();
+    if (!nombre && !doc) return data;
+    try {
+      const id = await window.DB.aseg.buscarOCrear({ nombre, documento: doc });
+      return { ...data, aseguradoId: id };
+    } catch (e) { console.error("No se pudo enganchar el asegurado:", e); return data; }
+  };
+
   const handleCreate = async (data) => {
   // Aviso si ya existe un siniestro activo con el mismo número
   const nro = (data.nroSiniestro || "").trim();
@@ -252,7 +299,8 @@ function App() {
   } else {
     n = siniestros.reduce((m, s) => Math.max(m, s.n || 0), 0) + 1;
   }
-  let item = { ...data, id: sinId(n), n, ultimaModPor: quien, ultimaModFecha: nowIso(), eliminado: false };
+  const conFicha = await engancharAsegurado(data);
+  let item = { ...conFicha, id: sinId(n), n, ultimaModPor: quien, ultimaModFecha: nowIso(), eliminado: false };
   if (usingDb) {
     try { item = await window.DB.create(item); }
     catch (e) { console.error(e); flash("Error al guardar en Supabase", true); return; }
@@ -326,7 +374,8 @@ function App() {
     } catch (e) { console.error(e); flash("Error al reabrir", true); }
   };
   const handleUpdate = async (data) => {
-    let updated = { ...data, ultimaModPor: quien, ultimaModFecha: nowIso() };
+    const conFicha = await engancharAsegurado(data);
+    let updated = { ...conFicha, ultimaModPor: quien, ultimaModFecha: nowIso() };
     if (usingDb) {
       try { updated = await window.DB.update(updated); }
       catch (e) { console.error(e); flash("Error al actualizar en Supabase", true); return; }
@@ -461,7 +510,9 @@ function App() {
 
         {!isSiniestros ? (
           <div className="content">
-            {ADMIN_KEYS.includes(active) && rol === "organizador"
+            {active === "asegurados-dup" && rol === "organizador"
+              ? <DuplicadosView quien={quien} onAviso={flash} />
+              : ADMIN_KEYS.includes(active) && rol === "organizador"
               ? <UsuariosView perfiles={perfiles} me={perfil} onUpdate={actualizarUsuario} />
               : FACTURACION_KEYS.includes(active)
               ? <FacturacionModule active={active} station={quien} query={query} onNav={(k) => { setActive(k); setDetailId(null); }} />
@@ -472,7 +523,8 @@ function App() {
               : PENDIENTES_KEYS.includes(active)
               ? <PendientesModule active={active} station={quien} query={query} usuarios={usuariosActivos} />
               : OBJETIVOS_KEYS.includes(active)
-              ? <ObjetivosModule active={active} station={quien} query={query} />
+              ? <ObjetivosModule active={active} station={quien} query={query} usuarios={usuariosActivos}
+                  onNav={(k) => { setActive(k); setDetailId(null); }} />
               : <ModuleScreen info={NAV_LOOKUP[active]} />}
           </div>
         ) : detailItem ? (
@@ -496,19 +548,19 @@ function App() {
           </div>
         ) : (
           <div className="content">
-            {active === "dashboard" && <Kpis data={activos} />}
+            {active === "dashboard" && <Kpis data={activos} foco={focoKpi} onFoco={aplicarFocoKpi} />}
             <div className="panel">
               <Toolbar
                 title={active === "siniestros" ? "Todos los siniestros" : "Siniestros"}
                 count={rows.length}
-                estadoFilter={estadoFilter} onEstado={setEstadoFilter}
+                estadoFilter={estadoFilter} onEstado={cambiarEstado}
                 ramoFilter={ramoFilter} onRamo={setRamoFilter}
                 ciaFilter={ciaFilter} onCia={setCiaFilter}
                 selected={selected}
                 onEdit={() => selected && openEdit(selected)}
                 onDelete={() => selected && askDelete(selected)} />
               <ClaimsTable rows={rows} selectedId={selectedId} onSelect={setSelectedId} onOpen={openDetail}
-                multi={clientesMulti} onClientFilter={(cliente) => { setQuery(cliente); setEstadoFilter("Todos"); }} />
+                multi={clientesMulti} onClientFilter={(cliente) => { setQuery(cliente); cambiarEstado("Todos"); }} />
             </div>
           </div>
         )}
@@ -526,3 +578,8 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+
+// Marca este archivo como modulo ES. Sin esto el compilador lo toma por
+// script (no tiene ningun import/export todavia) y compila el JSX a require(),
+// que en el navegador no existe. Se va cuando el archivo tenga imports de verdad.
+export {};
