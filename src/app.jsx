@@ -14,6 +14,10 @@ function App() {
   const [urgFilter, setUrgFilter] = React.useState("Todas");  // Todas | porVencer | vencidas
   const [selectedId, setSelectedId] = React.useState(null);
   const [detailId, setDetailId] = React.useState(null);
+  // Ficha abierta en Siniestralidad por asegurado. Vive acá y no en la
+  // pantalla porque abrir un siniestro la desmonta: al volver del detalle
+  // tiene que reaparecer la misma ficha, no la lista.
+  const [fichaSel, setFichaSel] = React.useState(null);
   const [solicitudes, setSolicitudes] = React.useState([]);
   const [perfil, setPerfil] = React.useState(null);           // rol y estado del usuario logueado
   const [perfilChecked, setPerfilChecked] = React.useState(false);
@@ -508,7 +512,7 @@ function App() {
 
   return (
     <div className="app">
-      <Sidebar active={active} onNav={(k) => { setActive(k); setDetailId(null); setNavOpen(false); }} station={quien} rol={rol}
+      <Sidebar active={active} onNav={(k) => { setActive(k); setDetailId(null); setFichaSel(null); setNavOpen(false); }} station={quien} rol={rol}
         counts={{ abiertos: abiertos.length, porVencer, solicitudes: solNuevas, usuariosPend, cotNuevas }} open={navOpen} />
       {navOpen && <div className="sb-scrim" onClick={() => setNavOpen(false)} />}
 
@@ -553,6 +557,11 @@ function App() {
         ) : active === "sin-estadisticas" ? (
           <div className="content">
             <EstadisticasSiniestros data={activos} />
+          </div>
+        ) : active === "sin-asegurados" ? (
+          <div className="content">
+            <SiniestralidadView data={activos} query={query} fichaSel={fichaSel} onFicha={setFichaSel}
+              onOpen={openDetail} onAviso={flash} />
           </div>
         ) : active === "agenda" ? (
           <div className="content">

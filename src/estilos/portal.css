@@ -1204,3 +1204,33 @@ button.adj-card:focus-visible{ outline:2px solid var(--brand); outline-offset:3p
   .dup-acciones{ flex-direction:column-reverse; }
   .dup-acciones button{ width:100%; justify-content:center; }
 }
+
+/* ---- siniestralidad por asegurado ---- */
+.sa-barra{ display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 12px; padding:14px 18px 10px; }
+.sa-barra h3{ margin:0; font-size:15px; font-weight:700; color:var(--ink); }
+.sa-fila{ cursor:pointer; }
+.sa-fila:hover td{ background:var(--brand-soft); }
+.sa-reinc{ display:inline-block; margin-left:8px; padding:1px 8px; border-radius:99px; vertical-align:middle;
+  font-size:10.5px; font-weight:800; letter-spacing:.04em; text-transform:uppercase;
+  background:var(--brand-soft); color:var(--brand-txt); border:1px solid var(--brand-line); }
+.sa-sindoc{ font-family:inherit; font-size:11.5px; color:var(--muted); font-style:italic; }
+.sa-volver{ align-self:flex-start; }
+.sa-cab{ display:flex; align-items:flex-start; gap:14px; padding:16px 18px; background:var(--surface);
+  border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow-sm); }
+.sa-cab-ico{ width:42px; height:42px; border-radius:11px; display:grid; place-items:center; flex:none;
+  background:var(--brand-soft); color:var(--brand-txt); }
+.sa-cab-txt{ min-width:0; }
+.sa-cab-txt h2{ margin:0 0 5px; font-size:20px; font-weight:800; color:var(--ink); overflow-wrap:anywhere; }
+.sa-cab-datos{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; font-size:13px; color:var(--ink-2); }
+.sa-cab-datos .sa-reinc{ margin-left:0; }
+.sa-notas{ margin:8px 0 0; font-size:12.5px; color:var(--muted); white-space:pre-line; }
+.sa-cargar-doc{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 12px; padding:12px 16px;
+  background:var(--surface-2); border:1px dashed var(--line-2); border-radius:var(--radius); }
+.sa-cargar-doc-txt{ display:flex; flex-direction:column; line-height:1.35; flex:1 1 260px; min-width:0; }
+.sa-cargar-doc-txt b{ font-size:13.5px; color:var(--ink); }
+.sa-cargar-doc-txt span{ font-size:12.5px; color:var(--muted); }
+.sa-cargar-doc .input{ flex:0 1 220px; min-width:0; }
+.sa-cargar-doc .aseg-aviso{ flex-basis:100%; margin-top:0; }
+@media (max-width:720px){
+  .sa-cargar-doc .input, .sa-cargar-doc .btn-primary{ flex:1 1 100%; justify-content:center; }
+}

@@ -89,7 +89,8 @@ const PORTAL_NAV = [
     { key: "dashboard", label: "Panel de control", icon: "grid", count: "abiertos" },
     { key: "agenda", label: "Agenda de gestiones", icon: "agenda", count: "porVencer" },
     { key: "solicitudes", label: "Solicitudes recibidas", icon: "mail", count: "solicitudes" },
-    { key: "sin-estadisticas", label: "Estadísticas", icon: "chart" } ] },
+    { key: "sin-estadisticas", label: "Estadísticas", icon: "chart" },
+    { key: "sin-asegurados", label: "Siniestralidad por asegurado", icon: "user" } ] },
   { key: "facturacion", label: "Facturación", icon: "doc", org: true, children: [
     { key: "fact-estadisticas", label: "Estadísticas", icon: "chart" },
     { key: "fact-carga", label: "Carga mensual", icon: "edit" },
@@ -110,7 +111,7 @@ const PORTAL_NAV = [
 ];
 const NAV_LOOKUP = {};
 PORTAL_NAV.forEach((g) => g.children.forEach((c) => { NAV_LOOKUP[c.key] = { section: g.label, sectionKey: g.key, title: c.label }; }));
-const SINIESTROS_KEYS = ["dashboard", "agenda", "solicitudes", "sin-estadisticas"];
+const SINIESTROS_KEYS = ["dashboard", "agenda", "solicitudes", "sin-estadisticas", "sin-asegurados"];
 const FACTURACION_KEYS = ["fact-estadisticas", "fact-carga", "fact-crecimiento", "fact-companias"];
 const COMERCIAL_KEYS = ["com-panel", "com-cotizaciones"];
 const RENOVACION_KEYS = ["renov-proximas", "renov-historial"];

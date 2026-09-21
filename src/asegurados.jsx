@@ -31,13 +31,14 @@ function asegCuitValido(txt) {
   return v === Number(d[10]);
 }
 
-// ¿Alcanza para identificar a alguien? Un DNI (hasta 8 números; los muy viejos
-// tienen 6 o 7) o un CUIT de 11 con el dígito verificador bien. Es lo que se
+// ¿Alcanza para identificar a alguien? Un DNI (7 u 8 números: con menos no hay
+// nadie vivo, y suele ser un CUIT a medio escribir) o un CUIT de 11 con el
+// dígito verificador bien. Es lo que se
 // exige para registrar un siniestro nuevo.
 function asegDocValido(txt) {
   const d = String(txt || "").replace(/[^0-9]/g, "");
   if (d.length === 11) return asegCuitValido(d) === true;
-  return d.length >= 6 && d.length <= 8;
+  return d.length >= 7 && d.length <= 8;
 }
 
 function BuscadorAsegurado({ nombre, documento, aseguradoId, conError, docObligatorio, onCambio }) {
@@ -52,7 +53,7 @@ function BuscadorAsegurado({ nombre, documento, aseguradoId, conError, docObliga
   const digitos = String(documento || "").replace(/[^0-9]/g, "").length;
   // Largo imposible para un DNI o un CUIT. El CUIT de 11 con el verificador
   // mal tiene su propio aviso más abajo.
-  const largoRaro = digitos > 0 && digitos !== 11 && (digitos < 6 || digitos > 8);
+  const largoRaro = digitos > 0 && digitos !== 11 && (digitos < 7 || digitos > 8);
 
   // Al abrir en modo edición, recuperar la ficha ya enganchada.
   React.useEffect(() => {
@@ -159,7 +160,7 @@ function BuscadorAsegurado({ nombre, documento, aseguradoId, conError, docObliga
         )}
         {largoRaro && (
           <span className="aseg-aviso malo">
-            <Ico name="alert" size={13} />Revisá el número: un DNI tiene hasta 8 números y un CUIT, 11.
+            <Ico name="alert" size={13} />Revisá el número: un DNI tiene 7 u 8 números y un CUIT, 11.
           </span>
         )}
         {/* Aparece recién cuando ya escribieron el nombre: antes es ruido. */}
