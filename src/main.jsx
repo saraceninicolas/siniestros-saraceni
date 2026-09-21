@@ -44,6 +44,7 @@ import "./detail.jsx";
 import "./solicitudes.jsx";
 import "./usuarios.jsx";
 import "./duplicados.jsx";
+import "./siniestralidad.jsx";
 import "./facturas.jsx";
 import "./renovaciones.jsx";
 import "./comercial.jsx";

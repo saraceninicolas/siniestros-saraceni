@@ -596,7 +596,7 @@ textarea{ resize:vertical; min-height:110px; }
       li.appendChild(nm); li.appendChild(sz); li.appendChild(rm); ul.appendChild(li);
     });
   }
-  // Misma regla que asegDocValido() del portal: DNI de hasta 8 números, o CUIT
+  // Misma regla que asegDocValido() del portal: DNI de 7 u 8 números, o CUIT
   // de 11 con el dígito verificador bien (así se detecta un número mal tipeado).
   function docValido(txt) {
     var d = String(txt || "").replace(/[^0-9]/g, "");
@@ -607,7 +607,7 @@ textarea{ resize:vertical; min-height:110px; }
       if (v === 11) v = 0; else if (v === 10) v = 9;
       return v === Number(d[10]);
     }
-    return d.length >= 6 && d.length <= 8;
+    return d.length >= 7 && d.length <= 8;
   }
   function showErr(msg) { var e = $("err"); e.textContent = msg; e.style.display = "block"; }
   function hideErr() { $("err").style.display = "none"; }
@@ -636,7 +636,7 @@ textarea{ resize:vertical; min-height:110px; }
     if (!docValido($("dni").value)) {
       var largo = $("dni").value.replace(/[^0-9]/g, "").length;
       showErr(largo === 11 ? "Revisá tu CUIT: algún número está mal."
-                           : "Revisá tu DNI o CUIT: un DNI tiene hasta 8 números y un CUIT, 11.");
+                           : "Revisá tu DNI o CUIT: un DNI tiene 7 u 8 números y un CUIT, 11.");
       return;
     }
     if (!ramo) { showErr("Seleccioná el ramo del siniestro."); return; }

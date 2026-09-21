@@ -74,6 +74,7 @@ Mientras dure el paso 1 siguen valiendo las reglas viejas:
 | `src/auth.jsx` | Login, registro y pantalla de "cuenta pendiente" |
 | `src/asegurados.jsx` | Buscador de asegurado con autocompletado por documento o nombre |
 | `src/duplicados.jsx` | Revisión y unificación de asegurados duplicados (solo organizador) |
+| `src/siniestralidad.jsx` | Siniestralidad por asegurado: ranking, reincidentes y la ficha de cada uno (donde se le carga el DNI si no lo tiene) |
 | `src/adjuntos.jsx` | Grilla de adjuntos, visor de fotos y descarga en zip |
 | `src/modals.jsx` / `src/detail.jsx` | Alta/edición y ficha completa de siniestro (+ PDF) |
 | `src/solicitudes.jsx` `src/facturas.jsx` `src/renovaciones.jsx` `src/comercial.jsx` `src/pendientes.jsx` `src/objetivos.jsx` `src/usuarios.jsx` | Un módulo por carpeta del menú |
