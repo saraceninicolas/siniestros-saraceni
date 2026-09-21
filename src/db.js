@@ -765,6 +765,18 @@ async function dbMaxN() {
     return data;   // id del asegurado
   }
 
+  // La ficha elegida de la lista puede no tener documento (las que salieron de
+  // los siniestros viejos no tienen). Si en el siniestro se cargó uno, la ficha
+  // lo aprende. Devuelve la ficha a la que va el siniestro: si el documento ya
+  // era de otra, es esa otra (ver migración 0008).
+  async function asegCompletarDocumento(id, documento) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.rpc("asegurado_completar_documento", {
+      p_id: id, p_documento: documento || null });
+    if (error) throw error;
+    return data;
+  }
+
   // ---- posibles duplicados ----
   // La lista trae las dos fichas con sus datos y cuántos siniestros tiene cada
   // una: sin eso no se puede decidir cuál conservar.
@@ -898,6 +910,7 @@ async function dbMaxN() {
     aseg: {
       list: asegList, buscar: asegBuscar, porDocumento: asegPorDocumento,
       buscarOCrear: asegBuscarOCrear, update: asegUpdate, siniestros: asegSiniestros,
+      completarDocumento: asegCompletarDocumento,
       enganchar: asegEnganchar,
       dup: { list: dupList, buscar: dupBuscar, unificar: dupUnificar, distintos: dupDistintos },
     },

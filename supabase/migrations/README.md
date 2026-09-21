@@ -33,6 +33,7 @@ Siempre **test primero**, se verifica, y recién después producción.
 | `20260918_0005_unificar_asegurados.sql` | aplicada | aplicada (2026-09-18) |
 | `20260918_0006_endurecer_asegurados.sql` | aplicada | aplicada (2026-09-18) |
 | `20260918_0007_enganchar_por_documento.sql` | aplicada | aplicada (2026-09-18) |
+| `20260921_0008_ficha_aprende_documento.sql` | aplicada | aplicada (2026-09-21) |
 
 ## Nota sobre producción
 
@@ -59,3 +60,14 @@ filas y nada la referenciaba, y que las policies de `anon` no llaman a
 - Los avisos del linter son los mismos tres conocidos de test (extensiones en
   `public`, la API de asegurados es `security definer` a propósito, y la
   protección de contraseñas filtradas, que es del plan Pro).
+
+## Enganche de los siniestros viejos (producción, 2026-09-21)
+
+Con el ok de Nico se corrió en producción el cuerpo de
+`asegurados_enganchar_siniestros(false)` (la versión de la 0007) más el de
+`asegurados_buscar_parecidos(0.70)`, a mano por SQL: las dos funciones exigen
+sesión de organizador y desde el editor no la hay. Antes se repitió la
+simulación. Resultado: los 28 siniestros activos quedaron con ficha (20 fichas,
+todas sin documento: los siniestros viejos nunca lo pidieron) y un solo par
+para revisar en Administración → Asegurados duplicados. Los eliminados no
+llevan ficha, a propósito.
