@@ -277,9 +277,18 @@ function App() {
   // mejora, no puede ser lo que impida registrar un siniestro.
   const engancharAsegurado = async (data) => {
     if (!usingDb || !window.DB.aseg) return data;
-    if (data.aseguradoId) return data;
     const nombre = (data.cliente || "").trim();
     const doc = (data.clienteDoc || "").trim();
+    if (data.aseguradoId) {
+      // Ficha elegida de la lista: si se cargó un documento, la ficha lo
+      // aprende. Sin esto, la próxima carga con ese DNI no la encontraba y
+      // creaba una duplicada.
+      if (!doc) return data;
+      try {
+        const id = await window.DB.aseg.completarDocumento(data.aseguradoId, doc);
+        return { ...data, aseguradoId: id || data.aseguradoId };
+      } catch (e) { console.error("No se pudo completar el documento de la ficha:", e); return data; }
+    }
     if (!nombre && !doc) return data;
     try {
       const id = await window.DB.aseg.buscarOCrear({ nombre, documento: doc });
@@ -347,6 +356,9 @@ function App() {
     if (terc) { lineas.push(""); lineas.push("TERCERO: " + terc); }
     const prefill = {
       cliente: up(s.nombre), dominio: up(s.dominio), poliza: s.poliza || "",
+      // El documento que escribió el cliente: con él el buscador encuentra su
+      // ficha solo, y ahora es obligatorio para registrar el siniestro.
+      clienteDoc: s.dniCuit || "",
       fechaOcurrido: s.fechaHecho || "", fechaDenuncia: new Date().toISOString().slice(0, 10),
       obs: lineas.join("\n"),
       adjuntos: (s.adjuntos || []).map((a) => ({ ...a, bucket: "solicitudes" })),

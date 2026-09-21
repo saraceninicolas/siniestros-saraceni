@@ -93,6 +93,7 @@ describe("RLS · un visitante sin cuenta no toca la API de asegurados", () => {
     ["asegurados_no_son_duplicados", { a: 1, b: 2 }],
     ["asegurados_buscar_parecidos", { umbral: 0.7 }],
     ["asegurados_enganchar_siniestros", { solo_simular: false }],
+    ["asegurado_completar_documento", { p_id: 1, p_documento: "11111111" }],
     // Los helpers de rol solo los necesitan las policies de usuarios logueados.
     ["es_activo", {}],
     ["es_organizador", {}],

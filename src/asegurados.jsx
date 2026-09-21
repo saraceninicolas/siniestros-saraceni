@@ -31,7 +31,16 @@ function asegCuitValido(txt) {
   return v === Number(d[10]);
 }
 
-function BuscadorAsegurado({ nombre, documento, aseguradoId, conError, onCambio }) {
+// ¿Alcanza para identificar a alguien? Un DNI (hasta 8 números; los muy viejos
+// tienen 6 o 7) o un CUIT de 11 con el dígito verificador bien. Es lo que se
+// exige para registrar un siniestro nuevo.
+function asegDocValido(txt) {
+  const d = String(txt || "").replace(/[^0-9]/g, "");
+  if (d.length === 11) return asegCuitValido(d) === true;
+  return d.length >= 6 && d.length <= 8;
+}
+
+function BuscadorAsegurado({ nombre, documento, aseguradoId, conError, docObligatorio, onCambio }) {
   const [sugerencias, setSugerencias] = React.useState([]);
   const [abierto, setAbierto] = React.useState(false);
   const [ficha, setFicha] = React.useState(null);      // la ficha enganchada
@@ -40,6 +49,10 @@ function BuscadorAsegurado({ nombre, documento, aseguradoId, conError, onCambio 
   const hayDb = !!(window.DB && window.DB.configured() && window.DB.aseg);
 
   const cuitOk = asegCuitValido(documento);
+  const digitos = String(documento || "").replace(/[^0-9]/g, "").length;
+  // Largo imposible para un DNI o un CUIT. El CUIT de 11 con el verificador
+  // mal tiene su propio aviso más abajo.
+  const largoRaro = digitos > 0 && digitos !== 11 && (digitos < 6 || digitos > 8);
 
   // Al abrir en modo edición, recuperar la ficha ya enganchada.
   React.useEffect(() => {
@@ -133,15 +146,26 @@ function BuscadorAsegurado({ nombre, documento, aseguradoId, conError, onCambio 
         </div>
       </Field>
 
-      <Field label="DNI / CUIT del asegurado">
+      <Field label="DNI / CUIT del asegurado" required={docObligatorio}>
         <input
-          className={"input mono" + (cuitOk === false ? " err" : "")}
+          className={"input mono" + (cuitOk === false || largoRaro ? " err" : "")}
           value={documento}
           onChange={(e) => onCambio({ clienteDoc: e.target.value })}
           placeholder="Sin puntos" inputMode="numeric" autoComplete="off" />
         {cuitOk === false && (
           <span className="aseg-aviso malo">
             <Ico name="alert" size={13} />Ese CUIT no es válido: revisá los números.
+          </span>
+        )}
+        {largoRaro && (
+          <span className="aseg-aviso malo">
+            <Ico name="alert" size={13} />Revisá el número: un DNI tiene hasta 8 números y un CUIT, 11.
+          </span>
+        )}
+        {/* Aparece recién cuando ya escribieron el nombre: antes es ruido. */}
+        {docObligatorio && !digitos && String(nombre || "").trim() && (
+          <span className="aseg-aviso">
+            <Ico name="alert" size={13} />Obligatorio: es lo que evita que un cliente quede cargado dos veces.
           </span>
         )}
         {buscando && <span className="aseg-aviso"><Ico name="search" size={13} />Buscando ficha…</span>}
@@ -170,7 +194,7 @@ function BuscadorAsegurado({ nombre, documento, aseguradoId, conError, onCambio 
   );
 }
 
-Object.assign(window, { BuscadorAsegurado, asegCuitValido });
+Object.assign(window, { BuscadorAsegurado, asegCuitValido, asegDocValido });
 
 // Marca este archivo como modulo ES. Sin esto el compilador lo toma por
 // script (no tiene ningun import/export todavia) y compila el JSX a require(),

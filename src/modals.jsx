@@ -111,7 +111,11 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit, usuarios })
     if (hayCambios() && !window.confirm("Tenés cambios sin guardar. ¿Cerrar sin guardar?")) return;
     onClose();
   };
-  const valid = f.cliente.trim() && f.nroSiniestro.trim();
+  // El documento se exige solo al registrar: los siniestros viejos no lo
+  // tienen, y trabar su edición hasta conseguirlo sería peor que no tenerlo.
+  const docObligatorio = mode !== "edit";
+  const valid = f.cliente.trim() && f.nroSiniestro.trim() &&
+    (!docObligatorio || asegDocValido(f.clienteDoc));
   // La última gestión del historial queda como "gestión realizada" (compatibilidad)
   const submit = () => {
     setTouched(true);
@@ -141,6 +145,7 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit, usuarios })
         <BuscadorAsegurado
           nombre={f.cliente} documento={f.clienteDoc || ""} aseguradoId={f.aseguradoId || null}
           conError={touched && !f.cliente.trim()}
+          docObligatorio={docObligatorio}
           onCambio={(datos) => setF((p) => ({ ...p, ...datos }))} />
         <Field label="Dominio / bien afectado">
           <input className="input mono" value={f.dominio} onChange={(e) => set("dominio", e.target.value.toUpperCase())}
