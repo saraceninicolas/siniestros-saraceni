@@ -34,6 +34,7 @@ Siempre **test primero**, se verifica, y recién después producción.
 | `20260918_0006_endurecer_asegurados.sql` | aplicada | aplicada (2026-09-18) |
 | `20260918_0007_enganchar_por_documento.sql` | aplicada | aplicada (2026-09-18) |
 | `20260921_0008_ficha_aprende_documento.sql` | aplicada | aplicada (2026-09-21) |
+| `20260922_0009_multiempresa_base.sql` | aplicada | pendiente |
 
 ## Nota sobre producción
 

@@ -50,6 +50,19 @@ const TABLAS_PRIVADAS = [
   "notificaciones",
   "asegurados",
   "asegurados_duplicados",
+  // Multiempresa: acá viven los datos del negocio (quién es cliente, qué paga).
+  // `modulos`, `planes` y `plan_modulos` son el catálogo, que sí lee cualquier
+  // usuario logueado para armarse el menú, pero un visitante sin cuenta no.
+  "organizaciones",
+  "oficinas",
+  "membresias",
+  "super_admins",
+  "suscripciones",
+  "org_modulos",
+  "cobros",
+  "modulos",
+  "planes",
+  "plan_modulos",
 ];
 
 describe("RLS · un visitante sin cuenta no lee nada", () => {
@@ -97,6 +110,10 @@ describe("RLS · un visitante sin cuenta no toca la API de asegurados", () => {
     // Los helpers de rol solo los necesitan las policies de usuarios logueados.
     ["es_activo", {}],
     ["es_organizador", {}],
+    // Los del multiempresa, igual: deciden qué empresa sos y qué módulos tenés.
+    ["org_actual", {}],
+    ["es_super_admin", {}],
+    ["tiene_modulo", { p_clave: "siniestros" }],
   ])("%s no responde", async (fn, args) => {
     const r = await comoAnon(`rpc/${fn}`, { method: "POST", body: JSON.stringify(args) });
     expect(r.status).toBeGreaterThanOrEqual(400);

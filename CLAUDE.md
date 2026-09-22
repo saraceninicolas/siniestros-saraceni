@@ -110,6 +110,24 @@ nueva nace `estado='pendiente'` y no ve nada hasta que un organizador la aprueba
 - Las páginas públicas insertan como `anon` y **nunca** pueden leer:
   `for insert to anon with check (true)` y ninguna policy de select.
 
+⚠️ **Multiempresa, en marcha (fase 1).** La migración 0009 agregó las tablas de
+empresas, membresías, módulos y cobros, con los helpers `org_actual()`,
+`es_super_admin()` y `tiene_modulo()`. Todavía **no** tocó las 12 tablas del
+portal: eso es la 0010. Mientras tanto conviven los dos modelos (`perfiles`
+sigue mandando). Reglas desde ahora:
+
+- **Toda tabla nueva nace con `org_id not null`** y sus cuatro policies
+  filtrando por `org_id = (select public.org_actual())`. El `(select …)` no es
+  cosmético: hace que Postgres evalúe la función una vez por consulta y no una
+  vez por fila.
+- **Los módulos se aplican en las policies**, no escondiendo el menú: esconder
+  una opción no impide que los datos viajen.
+- **Después de tocar cualquier policy, correr `supabase/tests/aislamiento.sql`**
+  en la base de test. Prueba que un broker no vea nada del otro simulando el
+  token de cada uno, sin necesidad de contraseñas.
+- La **organización es el límite de seguridad; la oficina no** (es un filtro
+  interno de cada broker).
+
 > Al crear policies por comando (`select`/`insert`/`update`/`delete`) es fácil
 > olvidarse una. Ya pasó: `solicitudes` quedó sin `insert` para `authenticated`
 > y un usuario logueado no podía enviar una denuncia. **Si reemplazás un
