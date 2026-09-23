@@ -1234,3 +1234,32 @@ button.adj-card:focus-visible{ outline:2px solid var(--brand); outline-offset:3p
 @media (max-width:720px){
   .sa-cargar-doc .input, .sa-cargar-doc .btn-primary{ flex:1 1 100%; justify-content:center; }
 }
+
+/* ---- configuración de la marca ---- */
+.cfg-cab{ display:flex; flex-wrap:wrap; gap:12px 16px; align-items:flex-start; justify-content:space-between;
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px 18px; box-shadow:var(--shadow-sm); }
+.cfg-cab h2{ margin:0 0 4px; font-size:19px; font-weight:800; color:var(--ink); }
+.cfg-cab p{ margin:0; font-size:13px; color:var(--muted); max-width:52ch; }
+.cfg-acciones{ display:flex; gap:8px; flex:none; }
+.cfg-fila{ display:flex; gap:10px; align-items:center; }
+.cfg-fila .input{ flex:1; min-width:0; }
+.cfg-color{ inline-size:52px; block-size:38px; flex:none; padding:0; cursor:pointer;
+  border:1px solid var(--line); border-radius:9px; background:var(--surface-2); }
+.cfg-pista{ margin:9px 0 0; font-size:12.5px; color:var(--muted); }
+.cfg-temas{ display:flex; flex-wrap:wrap; gap:7px; }
+.cfg-tema{ padding:7px 12px; border-radius:9px; border:1px solid var(--line); background:var(--surface-2);
+  color:var(--ink-2); font:inherit; font-size:13px; cursor:pointer; }
+.cfg-tema:hover{ border-color:var(--brand-line); }
+.cfg-tema.is-on{ background:var(--brand); border-color:var(--brand); color:var(--brand-ink); font-weight:600; }
+.cfg-logo{ display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; }
+.cfg-logo-caja{ flex:none; width:132px; min-height:82px; display:grid; place-items:center; padding:10px;
+  background:var(--surface); border:1px dashed var(--line-fuerte); border-radius:11px; }
+.cfg-logo-caja img{ max-width:100%; max-height:62px; display:block; }
+.cfg-logo-sin{ font-size:12px; color:var(--muted); text-align:center; }
+.cfg-logo-acciones{ display:flex; flex-direction:column; align-items:flex-start; gap:8px; min-width:0; flex:1 1 180px; }
+.cfg-subir{ position:relative; overflow:hidden; cursor:pointer; }
+.cfg-subir input[type=file]{ position:absolute; inset:0; opacity:0; cursor:pointer; }
+.cfg-sin-org{ padding:20px 22px; }
+.cfg-sin-org h3{ margin:0 0 6px; font-size:16px; }
+.cfg-sin-org p{ margin:0; color:var(--muted); font-size:13.5px; max-width:60ch; }

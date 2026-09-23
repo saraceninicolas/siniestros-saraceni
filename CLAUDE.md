@@ -240,3 +240,20 @@ pandas en su máquina: se leen con **PowerShell + Excel COM**.
 - Las fechas vienen como serial de Excel: `date '1899-12-30' + serial`.
 - Contrastar siempre los totales importados contra la planilla antes de dar por
   buena la carga.
+
+## Marca por empresa
+
+`Administración → Configuración` (`src/configuracion.jsx`, solo organizador) deja
+que cada broker elija su color, el tema del menú y suba su logo. Se guarda en
+`organizaciones.marca` y el logo en el bucket `marcas`, en la carpeta de su
+empresa.
+
+- **Se aplica en vivo mientras elige**, sobre el portal entero. Por eso la
+  pantalla, al desmontarse, vuelve a aplicar lo guardado: si no, alguien probaría
+  cinco colores y se quedaría con el último sin que su equipo lo tenga.
+- **En la base está cerrado por privilegios de columna**, no solo escondido en la
+  interfaz: `revoke update on organizaciones` + `grant update (marca, updated_at)`.
+  RLS filtra por fila; el nombre, el slug y el estado los maneja el super admin.
+- El bucket `marcas` es **público a propósito**: un logo institucional no es
+  secreto y las URLs firmadas vencen, lo que rompería el logo del menú cada hora.
+  Escribir sí está restringido a la carpeta `<org_id>/` de cada empresa.

@@ -273,6 +273,19 @@ function App() {
   const usuariosActivos = perfiles.filter((p) => p.estado === "activo");
   const usuariosPend = perfiles.filter((p) => p.estado === "pendiente").length;
 
+  // La marca de la empresa (colores y logo), apenas hay sesión. En producción
+  // la tabla de empresas todavía no existe: `mia()` devuelve null y el portal
+  // se queda con la marca por defecto, que es justo lo que se quiere.
+  React.useEffect(() => {
+    if (!usingDb || !session || !window.DB.org) return;
+    let vivo = true;
+    (async () => {
+      const o = await window.DB.org.mia();
+      if (vivo && o) window.aplicarMarca({ ...(o.marca || {}), nombre: o.nombre });
+    })();
+    return () => { vivo = false; };
+  }, [usingDb, session]);
+
   // Engancha el siniestro a una ficha de asegurado. Si ya hay una elegida en el
   // formulario se respeta; si no, busca por documento y la crea si no existe.
   // La base impide el duplicado con un indice unico, asi que dos cargas del
@@ -526,7 +539,9 @@ function App() {
 
         {!isSiniestros ? (
           <div className="content">
-            {active === "asegurados-dup" && rol === "organizador"
+            {active === "config-marca" && rol === "organizador"
+              ? <ConfiguracionView quien={quien} onAviso={flash} />
+              : active === "asegurados-dup" && rol === "organizador"
               ? <DuplicadosView quien={quien} onAviso={flash} />
               : ADMIN_KEYS.includes(active) && rol === "organizador"
               ? <UsuariosView perfiles={perfiles} me={perfil} onUpdate={actualizarUsuario} />

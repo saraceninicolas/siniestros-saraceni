@@ -107,7 +107,8 @@ const PORTAL_NAV = [
     { key: "pend-agenda", label: "Agenda por vencimiento", icon: "agenda" } ] },
   { key: "admin", label: "Administración", icon: "user", org: true, children: [
     { key: "usuarios", label: "Usuarios y roles", icon: "user", count: "usuariosPend" },
-    { key: "asegurados-dup", label: "Asegurados duplicados", icon: "search", count: "duplicados" } ] },
+    { key: "asegurados-dup", label: "Asegurados duplicados", icon: "search", count: "duplicados" },
+    { key: "config-marca", label: "Configuración", icon: "edit" } ] },
 ];
 const NAV_LOOKUP = {};
 PORTAL_NAV.forEach((g) => g.children.forEach((c) => { NAV_LOOKUP[c.key] = { section: g.label, sectionKey: g.key, title: c.label }; }));
@@ -117,7 +118,7 @@ const COMERCIAL_KEYS = ["com-panel", "com-cotizaciones"];
 const RENOVACION_KEYS = ["renov-proximas", "renov-historial"];
 const PENDIENTES_KEYS = ["pend-panel", "pend-agenda"];
 const OBJETIVOS_KEYS = ["obj-panel", "obj-metas"];
-const ADMIN_KEYS = ["usuarios", "asegurados-dup"];
+const ADMIN_KEYS = ["usuarios", "asegurados-dup", "config-marca"];
 // Módulos reservados al organizador (los empleados no los ven ni acceden)
 const ORG_ONLY_KEYS = [...FACTURACION_KEYS, ...OBJETIVOS_KEYS, ...ADMIN_KEYS];
 

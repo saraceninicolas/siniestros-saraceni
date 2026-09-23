@@ -777,6 +777,39 @@ async function dbMaxN() {
     return data;
   }
 
+  // ============================ MARCA DE LA EMPRESA ==========================
+  // La tabla `organizaciones` todavía no existe en producción (migraciones 0009
+  // y 0010, por ahora solo en test). Por eso `orgMia` devuelve null en vez de
+  // romper: sin empresa, el portal usa la marca por defecto.
+  async function orgMia() {
+    const c = client(); if (!c) return null;
+    const { data, error } = await c.from("organizaciones").select("*").limit(1).maybeSingle();
+    if (error) return null;
+    return data ? { id: data.id, nombre: data.nombre || "", slug: data.slug || "",
+                    estado: data.estado || "", marca: data.marca || {} } : null;
+  }
+
+  async function orgGuardarMarca(id, marca) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("organizaciones")
+      .update({ marca, updated_at: new Date().toISOString() })
+      .eq("id", id).select("marca").single();
+    if (error) throw error;
+    return data.marca;
+  }
+
+  // Cada subida estrena nombre de archivo: si se pisara el mismo, el navegador
+  // seguiría mostrando el logo viejo hasta que se le venza la caché.
+  async function orgSubirLogo(id, file) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const ext = String(file.name || "logo.png").split(".").pop().toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
+    const path = id + "/logo-" + Date.now() + "." + ext;
+    const { error } = await c.storage.from("marcas")
+      .upload(path, file, { contentType: file.type || undefined });
+    if (error) throw error;
+    return c.storage.from("marcas").getPublicUrl(path).data.publicUrl;
+  }
+
   // ---- posibles duplicados ----
   // La lista trae las dos fichas con sus datos y cuántos siniestros tiene cada
   // una: sin eso no se puede decidir cuál conservar.
@@ -914,6 +947,7 @@ async function dbMaxN() {
       enganchar: asegEnganchar,
       dup: { list: dupList, buscar: dupBuscar, unificar: dupUnificar, distintos: dupDistintos },
     },
+    org: { mia: orgMia, guardarMarca: orgGuardarMarca, subirLogo: orgSubirLogo },
     sol: { list: solList, update: solUpdate, subscribe: solSubscribe },
     cot: { list: cotList, update: cotUpdate, subscribe: cotSubscribe },
     files: { upload: fileUpload, signedUrl: fileSignedUrl, remove: fileRemove },

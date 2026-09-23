@@ -46,6 +46,7 @@ import "./solicitudes.jsx";
 import "./usuarios.jsx";
 import "./duplicados.jsx";
 import "./siniestralidad.jsx";
+import "./configuracion.jsx";
 import "./facturas.jsx";
 import "./renovaciones.jsx";
 import "./comercial.jsx";
