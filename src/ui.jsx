@@ -130,7 +130,13 @@ function Sidebar({ active, onNav, station, counts, open: drawerOpen, rol }) {
   return (
     <aside className={"sb" + (drawerOpen ? " is-open" : "")}>
       <div className="sb-brand">
-        <div className="sb-logo"><img src="/assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></div>
+        {/* El logo sale de la marca de la empresa; el de Saraceni es el que se
+            usa mientras no haya ninguno cargado. Así cada broker sube el suyo
+            desde Configuración y no hay que tocar el código por cliente. */}
+        <div className="sb-logo">
+          <img src={(window.MARCA && window.MARCA.logo) || "/assets/saraceni-logo.jpg"}
+            alt={(window.MARCA && window.MARCA.nombre) || "Saraceni Seguros"} />
+        </div>
         <div className="sb-sub"><span className="sb-sub-dot" />Portal de gestiones</div>
       </div>
       <nav className="sb-nav">

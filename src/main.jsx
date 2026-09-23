@@ -30,6 +30,7 @@ import "./estilos/tokens.css";
 import "./estilos/portal.css";
 
 import "./config.js";
+import "./marca.js";
 import "./imagenes.js";
 import "./db.js";
 import "./data.jsx";

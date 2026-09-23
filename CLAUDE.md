@@ -60,6 +60,7 @@ Mientras dure el paso 1 siguen valiendo las reglas viejas:
 | `src/andamio.js` | Temporal: pone React y Supabase en `window` (paso 1) |
 | `src/publico.js` | Entrada de las dos páginas públicas |
 | `src/estilos/tokens.css` | **Las variables de diseño.** Acá vive todo lo que cambia entre una marca y otra |
+| `src/marca.js` | De UN color de marca deriva todos los tonos, midiendo contraste. Aplica también el logo y el tema del menú |
 | `src/estilos/portal.css` | El resto del CSS del portal |
 | `src/config.js` | Elige **a qué base** se conecta el portal, según el dominio |
 | `src/imagenes.js` | Achica las fotos antes de subirlas (1600px, WebP). Ante cualquier problema devuelve el original: optimizar nunca puede hacer fallar una carga |
@@ -97,6 +98,27 @@ Mientras dure el paso 1 siguen valiendo las reglas viejas:
 5. **`src/app.jsx`**: ruteo en la cascada de `active`.
 6. **`src/main.jsx`**: el `import` en la posición correcta del orden.
 7. **`src/estilos/portal.css`**: su CSS. Si agrega un color, va en `tokens.css`.
+
+## Colores: ningún valor clavado
+
+Desde 2026-09-23 `portal.css` no tiene colores propios, salvo blancos, sombras
+negras y el visor de fotos (oscuro a propósito). Todo lo demás son variables, y
+hay dos familias que **no** hay que mezclar:
+
+- **Marca** (`--brand*`, `--sb-*`): cambia con cada broker. `marca.js` las
+  calcula a partir del color que eligió el cliente.
+- **Estado** (`--ok*`, `--warn*`, `--peligro*`, `--info*`): NO cambia. Verde es
+  terminado y rojo es alerta en todos los portales. Si siguieran a la marca, un
+  broker con marca verde vería sus alertas en verde.
+
+Los dos roles de texto de la marca son distintos y hay que elegir bien:
+`--brand-ink` es el texto que va **encima** del relleno de marca (un botón), y
+`--brand-txt` es el color de marca usado **como texto** sobre blanco. Con el
+amarillo de Aicardi, blanco sobre amarillo no se lee y amarillo sobre blanco
+tampoco: `marca.js` oscurece el color hasta pasar 4.5:1 de contraste (WCAG).
+
+⚠️ Al escribir CSS nuevo: `color:var(--brand)` casi siempre está mal. Si el
+fondo es claro va `--brand-txt`; si el fondo es el relleno de marca, `--brand-ink`.
 
 ## Roles y seguridad (RLS)
 

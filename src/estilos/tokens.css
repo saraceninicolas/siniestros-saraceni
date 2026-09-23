@@ -18,10 +18,28 @@
      -ink = texto sobre el color · -txt = texto del color · -soft/-line/-ring */
   --brand-ink:#fff; --brand-txt:#DD0909; --brand-soft:#fdf3f3;
   --brand-line:#f3c9c9; --brand-ring:rgba(221,9,9,.09);
+  --brand-soft-2:#fbeeee;   /* el mismo tinte, un punto más fuerte: hover */
+  --brand-line-2:#f3d6d6;   /* borde de marca más suave */
+
   --bg:#F5F6F8; --surface:#FFFFFF; --surface-2:#FBFBFC;
-  --ink:#191C22; --ink-2:#5A6271; --muted:#8B93A1;
-  --line:#E7E9ED; --line-2:#EFF1F4;
+  --ink:#191C22; --ink-2:#5A6271; --muted:#8B93A1; --ink-tenue:#CBD0D8;
+  --line:#E7E9ED; --line-2:#EFF1F4; --line-fuerte:#D3D7DD; --line-fuerte-2:#DCDFE5;
+  --neutro:#CBD5E1;
+
+  /* Estados. Estos NO cambian con la marca de cada broker: verde es terminado,
+     ámbar es "vence hoy" y rojo es alerta en todos los portales. Si siguieran
+     al color del cliente, un broker con marca verde vería sus alertas en verde.
+     Son variables igual para que el CSS no tenga colores clavados. */
+  --ok:#15803D; --ok-soft:#E6F4EA; --ok-soft-2:#FBFEFC; --ok-line:#B7E0C3; --ok-dot:#2EC27A;
+  --warn:#B45309; --warn-fuerte:#D97706; --warn-txt:#8A5A08;
+  --warn-soft:#FEF3E2; --warn-soft-2:#FEF9EF; --warn-line:#F2E0BC;
+  --peligro:#C0241D; --peligro-fuerte:#DC2626; --peligro-hondo:#B91C1C; --peligro-soft:#FBE3E3;
+  --info:#1A73E8; --info-d:#1765CC; --info-2:#1D4ED8; --info-3:#2563EB;
+  --info-soft:#E8F0FE; --info-soft-2:#F4F8FF; --info-line:#DBE6FB;
+  /* --sb-ink-fuerte es el texto del ítem resaltado del menú. Con menú oscuro es
+     blanco; con menú claro tiene que ser oscuro o el ítem activo desaparece. */
   --sb-bg:#1C1313; --sb-ink:#C9CFD9; --sb-ink-dim:#A18A8A; --sb-active:#2A1E1E;
+  --sb-ink-fuerte:#fff;
   --font-scale:1;
   --radius:12px; --radius-sm:9px;
   --row-pad:13px;
@@ -30,6 +48,7 @@
   --shadow-lg:0 18px 50px rgba(16,20,28,.22),0 6px 18px rgba(16,20,28,.12);
 }
 html[data-sidebar="rojo"]{ --sb-bg:#9c0808; --sb-ink:#ffd9d9; --sb-ink-dim:#f0a3a3; --sb-active:#7d0606; }
-html[data-sidebar="claro"]{ --sb-bg:#FFFFFF; --sb-ink:#3A414D; --sb-ink-dim:#8B93A1; --sb-active:#F4F1F1; }
+html[data-sidebar="claro"]{ --sb-bg:#FFFFFF; --sb-ink:#3A414D; --sb-ink-dim:#8B93A1; --sb-active:#F4F1F1;
+  --sb-ink-fuerte:#191C22; }
 html[data-density="compact"]{ --row-pad:9px; }
 html[data-density="comfy"]{ --row-pad:18px; }

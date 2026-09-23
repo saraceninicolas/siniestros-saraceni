@@ -21,11 +21,17 @@ function exportSiniestroPDF(item) {
     : `<tr><td colspan="3" class="empty">Sin gestiones registradas.</td></tr>`;
   const w = window.open("", "_blank");
   if (!w) { alert("Permití las ventanas emergentes para exportar el PDF."); return; }
+  // El PDF se arma en una ventana aparte, que no hereda el CSS del portal: el
+  // color de marca hay que leerlo y pasarlo. Si no, el PDF de cualquier broker
+  // saldría con el rojo de Saraceni. Se usa el color de TEXTO de la marca, que
+  // es el que se lee sobre blanco (con un amarillo, el relleno no se leería).
+  const marcaPdf = (getComputedStyle(document.documentElement)
+    .getPropertyValue("--brand-txt") || "#DD0909").trim();
   w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Siniestro ${esc(item.id)}</title>
   <style>
     *{font-family:Arial,Helvetica,sans-serif;box-sizing:border-box}
     body{margin:30px;color:#191C22}
-    .brand{color:#DD0909;font-weight:800;letter-spacing:.14em;font-size:12px}
+    .brand{color:${marcaPdf};font-weight:800;letter-spacing:.14em;font-size:12px}
     h1{font-size:21px;margin:6px 0 2px}
     .sub{color:#5A6271;font-size:12px;margin-bottom:14px}
     .badges{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
@@ -47,7 +53,7 @@ function exportSiniestroPDF(item) {
     .foot{margin-top:20px;font-size:10px;color:#8B93A1}
     @media print{body{margin:14mm}}
   </style></head><body>
-    <div class="brand">SARACENI · BROKER DE SEGUROS</div>
+    <div class="brand">${esc(marcaNombre())}</div>
     <h1>Ficha de siniestro — ${esc(item.cliente)}</h1>
     <div class="sub">N° ${esc(item.nroSiniestro)} · ${esc(item.id)}</div>
     <div class="badges">
@@ -73,7 +79,7 @@ function exportSiniestroPDF(item) {
     ${item.ticket ? `<p class="obs">Ticket: ${esc(item.ticket)}</p>` : ""}
     <h2>Historial de gestiones realizadas</h2>
     <table class="hist"><thead><tr><th>Fecha</th><th>Gestión realizada</th><th>Puesto</th></tr></thead><tbody>${rows}</tbody></table>
-    <div class="foot">Generado el ${new Date().toLocaleString("es-AR")} desde el Portal de Siniestros de Saraceni · Última modificación por ${esc(item.ultimaModPor || "—")}.</div>
+    <div class="foot">Generado el ${new Date().toLocaleString("es-AR")} desde el Portal de Siniestros · Última modificación por ${esc(item.ultimaModPor || "—")}.</div>
   </body></html>`);
   w.document.close(); w.focus();
   setTimeout(() => { try { w.print(); } catch (e) { /* noop */ } }, 350);
