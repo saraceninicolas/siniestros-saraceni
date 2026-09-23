@@ -91,6 +91,17 @@
         raiz.style.setProperty("--sb-ink", "#C9CFD9");
         raiz.style.setProperty("--sb-ink-dim", aHex(conBlanco(conNegro(c, 0.75), 0.55)));
         raiz.style.setProperty("--sb-ink-fuerte", "#FFFFFF");
+      } else if (menu === "personalizado" && aRgb(marca.menuColor)) {
+        // El menú con un color propio, distinto del de la marca: hay brokers
+        // cuyo logo pide un acento y un menú de otro tono. La tinta se decide
+        // por la luminancia de ESE color, no la de la marca.
+        var m = aRgb(marca.menuColor);
+        var mClaro = luz(m) > 0.45;
+        raiz.style.setProperty("--sb-bg", aHex(m));
+        raiz.style.setProperty("--sb-active", aHex(mClaro ? conNegro(m, 0.93) : conBlanco(m, 0.86)));
+        raiz.style.setProperty("--sb-ink", mClaro ? "#3A414D" : "#C9CFD9");
+        raiz.style.setProperty("--sb-ink-dim", mClaro ? "#8B93A1" : aHex(conBlanco(conNegro(m, 0.75), 0.55)));
+        raiz.style.setProperty("--sb-ink-fuerte", aHex(mClaro ? NEGRO : BLANCO));
       } else if (menu === "marca") {
         raiz.style.setProperty("--sb-bg", aHex(c));
         raiz.style.setProperty("--sb-active", aHex(claro ? conNegro(c, 0.88) : conBlanco(c, 0.8)));
