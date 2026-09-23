@@ -189,9 +189,10 @@ function SaFicha({ grupo, onVolver, onOpen, onDocGuardado, onAviso }) {
 }
 
 // ---------- pantalla ----------
-function SiniestralidadView({ data, query, fichaSel, onFicha, onOpen, onAviso }) {
+function SiniestralidadView({ data, query, fichaSel, onFicha, onOpen, onAviso, onNav, rol }) {
   const [fichas, setFichas] = React.useState({});
   const [foco, setFoco] = React.useState(null);
+  const [duplicados, setDuplicados] = React.useState(0);
   const hayDb = !!(window.DB && window.DB.configured() && window.DB.aseg);
 
   const cargarFichas = React.useCallback(async () => {
@@ -203,6 +204,22 @@ function SiniestralidadView({ data, query, fichaSel, onFicha, onOpen, onAviso })
     } catch (e) { console.error(e); }
   }, [hayDb]);
   React.useEffect(() => { cargarFichas(); }, [cargarFichas]);
+
+  // Los pares de fichas parecidas se revisan desde acá: es el lugar donde se
+  // está mirando la siniestralidad de cada cliente, así que es donde importa
+  // que dos fichas sean en realidad la misma persona. Solo un organizador
+  // puede unificarlas, así que a un empleado ni se le menciona.
+  React.useEffect(() => {
+    if (!hayDb || rol !== "organizador") return;
+    let vivo = true;
+    (async () => {
+      try {
+        const pares = await window.DB.aseg.dup.list();
+        if (vivo) setDuplicados(pares.length);
+      } catch (e) { /* informativo: no vale romper la pantalla por esto */ }
+    })();
+    return () => { vivo = false; };
+  }, [hayDb, rol]);
 
   const grupos = React.useMemo(() => saArmarGrupos(data, fichas), [data, fichas]);
 
@@ -234,6 +251,17 @@ function SiniestralidadView({ data, query, fichaSel, onFicha, onOpen, onAviso })
 
   return (
     <div className="est-wrap">
+      {duplicados > 0 && onNav && (
+        <div className="sa-dup-aviso">
+          <span className="sa-dup-ico"><Ico name="search" size={17} /></span>
+          <div className="sa-dup-txt">
+            <b>{duplicados === 1 ? "Hay 1 par de fichas parecidas" : "Hay " + duplicados + " pares de fichas parecidas"}</b>
+            <span>Pueden ser el mismo cliente cargado dos veces. Mientras estén separadas, su siniestralidad se cuenta partida.</span>
+          </div>
+          <button className="btn-ghost sm" onClick={() => onNav("asegurados-dup")}>Revisar</button>
+        </div>
+      )}
+
       <div className="kpis">
         {kpis.map((c) => (
           <KpiCard key={c.key} {...sinKey(c)}

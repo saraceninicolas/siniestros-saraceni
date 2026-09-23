@@ -539,10 +539,10 @@ function App() {
 
         {!isSiniestros ? (
           <div className="content">
-            {active === "config-marca" && rol === "organizador"
+            {active === "ajustes" && rol === "organizador"
               ? <ConfiguracionView quien={quien} onAviso={flash} />
               : active === "asegurados-dup" && rol === "organizador"
-              ? <DuplicadosView quien={quien} onAviso={flash} />
+              ? <DuplicadosView quien={quien} onAviso={flash} onVolver={() => setActive("sin-asegurados")} />
               : ADMIN_KEYS.includes(active) && rol === "organizador"
               ? <UsuariosView perfiles={perfiles} me={perfil} onUpdate={actualizarUsuario} />
               : FACTURACION_KEYS.includes(active)
@@ -576,7 +576,8 @@ function App() {
         ) : active === "sin-asegurados" ? (
           <div className="content">
             <SiniestralidadView data={activos} query={query} fichaSel={fichaSel} onFicha={setFichaSel}
-              onOpen={openDetail} onAviso={flash} />
+              onOpen={openDetail} onAviso={flash} rol={rol}
+              onNav={(k) => { setActive(k); setDetailId(null); }} />
           </div>
         ) : active === "agenda" ? (
           <div className="content">

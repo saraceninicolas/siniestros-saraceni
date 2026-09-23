@@ -57,11 +57,20 @@ function ConfiguracionView({ quien, onAviso }) {
     return () => { vivo = false; };
   }, [hayDb]);
 
+  // Lo guardado y la empresa, en referencias: el efecto de abajo tiene que
+  // correr SOLO al salir de la pantalla. Con `guardado` en las dependencias,
+  // React también lo ejecutaba al terminar de cargar —porque ahí cambia— y
+  // repintaba el portal con los valores por defecto. Se veía así: elegías un
+  // color, salías (quedaba bien) y al volver a Configuración se iba el color.
+  const guardadoRef = React.useRef(guardado);
+  const orgRef = React.useRef(org);
+  React.useEffect(() => { guardadoRef.current = guardado; orgRef.current = org; }, [guardado, org]);
+
   // Al salir de la pantalla sin guardar, el portal vuelve a lo que está en la
   // base. Sin esto, alguien probaría cinco colores y se quedaría con el último.
   React.useEffect(() => () => {
-    window.aplicarMarca({ ...guardado, nombre: org && org.nombre });
-  }, [guardado, org]);
+    window.aplicarMarca({ ...guardadoRef.current, nombre: orgRef.current && orgRef.current.nombre });
+  }, []);
 
   const aplicar = (cambio) => {
     const nuevo = { ...form, ...cambio };

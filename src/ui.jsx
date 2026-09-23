@@ -45,6 +45,8 @@ const Icons = {
   chart:  ["M3 21h18", "M6 21v-6", "M12 21V4", "M18 21v-10"],
   mega:   ["M4 10v4a1 1 0 0 0 1 1h3l5 4V5L8 9H5a1 1 0 0 0-1 1z", "M17 9a4 4 0 0 1 0 6"],
   trend:  ["M3 17l6-6 4 4 7-7", "M15 8h5v5"],
+  ajustes:["M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z",
+           "M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"],
 };
 const Ico = ({ name, ...rest }) => <Icon d={Icons[name]} {...rest} />;
 
@@ -106,21 +108,28 @@ const PORTAL_NAV = [
     { key: "pend-panel", label: "Panel de control", icon: "grid" },
     { key: "pend-agenda", label: "Agenda por vencimiento", icon: "agenda" } ] },
   { key: "admin", label: "Administración", icon: "user", org: true, children: [
-    { key: "usuarios", label: "Usuarios y roles", icon: "user", count: "usuariosPend" },
-    { key: "asegurados-dup", label: "Asegurados duplicados", icon: "search", count: "duplicados" },
-    { key: "config-marca", label: "Configuración", icon: "edit" } ] },
+    { key: "usuarios", label: "Usuarios y roles", icon: "user", count: "usuariosPend" } ] },
+  // `suelto`: no es una carpeta que se abre, es un botón directo con su ícono.
+  { key: "ajustes", label: "Ajustes", icon: "ajustes", org: true, suelto: true, children: [] },
 ];
 const NAV_LOOKUP = {};
 PORTAL_NAV.forEach((g) => g.children.forEach((c) => { NAV_LOOKUP[c.key] = { section: g.label, sectionKey: g.key, title: c.label }; }));
+// Pantallas que existen pero no van en el menú: se llega a ellas desde otra
+// pantalla. Duplicados se abre desde Siniestralidad por asegurado, que es
+// donde el dato tiene sentido.
+NAV_LOOKUP["ajustes"] = { section: "Ajustes", sectionKey: "ajustes", title: "Marca del portal" };
+NAV_LOOKUP["asegurados-dup"] = { section: "Siniestros", sectionKey: "siniestros", title: "Asegurados duplicados" };
 const SINIESTROS_KEYS = ["dashboard", "agenda", "solicitudes", "sin-estadisticas", "sin-asegurados"];
 const FACTURACION_KEYS = ["fact-estadisticas", "fact-carga", "fact-crecimiento", "fact-companias"];
 const COMERCIAL_KEYS = ["com-panel", "com-cotizaciones"];
 const RENOVACION_KEYS = ["renov-proximas", "renov-historial"];
 const PENDIENTES_KEYS = ["pend-panel", "pend-agenda"];
 const OBJETIVOS_KEYS = ["obj-panel", "obj-metas"];
-const ADMIN_KEYS = ["usuarios", "asegurados-dup", "config-marca"];
-// Módulos reservados al organizador (los empleados no los ven ni acceden)
-const ORG_ONLY_KEYS = [...FACTURACION_KEYS, ...OBJETIVOS_KEYS, ...ADMIN_KEYS];
+const ADMIN_KEYS = ["usuarios"];
+// Módulos reservados al organizador (los empleados no los ven ni acceden).
+// `ajustes` y `asegurados-dup` no están en ADMIN_KEYS porque no viven en esa
+// carpeta, pero son igual de organizador.
+const ORG_ONLY_KEYS = [...FACTURACION_KEYS, ...OBJETIVOS_KEYS, ...ADMIN_KEYS, "ajustes", "asegurados-dup"];
 
 // ---------- sidebar ----------
 function Sidebar({ active, onNav, station, counts, open: drawerOpen, rol }) {
@@ -143,6 +152,17 @@ function Sidebar({ active, onNav, station, counts, open: drawerOpen, rol }) {
       <nav className="sb-nav">
         <div className="sb-group-label">Carpetas de gestión</div>
         {nav.map((g) => {
+          // Un módulo suelto (Ajustes) es un botón y no una carpeta: no tiene
+          // pantallas adentro que valga la pena desplegar.
+          if (g.suelto) {
+            return (
+              <button key={g.key} className={"sb-folder-head sb-suelto" + (active === g.key ? " is-active" : "")}
+                onClick={() => onNav(g.key)}>
+                <span className="sb-item-ico"><Ico name={g.icon} size={17} /></span>
+                <span className="sb-folder-label">{g.label}</span>
+              </button>
+            );
+          }
           const isOpen = !!open[g.key];
           const hasActive = g.children.some((c) => c.key === active);
           return (

@@ -1263,3 +1263,19 @@ button.adj-card:focus-visible{ outline:2px solid var(--brand); outline-offset:3p
 .cfg-sin-org{ padding:20px 22px; }
 .cfg-sin-org h3{ margin:0 0 6px; font-size:16px; }
 .cfg-sin-org p{ margin:0; color:var(--muted); font-size:13.5px; max-width:60ch; }
+/* Módulo suelto del menú (Ajustes): botón directo, sin carpeta que desplegar */
+.sb-suelto .sb-folder-chev{ display:none; }
+.sb-suelto.is-active{ background:var(--sb-active); color:var(--sb-ink-fuerte); }
+.sb-suelto.is-active .sb-item-ico{ color:var(--brand-txt); }
+.sa-dup-aviso{ display:flex; align-items:center; gap:12px; padding:11px 14px; background:var(--warn-soft-2);
+  border:1px solid var(--warn-line); border-radius:var(--radius); }
+.sa-dup-ico{ width:32px; height:32px; border-radius:9px; flex:none; display:grid; place-items:center;
+  background:var(--surface); color:var(--warn); }
+.sa-dup-txt{ display:flex; flex-direction:column; line-height:1.35; min-width:0; }
+.sa-dup-txt b{ font-size:13.5px; color:var(--ink); }
+.sa-dup-txt span{ font-size:12.5px; color:var(--muted); }
+.sa-dup-aviso .btn-ghost{ margin-left:auto; flex:none; }
+@media (max-width:560px){
+  .sa-dup-aviso{ flex-wrap:wrap; }
+  .sa-dup-aviso .btn-ghost{ margin-left:0; width:100%; justify-content:center; }
+}
