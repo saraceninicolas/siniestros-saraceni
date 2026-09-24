@@ -18,13 +18,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 const OBJ_AREAS = [
-  { k: "facturacion",  label: "Facturación",     icono: "card",    color: "#C0241D", bg: "#FBE3E3", auto: true,  unidad: "$" },
-  { k: "ventas",       label: "Ventas",          icono: "store",   color: "#EA580C", bg: "#FEF0E6", auto: false, unidad: "pólizas" },
+  { k: "facturacion",  label: "Facturación",     icono: "card",    color: "var(--peligro)", bg: "var(--peligro-soft)", auto: true,  unidad: "$" },
+  { k: "ventas",       label: "Ventas",          icono: "store",   color: "#EA580C", bg: "var(--warn-soft)", auto: false, unidad: "pólizas" },
   { k: "marketing",    label: "Marketing",       icono: "mega",    color: "#7C3AED", bg: "#F1EAFE", auto: false, unidad: "acciones" },
-  { k: "crecimiento",  label: "Crecimiento",     icono: "trend",   color: "#16A34A", bg: "#E6F4EA", auto: false, unidad: "$" },
-  { k: "renovaciones", label: "Renovaciones",    icono: "refresh", color: "#0891B2", bg: "#E0F2FE", auto: true,  unidad: "renovaciones" },
-  { k: "clientes",     label: "Nuevos clientes", icono: "user",    color: "#2563EB", bg: "#E8F0FE", auto: false, unidad: "clientes" },
-  { k: "otro",         label: "Personalizado",   icono: "flag",    color: "#64748B", bg: "#EEF1F4", auto: false, unidad: "" },
+  { k: "crecimiento",  label: "Crecimiento",     icono: "trend",   color: "var(--ok)", bg: "var(--ok-soft)", auto: false, unidad: "$" },
+  { k: "renovaciones", label: "Renovaciones",    icono: "refresh", color: "#0891B2", bg: "var(--info-soft)", auto: true,  unidad: "renovaciones" },
+  { k: "clientes",     label: "Nuevos clientes", icono: "user",    color: "var(--info-3)", bg: "var(--info-soft)", auto: false, unidad: "clientes" },
+  { k: "otro",         label: "Personalizado",   icono: "flag",    color: "var(--muted)", bg: "var(--line-2)", auto: false, unidad: "" },
 ];
 const objArea = (k) => OBJ_AREAS.find((a) => a.k === k) || OBJ_AREAS[OBJ_AREAS.length - 1];
 
@@ -174,9 +174,9 @@ const objVencido = (o) => { const h = objDia(o.fechaHasta); const hoy = new Date
 const objDiasRestantes = (o) => { const h = objDia(o.fechaHasta); if (!h) return null; const hoy = new Date(); hoy.setHours(0,0,0,0); return Math.round((h - hoy) / 86400000); };
 
 const OBJ_ESTADOS = {
-  cumplido: { k: "cumplido", label: "Cumplido",  color: "#16A34A", bg: "#E6F4EA", fg: "#15803D", icono: "check" },
-  curso:    { k: "curso",    label: "En curso",  color: "#2563EB", bg: "#E8F0FE", fg: "#1D4ED8", icono: "clock" },
-  atrasado: { k: "atrasado", label: "Atrasado",  color: "#EA580C", bg: "#FEF3E2", fg: "#B45309", icono: "alert" },
+  cumplido: { k: "cumplido", label: "Cumplido",  color: "var(--ok)", bg: "var(--ok-soft)", fg: "var(--ok)", icono: "check" },
+  curso:    { k: "curso",    label: "En curso",  color: "var(--info-3)", bg: "var(--info-soft)", fg: "var(--info-2)", icono: "clock" },
+  atrasado: { k: "atrasado", label: "Atrasado",  color: "#EA580C", bg: "var(--warn-soft)", fg: "var(--warn)", icono: "alert" },
 };
 function objEstado(o, fuentes) {
   const pct = objPct(o, fuentes);

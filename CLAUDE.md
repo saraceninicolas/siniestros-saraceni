@@ -60,7 +60,7 @@ Mientras dure el paso 1 siguen valiendo las reglas viejas:
 | `src/andamio.js` | Temporal: pone React y Supabase en `window` (paso 1) |
 | `src/publico.js` | Entrada de las dos páginas públicas |
 | `src/estilos/tokens.css` | **Las variables de diseño.** Acá vive todo lo que cambia entre una marca y otra |
-| `src/marca.js` | De UN color de marca deriva todos los tonos, midiendo contraste. Aplica también el logo y el tema del menú |
+| `src/marca.js` | De los colores elegidos deriva todos los tonos del portal, midiendo contraste. Aplica también el logo y el tema del menú. Tiene los valores de fábrica (`MARCA_FABRICA`) |
 | `src/estilos/portal.css` | El resto del CSS del portal |
 | `src/config.js` | Elige **a qué base** se conecta el portal, según el dominio |
 | `src/imagenes.js` | Achica las fotos antes de subirlas (1600px, WebP). Ante cualquier problema devuelve el original: optimizar nunca puede hacer fallar una carga |
@@ -76,7 +76,7 @@ Mientras dure el paso 1 siguen valiendo las reglas viejas:
 | `src/auth.jsx` | Login, registro y pantalla de "cuenta pendiente" |
 | `src/asegurados.jsx` | Buscador de asegurado con autocompletado por documento o nombre |
 | `src/duplicados.jsx` | Revisión y unificación de asegurados duplicados (solo organizador) |
-| `src/configuracion.jsx` | Ajustes: colores, tema del menú y logo de cada broker |
+| `src/configuracion.jsx` | Ajustes: todos los colores de cada broker (marca, menú, pantalla, estados) y su logo |
 | `src/siniestralidad.jsx` | Siniestralidad por asegurado: ranking, reincidentes y la ficha de cada uno (donde se le carga el DNI si no lo tiene) |
 | `src/adjuntos.jsx` | Grilla de adjuntos, visor de fotos y descarga en zip |
 | `src/modals.jsx` / `src/detail.jsx` | Alta/edición y ficha completa de siniestro (+ PDF) |
@@ -103,15 +103,30 @@ Mientras dure el paso 1 siguen valiendo las reglas viejas:
 
 ## Colores: ningún valor clavado
 
-Desde 2026-09-23 `portal.css` no tiene colores propios, salvo blancos, sombras
-negras y el visor de fotos (oscuro a propósito). Todo lo demás son variables, y
-hay dos familias que **no** hay que mezclar:
+Desde 2026-09-23 `portal.css` no tiene colores propios, y desde 2026-09-24
+tampoco los `style` inline de los `.jsx` (201 hexadecimales pasaron a
+`var(--token)`). Quedan clavados a propósito, y solo ahí:
 
-- **Marca** (`--brand*`, `--sb-*`): cambia con cada broker. `marca.js` las
-  calcula a partir del color que eligió el cliente.
-- **Estado** (`--ok*`, `--warn*`, `--peligro*`, `--info*`): NO cambia. Verde es
-  terminado y rojo es alerta en todos los portales. Si siguieran a la marca, un
-  broker con marca verde vería sus alertas en verde.
+- `src/detail.jsx`: el PDF se imprime en **otro documento**, donde las
+  variables del portal no existen.
+- `src/charts.jsx` (`CH_COLOR`) y los colores de `HECHO_COLOR` que no coinciden
+  con ningún token: son paletas **categóricas**, no roles.
+- El visor de fotos, la pastilla del logo y los blancos sobre fondos oscuros.
+
+⚠️ **En JSX nuevo tampoco va un hexadecimal.** `style={{ color: "#15803D" }}`
+rompe la personalización: ese verde se queda verde aunque el broker cambie sus
+colores. Va `var(--ok)`, que también funciona en atributos SVG (`fill`,
+`stroke`).
+
+Hay dos familias que **no** hay que mezclar:
+
+- **Marca y pantalla** (`--brand*`, `--sb-*`, `--bg`, `--surface*`, `--ink*`,
+  `--line*`): cambia con cada broker. `marca.js` las calcula a partir de los
+  pocos colores que eligió.
+- **Estado** (`--ok*`, `--warn*`, `--peligro*`, `--info*`): arranca igual en
+  todos los portales. Verde es terminado y rojo es alerta. Se pueden cambiar
+  desde Ajustes, pero **no se derivan de la marca**: si siguieran al color del
+  cliente, un broker con marca verde vería sus alertas en verde.
 
 Los dos roles de texto de la marca son distintos y hay que elegir bien:
 `--brand-ink` es el texto que va **encima** del relleno de marca (un botón), y
@@ -246,10 +261,24 @@ pandas en su máquina: se leen con **PowerShell + Excel COM**.
 ## Marca por empresa
 
 `Ajustes` (`src/configuracion.jsx`, módulo suelto del menú, solo organizador) deja
-que cada broker elija su color, el tema del menú y suba su logo. Se guarda en
-`organizaciones.marca` y el logo en el bucket `marcas`, en la carpeta de su
-empresa.
+que cada broker elija **todos** sus colores y suba su logo:
 
+| Grupo | Qué elige | Qué se deriva solo |
+|---|---|---|
+| Marca | un color | relleno, los dos textos, tonos suaves, bordes, anillo de foco |
+| Menú lateral | tema, fondo, texto y opción abierta (los dos últimos, opcionales) | lo que quede en automático, según el fondo |
+| Pantalla | fondo, tarjetas y texto | los seis grises del texto y los cuatro bordes |
+| Estado | terminado, por vencer, alerta e información | texto legible, punto, fondo y borde de cada píldora |
+
+Todo se guarda en `organizaciones.marca` (jsonb, así que sumar un color no
+necesita migración) y el logo en el bucket `marcas`, en la carpeta de su empresa.
+Los valores de fábrica viven en `MARCA_FABRICA` (`marca.js`), al lado de los
+cálculos, y son los mismos que `tokens.css`.
+
+- **Nunca se elige tono por tono**: el broker elige los pocos colores que
+  importan y `marca.js` deriva el resto midiendo contraste (WCAG 4.5:1). Pedirle
+  veinte grises es pedirle que sea diseñador, y el primer texto ilegible lo paga
+  su equipo todos los días.
 - **Se aplica en vivo mientras elige**, sobre el portal entero. Por eso la
   pantalla, al desmontarse, vuelve a aplicar lo guardado: si no, alguien probaría
   cinco colores y se quedaría con el último sin que su equipo lo tenga.

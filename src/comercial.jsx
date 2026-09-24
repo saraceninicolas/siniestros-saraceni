@@ -3,9 +3,9 @@
 // Panel con KPIs + bandeja de cotizaciones para gestionar y cerrar.
 
 const COT_ESTADO = {
-  "nueva":      { fg: "#B91C1C", bg: "#FBE3E3", t: "Nueva" },
-  "cotizada":   { fg: "#15803D", bg: "#E6F4EA", t: "Cotizada" },
-  "descartada": { fg: "#475569", bg: "#EEF1F4", t: "Descartada" },
+  "nueva":      { fg: "var(--peligro-hondo)", bg: "var(--peligro-soft)", t: "Nueva" },
+  "cotizada":   { fg: "var(--ok)", bg: "var(--ok-soft)", t: "Cotizada" },
+  "descartada": { fg: "var(--ink-2)", bg: "var(--line-2)", t: "Descartada" },
 };
 function cotBadge(estado) {
   const c = COT_ESTADO[estado] || COT_ESTADO.nueva;
@@ -55,7 +55,7 @@ function CotCard({ c, onCotizar, onDescartar, onReabrir, onNotas }) {
         {c.enCountry != null && (
           <div>
             <div className="sol-k">Country / barrio cerrado</div>
-            <div className="sol-v" style={c.enCountry ? { color: "#15803D", fontWeight: 700 } : null}>
+            <div className="sol-v" style={c.enCountry ? { color: "var(--ok)", fontWeight: 700 } : null}>
               {c.enCountry ? "Sí — con vallado perimetral" : "No"}
             </div>
           </div>
@@ -63,7 +63,7 @@ function CotCard({ c, onCotizar, onDescartar, onReabrir, onNotas }) {
         {c.tienePileta != null && (
           <div>
             <div className="sol-k">Pileta</div>
-            <div className="sol-v" style={c.tienePileta ? { color: "#1D4ED8", fontWeight: 700 } : null}>
+            <div className="sol-v" style={c.tienePileta ? { color: "var(--info-2)", fontWeight: 700 } : null}>
               {c.tienePileta ? "Sí" : "No"}
             </div>
           </div>
@@ -155,10 +155,10 @@ function ComercialPanel({ data }) {
   const delMes = data.filter((c) => (c.creado || "").slice(0, 7) === hoy.slice(0, 7)).length;
 
   const cards = [
-    { key: "nuevas", label: "Pedidos sin responder", value: nuevas.length, hint: "esperando cotización", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "mail" },
-    { key: "cotizadas", label: "Cotizadas", value: cotizadas.length, hint: "propuesta enviada", tone: { bg: "#E6F4EA", fg: "#15803D" }, icon: "check" },
-    { key: "delMes", label: "Pedidos del mes", value: delMes, hint: "entraron este mes", tone: { bg: "#E8F0FE", fg: "#1D4ED8" }, icon: "grid" },
-    { label: "Cotizadas / cerradas", value: conversion + "%", hint: cerradas + " cerradas en total", tone: { bg: "#FDF1DC", fg: "#B45309" }, icon: "target" },
+    { key: "nuevas", label: "Pedidos sin responder", value: nuevas.length, hint: "esperando cotización", tone: { bg: "var(--peligro-soft)", fg: "var(--peligro)" }, icon: "mail" },
+    { key: "cotizadas", label: "Cotizadas", value: cotizadas.length, hint: "propuesta enviada", tone: { bg: "var(--ok-soft)", fg: "var(--ok)" }, icon: "check" },
+    { key: "delMes", label: "Pedidos del mes", value: delMes, hint: "entraron este mes", tone: { bg: "var(--info-soft)", fg: "var(--info-2)" }, icon: "grid" },
+    { label: "Cotizadas / cerradas", value: conversion + "%", hint: cerradas + " cerradas en total", tone: { bg: "var(--warn-soft)", fg: "var(--warn)" }, icon: "target" },
   ];
 
   const filas = React.useMemo(() => {
@@ -223,7 +223,7 @@ function CotizacionesView({ data, onCotizar, onDescartar, onReabrir, onNotas }) 
   return (
     <div className="sol-wrap">
       <div className="ag-banner">
-        <span className="ag-banner-ico" style={{ background: "#fdecec", color: "var(--brand)" }}><Ico name="home" size={22} /></span>
+        <span className="ag-banner-ico" style={{ background: "var(--peligro-soft)", color: "var(--brand)" }}><Ico name="home" size={22} /></span>
         <div className="ag-banner-txt">
           <span className="ag-banner-title">Cotizaciones de seguro de hogar</span>
           <span className="ag-banner-sub">Compartí este link con tus clientes: <b className="mono">{linkPublico}</b></span>
@@ -319,7 +319,7 @@ function ComercialModule({ active, station, query }) {
             onNotas={guardarNotas} />}
       {toast && (
         <div className="toast">
-          <span className="toast-ico" style={toast.err ? { background: "#DC2626" } : null}><Ico name={toast.err ? "alert" : "check"} size={15} /></span>
+          <span className="toast-ico" style={toast.err ? { background: "var(--peligro-fuerte)" } : null}><Ico name={toast.err ? "alert" : "check"} size={15} /></span>
           <span>{toast.msg}</span>
         </div>
       )}

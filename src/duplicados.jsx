@@ -109,7 +109,7 @@ function DuplicadosView({ quien, onAviso, onVolver }) {
         </button>
       )}
       <div className="ag-banner">
-        <span className="ag-banner-ico" style={{ background: "#FEF3E2", color: "#B45309" }}>
+        <span className="ag-banner-ico" style={{ background: "var(--warn-soft)", color: "var(--warn)" }}>
           <Ico name="user" size={22} />
         </span>
         <div className="ag-banner-txt">

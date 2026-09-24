@@ -434,7 +434,7 @@ function Toast({ toast }) {
   if (!toast) return null;
   return (
     <div className="toast">
-      <span className="toast-ico" style={toast.err ? { background: "#DC2626" } : null}>
+      <span className="toast-ico" style={toast.err ? { background: "var(--peligro-fuerte)" } : null}>
         <Ico name={toast.err ? "alert" : "check"} size={15} />
       </span>
       <span>{toast.msg}</span>

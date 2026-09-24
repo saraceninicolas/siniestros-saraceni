@@ -3,9 +3,9 @@
 
 const ROL_LABEL = { organizador: "Organizador", empleado: "Empleado" };
 const USR_ESTADO = {
-  activo:     { fg: "#15803D", bg: "#E6F4EA", t: "Activo" },
-  pendiente:  { fg: "#B45309", bg: "#FDF1DC", t: "Pendiente" },
-  suspendido: { fg: "#B91C1C", bg: "#FBE3E3", t: "Suspendido" },
+  activo:     { fg: "var(--ok)", bg: "var(--ok-soft)", t: "Activo" },
+  pendiente:  { fg: "var(--warn)", bg: "var(--warn-soft)", t: "Pendiente" },
+  suspendido: { fg: "var(--peligro-hondo)", bg: "var(--peligro-soft)", t: "Suspendido" },
 };
 
 function UsuariosView({ perfiles, me, onUpdate }) {
@@ -54,7 +54,7 @@ function UsuariosView({ perfiles, me, onUpdate }) {
   return (
     <div>
       <div className="ag-banner">
-        <span className="ag-banner-ico" style={{ background: "#fdecec", color: "var(--brand)" }}><Ico name="user" size={22} /></span>
+        <span className="ag-banner-ico" style={{ background: "var(--peligro-soft)", color: "var(--brand)" }}><Ico name="user" size={22} /></span>
         <div className="ag-banner-txt">
           <span className="ag-banner-title">Usuarios del portal</span>
           <span className="ag-banner-sub">

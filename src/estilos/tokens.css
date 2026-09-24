@@ -26,15 +26,16 @@
   --line:#E7E9ED; --line-2:#EFF1F4; --line-fuerte:#D3D7DD; --line-fuerte-2:#DCDFE5;
   --neutro:#CBD5E1;
 
-  /* Estados. Estos NO cambian con la marca de cada broker: verde es terminado,
-     ámbar es "vence hoy" y rojo es alerta en todos los portales. Si siguieran
-     al color del cliente, un broker con marca verde vería sus alertas en verde.
-     Son variables igual para que el CSS no tenga colores clavados. */
-  --ok:#15803D; --ok-soft:#E6F4EA; --ok-soft-2:#FBFEFC; --ok-line:#B7E0C3; --ok-dot:#2EC27A;
+  /* Estados. NO se derivan de la marca: verde es terminado, ámbar es "vence
+     hoy" y rojo es alerta en todos los portales. Si siguieran al color del
+     cliente, un broker con marca verde vería sus alertas en verde. Se pueden
+     cambiar desde Ajustes, pero arrancan iguales en todos lados a propósito.
+     Los `-ink` son la letra que va ENCIMA del relleno de ese color. */
+  --ok:#15803D; --ok-soft:#E6F4EA; --ok-soft-2:#FBFEFC; --ok-line:#B7E0C3; --ok-dot:#2EC27A; --ok-ink:#fff;
   --warn:#B45309; --warn-fuerte:#D97706; --warn-txt:#8A5A08;
   --warn-soft:#FEF3E2; --warn-soft-2:#FEF9EF; --warn-line:#F2E0BC;
   --peligro:#C0241D; --peligro-fuerte:#DC2626; --peligro-hondo:#B91C1C; --peligro-soft:#FBE3E3;
-  --info:#1A73E8; --info-d:#1765CC; --info-2:#1D4ED8; --info-3:#2563EB;
+  --info:#1A73E8; --info-d:#1765CC; --info-2:#1D4ED8; --info-3:#2563EB; --info-ink:#fff;
   --info-soft:#E8F0FE; --info-soft-2:#F4F8FF; --info-line:#DBE6FB;
   /* --sb-ink-fuerte es el texto del ítem resaltado del menú. Con menú oscuro es
      blanco; con menú claro tiene que ser oscuro o el ítem activo desaparece. */

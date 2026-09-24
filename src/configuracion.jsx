@@ -1,8 +1,13 @@
-// configuracion.jsx — La marca de cada broker, editable desde el portal
+// configuracion.jsx — Los colores de cada broker, editables desde el portal
 // ─────────────────────────────────────────────────────────────────────────────
 // Hasta acá los colores de un cliente se cambiaban tocando el código, y por eso
 // cada demo necesitaba su propia rama. Esta pantalla los deja en manos de cada
-// broker: elige su color, el tema del menú y sube su logo.
+// broker: marca, menú, fondo, tarjetas, texto, los cuatro de estado y el logo.
+//
+// NO se elige tono por tono. De cada color elegido salen todos los derivados
+// (bordes, fondos suaves, grises del texto) calculados en `marca.js` midiendo
+// contraste: pedirle a un broker que elija veinte grises es pedirle que sea
+// diseñador, y el primer texto ilegible lo paga su equipo todos los días.
 //
 // Los cambios se aplican EN VIVO mientras elige, sobre el portal entero, no
 // sobre una maqueta: es la única forma de que vea de verdad cómo le queda. Por
@@ -23,15 +28,55 @@ const CFG_TEMAS = [
 ];
 const CFG_LOGO_MAX = 2 * 1024 * 1024;   // 2 MB: un logo bien exportado pesa mucho menos
 
-// Lo que el portal termina mostrando, con los valores por defecto puestos.
+// Los colores que se guardan. Los `auto: true` aceptan quedar vacíos, y vacío
+// no es "sin color": es "seguí lo que calcula el tema".
+const CFG_CAMPOS = ["color", "menu", "menuColor", "menuTexto", "menuActivo",
+  "fondo", "superficie", "texto", "ok", "warn", "peligro", "info", "logo"];
+
+// Lo que el portal termina mostrando, con los valores de fábrica puestos en los
+// casilleros vacíos. Los de fábrica viven en marca.js, al lado de los cálculos.
 function cfgNormalizar(marca) {
+  const f = window.MARCA_FABRICA || {};
   const m = marca || {};
-  return {
-    color: m.color || "#DD0909",
-    menu: m.menu || "auto",
-    menuColor: m.menuColor || "#1C1313",
-    logo: m.logo || "",
-  };
+  const out = {};
+  CFG_CAMPOS.forEach((k) => {
+    out[k] = (m[k] !== undefined && m[k] !== null && m[k] !== "") ? m[k] : (f[k] || "");
+  });
+  return out;
+}
+
+// El color con el que quedó una variable después de aplicar la marca. Sirve
+// para que un casillero en automático arranque del color que se está viendo y
+// no de un hexadecimal inventado.
+function cfgVarActual(nombre, sino) {
+  try {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(nombre).trim();
+    return /^#[0-9a-f]{6}$/i.test(v) ? v : sino;
+  } catch (e) { return sino; }
+}
+
+function CfgColor({ label, pista, valor, defecto, onCambio, onAuto }) {
+  const enAuto = onAuto && !valor;
+  const mostrado = valor || defecto || "#000000";
+  return (
+    <div className="cfg-campo">
+      <div className="cfg-campo-cab">
+        <span className="cfg-campo-lab">{label}</span>
+        {enAuto && <span className="cfg-auto-tag">Automático</span>}
+        {onAuto && !enAuto && (
+          <button type="button" className="cfg-auto" onClick={onAuto}>Volver a automático</button>
+        )}
+      </div>
+      <div className="cfg-fila">
+        <input type="color" className="cfg-color" value={mostrado}
+          onChange={(e) => onCambio(e.target.value)} aria-label={label} />
+        <input className="input mono" value={mostrado.toUpperCase()}
+          onChange={(e) => { const v = e.target.value.trim(); onCambio(v.startsWith("#") ? v : "#" + v); }}
+          spellCheck="false" />
+      </div>
+      {pista && <p className="cfg-pista">{pista}</p>}
+    </div>
+  );
 }
 
 function ConfiguracionView({ quien, onAviso }) {
@@ -61,7 +106,7 @@ function ConfiguracionView({ quien, onAviso }) {
   // correr SOLO al salir de la pantalla. Con `guardado` en las dependencias,
   // React también lo ejecutaba al terminar de cargar —porque ahí cambia— y
   // repintaba el portal con los valores por defecto. Se veía así: elegías un
-  // color, salías (quedaba bien) y al volver a Configuración se iba el color.
+  // color, salías (quedaba bien) y al volver a Ajustes se iba el color.
   const guardadoRef = React.useRef(guardado);
   const orgRef = React.useRef(org);
   React.useEffect(() => { guardadoRef.current = guardado; orgRef.current = org; }, [guardado, org]);
@@ -116,31 +161,43 @@ function ConfiguracionView({ quien, onAviso }) {
     window.aplicarMarca({ ...guardado, nombre: org && org.nombre });
   };
 
-  const hayCambios = archivo ||
-    ["color", "menu", "menuColor", "logo"].some((k) => form[k] !== guardado[k]);
+  // Vuelve a los colores originales del portal sin tocar el logo: el logo es de
+  // la empresa, los colores son una decisión de diseño que se puede deshacer.
+  const deFabrica = (campos) => {
+    const f = window.MARCA_FABRICA || {};
+    const cambio = {};
+    (campos || CFG_CAMPOS.filter((k) => k !== "logo")).forEach((k) => { cambio[k] = f[k] || ""; });
+    aplicar(cambio);
+  };
+
+  const hayCambios = archivo || CFG_CAMPOS.some((k) => form[k] !== guardado[k]);
 
   if (cargando) return <div className="ch-vacio">Cargando…</div>;
   if (!org) {
     return (
       <div className="panel cfg-sin-org">
         <h3>Todavía no hay empresa configurada</h3>
-        <p>Esta pantalla edita la marca de tu empresa, y este portal todavía no está
+        <p>Esta pantalla edita los colores de tu empresa, y este portal todavía no está
           asociado a ninguna. Cuando lo esté, vas a poder elegir acá tus colores y tu logo.</p>
       </div>
     );
   }
 
   const tema = CFG_TEMAS.find((t) => t.valor === form.menu) || CFG_TEMAS[0];
+  const btnFabrica = (campos) => (
+    <button className="btn-ghost sm" onClick={() => deFabrica(campos)}>Volver a los de fábrica</button>
+  );
 
   return (
     <div className="est-wrap">
       <div className="cfg-cab">
         <div>
-          <h2>Marca de {org.nombre}</h2>
-          <p>Lo que elijas se ve al instante mientras probás. Recién queda para todo tu
-            equipo cuando tocás Guardar.</p>
+          <h2>Colores de {org.nombre}</h2>
+          <p>Lo que elijas se ve al instante mientras probás, sobre el portal entero. Recién
+            queda para todo tu equipo cuando tocás Guardar.</p>
         </div>
         <div className="cfg-acciones">
+          <button className="btn-ghost" onClick={() => deFabrica()}>De fábrica</button>
           <button className="btn-ghost" onClick={deshacer} disabled={!hayCambios || guardando}>Deshacer</button>
           <button className="btn-primary" onClick={guardar} disabled={!hayCambios || guardando}>
             <Ico name="check" size={16} />{guardando ? "Guardando…" : "Guardar"}
@@ -150,17 +207,9 @@ function ConfiguracionView({ quien, onAviso }) {
 
       <div className="est-grid">
         <EstCard title="Color de la marca" sub="botones, resaltados y detalles del portal">
-          <div className="cfg-fila">
-            <input type="color" className="cfg-color" value={form.color}
-              onChange={(e) => aplicar({ color: e.target.value })} aria-label="Color de la marca" />
-            <input className="input mono" value={form.color.toUpperCase()}
-              onChange={(e) => { const v = e.target.value.trim();
-                aplicar({ color: v.startsWith("#") ? v : "#" + v }); }} spellCheck="false" />
-          </div>
-          <p className="cfg-pista">
-            Los tonos suaves, los bordes y los dos colores de texto se calculan solos a
-            partir de este, midiendo contraste para que nada quede ilegible.
-          </p>
+          <CfgColor label="Color principal" valor={form.color} defecto="#DD0909"
+            onCambio={(v) => aplicar({ color: v })}
+            pista="Los tonos suaves, los bordes y los dos colores de texto se calculan solos a partir de este, midiendo contraste para que nada quede ilegible." />
         </EstCard>
 
         <EstCard title="Menú lateral" sub={tema.pista}>
@@ -172,17 +221,56 @@ function ConfiguracionView({ quien, onAviso }) {
                 onClick={() => aplicar({ menu: t.valor })}>{t.label}</button>
             ))}
           </div>
-          <div className="cfg-fila" style={{ marginTop: 10 }}>
-            <input type="color" className="cfg-color" value={form.menuColor}
-              onChange={(e) => aplicar({ menuColor: e.target.value, menu: "personalizado" })}
-              aria-label="Color del menú" />
-            <input className="input mono" value={form.menuColor.toUpperCase()}
-              onChange={(e) => { const v = e.target.value.trim();
-                aplicar({ menuColor: v.startsWith("#") ? v : "#" + v, menu: "personalizado" }); }}
-              spellCheck="false" />
+          <div className="cfg-campos">
+            <CfgColor label="Fondo del menú" valor={form.menuColor} defecto="#1C1313"
+              onCambio={(v) => aplicar({ menuColor: v, menu: "personalizado" })}
+              pista="Tocarlo ya te pasa a «Elegir color»." />
+            <CfgColor label="Texto del menú" valor={form.menuTexto}
+              defecto={cfgVarActual("--sb-ink-fuerte", "#FFFFFF")}
+              onCambio={(v) => aplicar({ menuTexto: v })}
+              onAuto={() => aplicar({ menuTexto: "" })}
+              pista="En automático se aclara u oscurece según el fondo del menú." />
+            <CfgColor label="Opción abierta" valor={form.menuActivo}
+              defecto={cfgVarActual("--sb-active", "#2A1E1E")}
+              onCambio={(v) => aplicar({ menuActivo: v })}
+              onAuto={() => aplicar({ menuActivo: "" })}
+              pista="El fondo de la carpeta o la pantalla en la que estás parado." />
           </div>
-          <p className="cfg-pista">Tocar este color ya te pasa a «Elegir color». El texto del
-            menú se aclara o se oscurece solo, según lo que elijas.</p>
+        </EstCard>
+
+        <EstCard title="Pantalla" sub="el fondo, las tarjetas y el texto de todo el portal"
+          right={btnFabrica(["fondo", "superficie", "texto"])}>
+          <div className="cfg-campos">
+            <CfgColor label="Fondo" valor={form.fondo} defecto="#F5F6F8"
+              onCambio={(v) => aplicar({ fondo: v })}
+              pista="Lo que se ve detrás de las tarjetas." />
+            <CfgColor label="Tarjetas y paneles" valor={form.superficie} defecto="#FFFFFF"
+              onCambio={(v) => aplicar({ superficie: v })}
+              pista="El papel sobre el que se apoya todo: tablas, fichas, modales." />
+            <CfgColor label="Texto" valor={form.texto} defecto="#191C22"
+              onCambio={(v) => aplicar({ texto: v })}
+              pista="De este color salen también los grises secundarios y los bordes. Si no llega a leerse sobre las tarjetas, se ajusta solo." />
+          </div>
+        </EstCard>
+
+        <EstCard title="Colores de estado" sub="el semáforo del portal"
+          right={btnFabrica(["ok", "warn", "peligro", "info"])}>
+          <div className="cfg-campos cfg-campos-2">
+            <CfgColor label="Terminado" valor={form.ok} defecto="#15803D"
+              onCambio={(v) => aplicar({ ok: v })} />
+            <CfgColor label="Por vencer" valor={form.warn} defecto="#D97706"
+              onCambio={(v) => aplicar({ warn: v })} />
+            <CfgColor label="Vencido o alerta" valor={form.peligro} defecto="#DC2626"
+              onCambio={(v) => aplicar({ peligro: v })} />
+            <CfgColor label="Información" valor={form.info} defecto="#1A73E8"
+              onCambio={(v) => aplicar({ info: v })} />
+          </div>
+          <p className="cfg-aviso">
+            <Ico name="alert" size={14} />
+            Estos cuatro son el idioma del portal: verde terminado, ámbar por vencer, rojo
+            vencido. Cambiarlos cambia el semáforo en todas las pantallas a la vez, así que
+            conviene tocarlos solo si chocan con tu marca.
+          </p>
         </EstCard>
 
         <EstCard title="Logo" sub="se ve arriba del menú y en los PDF">
@@ -212,7 +300,7 @@ function ConfiguracionView({ quien, onAviso }) {
   );
 }
 
-Object.assign(window, { ConfiguracionView });
+Object.assign(window, { ConfiguracionView, CfgColor, cfgNormalizar });
 
 // Marca este archivo como modulo ES. Sin esto el compilador lo toma por
 // script (no tiene ningun import/export todavia) y compila el JSX a require(),

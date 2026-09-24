@@ -170,10 +170,10 @@ function EstadisticasSiniestros({ data }) {
   }, [cerrados]);
 
   const kpis = [
-    { label: "Demora promedio", value: estDias(prom), hint: cerrados.length + (cerrados.length === 1 ? " caso cerrado" : " casos cerrados"), tone: { bg: "#E8F0FE", fg: "#1D4ED8" }, icon: "clock" },
-    { label: "Mediana", value: estDias(med), hint: "la mitad tarda menos que esto", tone: { bg: "#E6F4EA", fg: "#15803D" }, icon: "target" },
-    { label: "Caso más demorado", value: estDias(masLargo && masLargo._demora), hint: masLargo ? `${masLargo.cliente} · ${HECHO_LABEL[masLargo.hecho] || masLargo.hecho || "—"}` : "—", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "alert" },
-    { label: "Abiertos hoy", value: abiertos.length, hint: "antigüedad promedio " + estDias(promAbiertos), tone: { bg: "#FEF3E2", fg: "#B45309" }, icon: "folder" },
+    { label: "Demora promedio", value: estDias(prom), hint: cerrados.length + (cerrados.length === 1 ? " caso cerrado" : " casos cerrados"), tone: { bg: "var(--info-soft)", fg: "var(--info-2)" }, icon: "clock" },
+    { label: "Mediana", value: estDias(med), hint: "la mitad tarda menos que esto", tone: { bg: "var(--ok-soft)", fg: "var(--ok)" }, icon: "target" },
+    { label: "Caso más demorado", value: estDias(masLargo && masLargo._demora), hint: masLargo ? `${masLargo.cliente} · ${HECHO_LABEL[masLargo.hecho] || masLargo.hecho || "—"}` : "—", tone: { bg: "var(--peligro-soft)", fg: "var(--peligro)" }, icon: "alert" },
+    { label: "Abiertos hoy", value: abiertos.length, hint: "antigüedad promedio " + estDias(promAbiertos), tone: { bg: "var(--warn-soft)", fg: "var(--warn)" }, icon: "folder" },
   ];
 
   return (

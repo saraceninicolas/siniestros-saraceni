@@ -97,10 +97,10 @@ function SaFicha({ grupo, onVolver, onOpen, onDocGuardado, onAviso }) {
   };
 
   const kpis = [
-    { label: "Siniestros", value: grupo.total, hint: grupo.primero ? "desde " + fmtDate(grupo.primero) : "—", tone: { bg: "#E8F0FE", fg: "#1D4ED8" }, icon: "shield" },
-    { label: "Últimos 12 meses", value: grupo.ult12, hint: grupo.reincidente ? "reincidente" : "por fecha de denuncia", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "alert" },
-    { label: "Abiertos", value: grupo.abiertos, hint: saPlural(grupo.total - grupo.abiertos, "terminado", "terminados"), tone: { bg: "#FEF3E2", fg: "#B45309" }, icon: "folder" },
-    { label: "Demora promedio", value: estDias(demora), hint: saPlural(cerrados.length, "caso cerrado", "casos cerrados"), tone: { bg: "#E6F4EA", fg: "#15803D" }, icon: "clock" },
+    { label: "Siniestros", value: grupo.total, hint: grupo.primero ? "desde " + fmtDate(grupo.primero) : "—", tone: { bg: "var(--info-soft)", fg: "var(--info-2)" }, icon: "shield" },
+    { label: "Últimos 12 meses", value: grupo.ult12, hint: grupo.reincidente ? "reincidente" : "por fecha de denuncia", tone: { bg: "var(--peligro-soft)", fg: "var(--peligro)" }, icon: "alert" },
+    { label: "Abiertos", value: grupo.abiertos, hint: saPlural(grupo.total - grupo.abiertos, "terminado", "terminados"), tone: { bg: "var(--warn-soft)", fg: "var(--warn)" }, icon: "folder" },
+    { label: "Demora promedio", value: estDias(demora), hint: saPlural(cerrados.length, "caso cerrado", "casos cerrados"), tone: { bg: "var(--ok-soft)", fg: "var(--ok)" }, icon: "clock" },
   ];
 
   const docMal = doc.trim() && !asegDocValido(doc);
@@ -243,9 +243,9 @@ function SiniestralidadView({ data, query, fichaSel, onFicha, onOpen, onAviso, o
   const totalSin = grupos.reduce((n, g) => n + g.total, 0);
   const alternar = (k) => setFoco((f) => (f === k ? null : k));
   const kpis = [
-    { key: "todos", label: "Asegurados con siniestros", value: grupos.length, hint: saPlural(totalSin, "siniestro activo", "siniestros activos"), tone: { bg: "#E8F0FE", fg: "#1D4ED8" }, icon: "user" },
-    { key: "reincidentes", label: "Reincidentes", value: grupos.filter(FILTROS.reincidentes).length, hint: SA_REINCIDENTE + " o más en los últimos 12 meses", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "alert" },
-    { key: "abiertos", label: "Con casos abiertos", value: grupos.filter(FILTROS.abiertos).length, hint: "al menos un siniestro abierto", tone: { bg: "#FEF3E2", fg: "#B45309" }, icon: "folder" },
+    { key: "todos", label: "Asegurados con siniestros", value: grupos.length, hint: saPlural(totalSin, "siniestro activo", "siniestros activos"), tone: { bg: "var(--info-soft)", fg: "var(--info-2)" }, icon: "user" },
+    { key: "reincidentes", label: "Reincidentes", value: grupos.filter(FILTROS.reincidentes).length, hint: SA_REINCIDENTE + " o más en los últimos 12 meses", tone: { bg: "var(--peligro-soft)", fg: "var(--peligro)" }, icon: "alert" },
+    { key: "abiertos", label: "Con casos abiertos", value: grupos.filter(FILTROS.abiertos).length, hint: "al menos un siniestro abierto", tone: { bg: "var(--warn-soft)", fg: "var(--warn)" }, icon: "folder" },
     { key: "sindoc", label: "Sin DNI / CUIT", value: grupos.filter(FILTROS.sindoc).length, hint: "se carga desde la ficha", tone: { bg: "var(--surface-2)", fg: "var(--muted)" }, icon: "search" },
   ];
 

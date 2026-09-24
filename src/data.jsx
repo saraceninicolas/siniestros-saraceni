@@ -23,14 +23,14 @@ const HECHOS = ["DAÑO PARCIAL", "ROBO TOTAL", "CRISTAL", "INCENDIO", "GRANIZO",
 const HECHO_LABEL = { "DAÑO PARCIAL": "Daño parcial", "ROBO TOTAL": "Robo total", "CRISTAL": "Cristal", "INCENDIO": "Incendio", "GRANIZO": "Granizo", "RC": "Resp. civil" };
 // Color del motivo (para que se note de un vistazo, ej. Robo total en rojo)
 const HECHO_COLOR = {
-  "ROBO TOTAL":   { fg: "#C0241D", bg: "#FBE3E3" },
-  "DAÑO PARCIAL": { fg: "#B45309", bg: "#FEF3E2" },
-  "CRISTAL":      { fg: "#1D4ED8", bg: "#E8F0FE" },
+  "ROBO TOTAL":   { fg: "var(--peligro)", bg: "var(--peligro-soft)" },
+  "DAÑO PARCIAL": { fg: "var(--warn)", bg: "var(--warn-soft)" },
+  "CRISTAL":      { fg: "var(--info-2)", bg: "var(--info-soft)" },
   "INCENDIO":     { fg: "#C2410C", bg: "#FEECDC" },
-  "GRANIZO":      { fg: "#0E7490", bg: "#E0F2FE" },
-  "RC":           { fg: "#475569", bg: "#EEF1F4" },
+  "GRANIZO":      { fg: "#0E7490", bg: "var(--info-soft)" },
+  "RC":           { fg: "var(--ink-2)", bg: "var(--line-2)" },
 };
-const hechoColor = (h) => HECHO_COLOR[h] || { fg: "#475569", bg: "#EEF1F4" };
+const hechoColor = (h) => HECHO_COLOR[h] || { fg: "var(--ink-2)", bg: "var(--line-2)" };
 
 // Coberturas: solo el ramo AUTO usa este desplegable fijo.
 // Para el resto de los ramos la cobertura es texto libre.
@@ -49,18 +49,18 @@ const STATIONS = ["PC_OFICINA_1", "PC_OFICINA_2"];
 
 // Estado: solo dos, como en la planilla real
 const ESTADOS = {
-  "Abierto":   { key: "Abierto",   fg: "#1D4ED8", bg: "#E8F0FE", dot: "#2563EB" },
-  "Terminado": { key: "Terminado", fg: "#15803D", bg: "#E6F4EA", dot: "#16A34A" },
+  "Abierto":   { key: "Abierto",   fg: "var(--info-2)", bg: "var(--info-soft)", dot: "var(--info-3)" },
+  "Terminado": { key: "Terminado", fg: "var(--ok)", bg: "var(--ok-soft)", dot: "var(--ok)" },
 };
 const ESTADO_LIST = Object.keys(ESTADOS);
 
 // Urgencia derivada de la fecha límite de respuesta (para los Abiertos)
 const URGENCIA = {
-  vencido:  { label: "Vencida",     fg: "#B91C1C", bg: "#FBE3E3", dot: "#DC2626" },
-  hoy:      { label: "Vence hoy",   fg: "#B45309", bg: "#FEF3E2", dot: "#D97706" },
-  proximo:  { label: "Próxima",     fg: "#1D4ED8", bg: "#E8F0FE", dot: "#2563EB" },
-  normal:   { label: "En plazo",    fg: "#475569", bg: "#EEF1F4", dot: "#64748B" },
-  ninguna:  { label: "—",           fg: "#94A3B8", bg: "#F1F3F5", dot: "#CBD5E1" },
+  vencido:  { label: "Vencida",     fg: "var(--peligro-hondo)", bg: "var(--peligro-soft)", dot: "var(--peligro-fuerte)" },
+  hoy:      { label: "Vence hoy",   fg: "var(--warn)", bg: "var(--warn-soft)", dot: "var(--warn-fuerte)" },
+  proximo:  { label: "Próxima",     fg: "var(--info-2)", bg: "var(--info-soft)", dot: "var(--info-3)" },
+  normal:   { label: "En plazo",    fg: "var(--ink-2)", bg: "var(--line-2)", dot: "var(--muted)" },
+  ninguna:  { label: "—",           fg: "var(--muted)", bg: "var(--line-2)", dot: "var(--neutro)" },
 };
 
 // ---- helpers de fecha ----

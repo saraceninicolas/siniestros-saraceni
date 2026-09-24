@@ -52,7 +52,7 @@ const Ico = ({ name, ...rest }) => <Icon d={Icons[name]} {...rest} />;
 
 // ---------- badges ----------
 function Badge({ estado, size = "md" }) {
-  const e = ESTADOS[estado] || { fg: "#475569", bg: "#EEF1F4", dot: "#64748B" };
+  const e = ESTADOS[estado] || { fg: "var(--ink-2)", bg: "var(--line-2)", dot: "var(--muted)" };
   return (
     <span className="badge" style={{ background: e.bg, color: e.fg, fontSize: size === "sm" ? 11.5 : 12.5 }}>
       <span className="badge-dot" style={{ background: e.dot }} />{estado}
@@ -294,7 +294,7 @@ function Kpis({ data, foco, onFoco }) {
   const cards = [
     { key: "activos", label: "Siniestros activos", value: abiertos.length, hint: `${total} en total`, tone: ESTADOS["Abierto"], icon: "folder" },
     { key: "porVencer", label: "Gestiones por vencer", value: porVencer, hint: "vencen en ≤ 3 días", tone: URGENCIA.proximo, icon: "clock" },
-    { key: "vencidas", label: "Gestiones vencidas", value: vencidas, hint: "requieren acción", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "alert" },
+    { key: "vencidas", label: "Gestiones vencidas", value: vencidas, hint: "requieren acción", tone: { bg: "var(--peligro-soft)", fg: "var(--peligro)" }, icon: "alert" },
     { key: "terminados", label: "Terminados", value: terminados, hint: "cerrados", tone: ESTADOS["Terminado"], icon: "check" },
   ];
   return (

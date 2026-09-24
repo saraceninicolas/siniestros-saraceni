@@ -248,10 +248,10 @@ function CrecimientoAnual({ companias, movs, anio, onAnio }) {
     <div>
       <div className="kpis">
         {[
-          { label: "Facturado " + anio, value: money0(totalAnual), hint: mesesConDatos + " meses cargados", tone: { bg: "#E8F0FE", fg: "#1D4ED8" }, icon: "doc" },
-          { label: "Promedio mensual", value: money0(mesesConDatos ? totalAnual / mesesConDatos : 0), hint: "sobre meses con datos", tone: { bg: "#E6F4EA", fg: "#15803D" }, icon: "grid" },
-          { label: "Mejor mes", value: mesesConDatos ? MESES_F[totalesMes.indexOf(Math.max(...totalesMes))] : "—", hint: money0(Math.max(...totalesMes, 0)), tone: { bg: "#FDF1DC", fg: "#B45309" }, icon: "target" },
-          { label: "Compañías", value: companias.length, hint: "en el listado", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "folder" },
+          { label: "Facturado " + anio, value: money0(totalAnual), hint: mesesConDatos + " meses cargados", tone: { bg: "var(--info-soft)", fg: "var(--info-2)" }, icon: "doc" },
+          { label: "Promedio mensual", value: money0(mesesConDatos ? totalAnual / mesesConDatos : 0), hint: "sobre meses con datos", tone: { bg: "var(--ok-soft)", fg: "var(--ok)" }, icon: "grid" },
+          { label: "Mejor mes", value: mesesConDatos ? MESES_F[totalesMes.indexOf(Math.max(...totalesMes))] : "—", hint: money0(Math.max(...totalesMes, 0)), tone: { bg: "var(--warn-soft)", fg: "var(--warn)" }, icon: "target" },
+          { label: "Compañías", value: companias.length, hint: "en el listado", tone: { bg: "var(--peligro-soft)", fg: "var(--peligro)" }, icon: "folder" },
         ].map((c) => (
           <div className="kpi" key={c.label}>
             <span className="kpi-stripe" style={{ background: c.tone.fg }} />
@@ -392,8 +392,8 @@ function CompaniasView({ companias, movs, onNueva, onEditar, onEliminar }) {
                 <td className="cell-sub">{c.banco || "—"}</td>
                 <td className="cell-sub">{cuenta(c.id)}</td>
                 <td>{c.activa
-                  ? <span className="badge" style={{ background: "#E6F4EA", color: "#15803D" }}><span className="badge-dot" style={{ background: "#15803D" }} />Activa</span>
-                  : <span className="badge" style={{ background: "#EEF1F4", color: "#475569" }}><span className="badge-dot" style={{ background: "#64748B" }} />Inactiva</span>}</td>
+                  ? <span className="badge" style={{ background: "var(--ok-soft)", color: "var(--ok)" }}><span className="badge-dot" style={{ background: "var(--ok)" }} />Activa</span>
+                  : <span className="badge" style={{ background: "var(--line-2)", color: "var(--ink-2)" }}><span className="badge-dot" style={{ background: "var(--muted)" }} />Inactiva</span>}</td>
                 <td>
                   <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
                     <button className="row-open" title="Editar" onClick={() => onEditar(c)}><Ico name="edit" size={15} /></button>
@@ -417,7 +417,7 @@ const pct1 = (v) => (v == null ? "—" : (v > 0 ? "+" : "") + (Math.round(v * 10
 // Mes anterior, cruzando el cambio de año
 const mesAnterior = (anio, mes) => (mes === 1 ? { anio: anio - 1, mes: 12 } : { anio, mes: mes - 1 });
 // Color del monograma de la compañía (mientras no haya logos)
-const FACT_TONOS = ["#1D4ED8", "#B45309", "#15803D", "#7C3AED", "#0891B2", "#C0241D", "#475569"];
+const FACT_TONOS = ["var(--info-2)", "var(--warn)", "var(--ok)", "#7C3AED", "#0891B2", "var(--peligro)", "var(--ink-2)"];
 const tonoCia = (nombre) => {
   let h = 0;
   for (let i = 0; i < (nombre || "").length; i++) h = (h * 31 + nombre.charCodeAt(i)) % 997;
@@ -438,10 +438,10 @@ function FactDelta({ v, sub }) {
   );
 }
 function EstadoCobro({ facturado, cobrado }) {
-  if (!facturado) return <span className="badge" style={{ background: "#EEF1F4", color: "#475569" }}>Sin cargar</span>;
-  if (cobrado >= facturado) return <span className="badge" style={{ background: "#E6F4EA", color: "#15803D" }}>Cobrado</span>;
-  if (cobrado > 0) return <span className="badge" style={{ background: "#FEF3E2", color: "#B45309" }}>Parcial</span>;
-  return <span className="badge" style={{ background: "#FBE3E3", color: "#C0241D" }}>Pendiente</span>;
+  if (!facturado) return <span className="badge" style={{ background: "var(--line-2)", color: "var(--ink-2)" }}>Sin cargar</span>;
+  if (cobrado >= facturado) return <span className="badge" style={{ background: "var(--ok-soft)", color: "var(--ok)" }}>Cobrado</span>;
+  if (cobrado > 0) return <span className="badge" style={{ background: "var(--warn-soft)", color: "var(--warn)" }}>Parcial</span>;
+  return <span className="badge" style={{ background: "var(--peligro-soft)", color: "var(--peligro)" }}>Pendiente</span>;
 }
 
 // Detalle anual de una compañía (se abre desde "Ver detalle")
@@ -468,7 +468,7 @@ function FactDetalleCia({ cia, movs, anio, onClose }) {
           <div className="fact-det-res">
             <div><span className="fact-res-k">Facturado {anio}</span><span className="fact-res-v">{money0(totF)}</span></div>
             <div><span className="fact-res-k">Cobrado</span><span className="fact-res-v">{money0(totC)}</span></div>
-            <div><span className="fact-res-k">Pendiente</span><span className="fact-res-v" style={{ color: totF - totC > 0 ? "#C0241D" : "#15803D" }}>{money0(totF - totC)}</span></div>
+            <div><span className="fact-res-k">Pendiente</span><span className="fact-res-v" style={{ color: totF - totC > 0 ? "var(--peligro)" : "var(--ok)" }}>{money0(totF - totC)}</span></div>
           </div>
           <div className="table-wrap" style={{ marginTop: 14 }}>
             <table className="table fact-det-tabla">
@@ -583,10 +583,10 @@ function FactEstadisticas({ companias, movs, anio, mes, onAnio, onMes, onNav }) 
     .sort((a, b) => (b.crecimiento == null ? -Infinity : b.crecimiento) - (a.crecimiento == null ? -Infinity : a.crecimiento));
 
   const kpis = [
-    { label: "Facturado total", value: money2(facturado), delta: varTotal, tone: { bg: "#E8F0FE", fg: "#1D4ED8" }, icon: "doc" },
-    { label: "Cobrado total", value: money2(cobrado), delta: varCobrado, tone: { bg: "#E6F4EA", fg: "#15803D" }, icon: "card" },
-    { label: "Pendiente de cobro", value: money2(pendiente), delta: varPendiente, invertir: true, tone: { bg: "#FEF3E2", fg: "#B45309" }, icon: "clock" },
-    { label: "Compañías con saldo", value: conSaldo.length + " de " + conMovimiento.length, hint: "facturaron y deben algo", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "folder" },
+    { label: "Facturado total", value: money2(facturado), delta: varTotal, tone: { bg: "var(--info-soft)", fg: "var(--info-2)" }, icon: "doc" },
+    { label: "Cobrado total", value: money2(cobrado), delta: varCobrado, tone: { bg: "var(--ok-soft)", fg: "var(--ok)" }, icon: "card" },
+    { label: "Pendiente de cobro", value: money2(pendiente), delta: varPendiente, invertir: true, tone: { bg: "var(--warn-soft)", fg: "var(--warn)" }, icon: "clock" },
+    { label: "Compañías con saldo", value: conSaldo.length + " de " + conMovimiento.length, hint: "facturaron y deben algo", tone: { bg: "var(--peligro-soft)", fg: "var(--peligro)" }, icon: "folder" },
   ];
   const visiblesTabla = verTodas ? filas : filas.slice(0, 6);
 
@@ -653,19 +653,19 @@ function FactEstadisticas({ companias, movs, anio, mes, onAnio, onMes, onNav }) 
                         </div>
                       </td>
                       <td className="mono" style={{ textAlign: "right" }}>{f.facturado ? money0(f.facturado) : "—"}</td>
-                      <td className="mono" style={{ textAlign: "right", color: f.cobrado > 0 ? "#15803D" : "var(--muted)" }}>{f.cobrado ? money0(f.cobrado) : "$ 0"}</td>
+                      <td className="mono" style={{ textAlign: "right", color: f.cobrado > 0 ? "var(--ok)" : "var(--muted)" }}>{f.cobrado ? money0(f.cobrado) : "$ 0"}</td>
                       <td>
                         <div className="fact-cobro">
                           <span className="fact-cobro-track">
                             <span style={{
                               width: Math.min(100, Math.max(0, f.pctCobro || 0)) + "%",
-                              background: (f.pctCobro || 0) >= 100 ? "#16A34A" : (f.pctCobro || 0) >= 50 ? "#F59E0B" : "#EA580C",
+                              background: (f.pctCobro || 0) >= 100 ? "var(--ok)" : (f.pctCobro || 0) >= 50 ? "#F59E0B" : "#EA580C",
                             }} />
                           </span>
                           <b className="mono">{f.pctCobro == null ? "—" : Math.round(f.pctCobro) + "%"}</b>
                         </div>
                       </td>
-                      <td className="mono" style={{ textAlign: "right", color: f.pendiente > 0 ? "#C0241D" : "var(--ink-2)" }}>{f.facturado ? money0(f.pendiente) : "—"}</td>
+                      <td className="mono" style={{ textAlign: "right", color: f.pendiente > 0 ? "var(--peligro)" : "var(--ink-2)" }}>{f.facturado ? money0(f.pendiente) : "—"}</td>
                       <td><EstadoCobro facturado={f.facturado} cobrado={f.cobrado} /></td>
                       <td>
                         <button className="row-open" title="Ver el año de esta compañía" onClick={() => setDetalle(f.cia)}><Ico name="chevR" size={16} /></button>
@@ -885,7 +885,7 @@ function FacturacionModule({ active, station, query, onNav }) {
       )}
       {toast && (
         <div className="toast">
-          <span className="toast-ico" style={toast.err ? { background: "#DC2626" } : null}><Ico name={toast.err ? "alert" : "check"} size={15} /></span>
+          <span className="toast-ico" style={toast.err ? { background: "var(--peligro-fuerte)" } : null}><Ico name={toast.err ? "alert" : "check"} size={15} /></span>
           <span>{toast.msg}</span>
         </div>
       )}

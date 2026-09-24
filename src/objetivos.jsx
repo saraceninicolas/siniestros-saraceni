@@ -96,7 +96,7 @@ function ObjKpis({ lista, fuentes }) {
         <div className="kpi-top"><span className="kpi-label">Cumplimiento total</span></div>
         <div className="obj-kpi-total-body">
           <ChAnillo pct={promedio} size={92} grosor={11}
-            color={promedio >= 80 ? "#16A34A" : promedio >= 50 ? "#2563EB" : "#EA580C"} />
+            color={promedio >= 80 ? "var(--ok)" : promedio >= 50 ? "var(--info-3)" : "#EA580C"} />
           <div className="obj-kpi-total-txt">
             <span className="obj-kpi-monto" title="Suma de los objetivos medidos en pesos">{OBJ_ARS.format(alcanzado)}</span>
             <span className="obj-kpi-meta">de {OBJ_ARS.format(metaTotal)}</span>
@@ -494,7 +494,7 @@ function ObjetivosModule({ active, station, query, usuarios, onNav }) {
 
   const barraToast = toast && (
     <div className="toast">
-      <span className="toast-ico" style={toast.err ? { background: "#DC2626" } : null}><Ico name={toast.err ? "alert" : "check"} size={15} /></span>
+      <span className="toast-ico" style={toast.err ? { background: "var(--peligro-fuerte)" } : null}><Ico name={toast.err ? "alert" : "check"} size={15} /></span>
       <span>{toast.msg}</span>
     </div>
   );
