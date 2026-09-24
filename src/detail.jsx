@@ -85,7 +85,7 @@ function exportSiniestroPDF(item) {
   setTimeout(() => { try { w.print(); } catch (e) { /* noop */ } }, 350);
 }
 
-function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs, onTerminar, onQuickGestion }) {
+function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onTerminar, onQuickGestion }) {
   const inspeccion = item.fechaInspeccion ? fmtDate(item.fechaInspeccion) : "Pendiente";
   const abierto = item.estado === "Abierto";
   const adjuntos = item.adjuntos || [];
@@ -170,7 +170,6 @@ function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onIcs, onTermina
           {item.fechaLimite && (
             <div className="ds-action-cal">
               <button className="btn-gcal" onClick={() => onGcal(item)}><Ico name="agenda" size={15} />Agendar en Google Calendar</button>
-              <button className="btn-ghost sm" onClick={() => onIcs(item)}><Ico name="download" size={14} />Descargar .ics</button>
             </div>
           )}
         </div>

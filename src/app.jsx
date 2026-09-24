@@ -437,7 +437,7 @@ function App() {
   const askDelete = (item) => setModal({ type: "delete", item });
   const detailItem = activos.find((s) => s.id === detailId) || null;
 
-  // ---- Google Calendar ----
+  // ---- Calendario ----
   const marcarAgendado = (ids) => {
     const set = new Set(ids);
     setSiniestros((p) => p.map((s) => set.has(s.id) ? { ...s, enCalendario: true } : s));
@@ -452,11 +452,6 @@ function App() {
     if (url) window.open(url, "_blank", "noopener");
     marcarAgendado([item.id]);
     flash(`Evento de ${item.cliente} abierto en Google Calendar`);
-  };
-  const descargarIcs = (item) => {
-    downloadICS(`gestion-${item.id}.ics`, buildICS([item], 1));
-    marcarAgendado([item.id]);
-    flash(`Archivo .ics de ${item.cliente} descargado`);
   };
 
   const switchStation = () => {
@@ -532,7 +527,7 @@ function App() {
       <main className="main">
         <Topbar active={active} query={query} onQuery={setQuery} station={quien}
           onSwitchStation={switchStation} onNew={() => setModal({ type: "new" })}
-          onOpenSync={() => setModal({ type: "sync" })} onLogout={configured ? logout : undefined}
+          onOpenCalendario={() => setModal({ type: "calendario" })} onLogout={configured ? logout : undefined}
           onChangePass={configured && session ? () => setModal({ type: "pass" }) : undefined}
           onMenu={() => setNavOpen(true)} isSiniestros={isSiniestros}
           notifs={configured && session ? notifs : null} onOpenNotif={abrirNotif} onMarkAllNotifs={marcarTodasNotifs} />
@@ -561,7 +556,7 @@ function App() {
         ) : detailItem ? (
           <div className="content">
             <DetailScreen item={detailItem} onBack={() => setDetailId(null)}
-              onEdit={openEdit} onDelete={askDelete} onGcal={agendarGcal} onIcs={descargarIcs}
+              onEdit={openEdit} onDelete={askDelete} onGcal={agendarGcal}
               onTerminar={terminarSiniestro} onQuickGestion={agregarGestionRapida} />
           </div>
         ) : active === "solicitudes" ? (
@@ -581,7 +576,7 @@ function App() {
           </div>
         ) : active === "agenda" ? (
           <div className="content">
-            <Agenda data={agendaData} onOpen={openDetail} onSync={() => setModal({ type: "sync" })} onGcal={agendarGcal} />
+            <Agenda data={agendaData} onOpen={openDetail} onCalendario={() => setModal({ type: "calendario" })} onGcal={agendarGcal} />
           </div>
         ) : (
           <div className="content">
@@ -606,7 +601,10 @@ function App() {
       {modal?.type === "new" && <ClaimFormModal mode="new" initial={modal.prefill} station={quien} usuarios={usuariosActivos} onClose={() => setModal(null)} onSubmit={handleCreate} />}
       {modal?.type === "edit" && <ClaimFormModal mode="edit" initial={modal.item} station={quien} usuarios={usuariosActivos} onClose={() => setModal(null)} onSubmit={handleUpdate} />}
       {modal?.type === "delete" && <ConfirmDelete item={modal.item} station={quien} onClose={() => setModal(null)} onConfirm={handleDelete} />}
-      {modal?.type === "sync" && <CalendarSync data={activos} onClose={() => setModal(null)} onAgendar={marcarAgendado} />}
+      {modal?.type === "calendario" && (
+        <CalendarioMes data={activos} onClose={() => setModal(null)} onGcal={agendarGcal}
+          onAbrir={(id) => { setModal(null); openDetail(id); }} />
+      )}
       {modal?.type === "pass" && <ChangePassModal onClose={() => setModal(null)} onDone={() => { setModal(null); flash("Contraseña actualizada"); }} />}
 
       <Toast toast={toast} />

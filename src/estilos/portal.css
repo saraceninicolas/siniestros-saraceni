@@ -612,26 +612,83 @@ button.adj-card:focus-visible{ outline:2px solid var(--brand); outline-offset:3p
 .ag-banner-title{ display:block; font-size:14.5px; font-weight:700; color:var(--ink); }
 .ag-banner-sub{ font-size:12.5px; color:var(--ink-2); }
 
-/* sync modal */
 .sync-head{ display:flex; align-items:center; gap:13px; }
 .sync-gcal{ width:40px; height:40px; border-radius:11px; background:var(--info-soft); color:var(--info); display:grid; place-items:center; flex-shrink:0; }
-.sync-bar{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin:4px 0 14px; }
-.sync-reminder{ display:flex; flex-direction:column; gap:7px; }
-.sync-note{ display:flex; gap:9px; background:var(--info-soft-2); border:1px solid var(--info-line); border-radius:10px;
-  padding:11px 13px; font-size:12.5px; color:var(--ink-2); line-height:1.5; margin-bottom:16px; }
-.sync-note svg{ color:var(--info); flex-shrink:0; margin-top:1px; }
-.sync-list{ display:flex; flex-direction:column; gap:8px; }
-.sync-row{ display:flex; align-items:center; gap:0; background:var(--surface); border:1px solid var(--line);
-  border-radius:10px; overflow:hidden; }
-.sync-rail{ width:4px; align-self:stretch; flex-shrink:0; }
-.sync-row-main{ flex:1; padding:10px 14px; min-width:0; }
-.sync-row-top{ display:flex; align-items:center; gap:9px; }
-.sync-client{ font-size:13.5px; font-weight:700; color:var(--ink); }
-.sync-gestion{ font-size:12px; color:var(--ink-2); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:340px; }
 .sync-done{ display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; color:var(--ok); }
-.sync-row-date{ font-size:13px; font-weight:700; color:var(--ink-2); padding:0 14px; }
-.sync-row-actions{ display:flex; align-items:center; gap:7px; padding:0 12px 0 0; }
 .dt-cal-actions{ display:flex; align-items:center; gap:9px; margin-top:12px; }
+
+/* ---------- calendario del mes ---------- */
+.modal-mes{ max-width:1040px; }
+.cal-barra{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:2px 0 13px; }
+.cal-nav{ display:inline-flex; gap:4px; }
+.cal-mes-nom{ font-size:17px; font-weight:700; color:var(--ink); text-transform:capitalize; }
+.cal-resumen{ margin-left:auto; display:flex; align-items:center; gap:12px; font-size:13px; color:var(--ink-2); }
+.cal-vencidas{ display:inline-flex; align-items:center; gap:5px; font-weight:600; color:var(--peligro-hondo); }
+.cal-cuerpo{ display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:14px; align-items:start; }
+
+.cal-grilla{ border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--surface); }
+.cal-cabecera{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); background:var(--surface-2); border-bottom:1px solid var(--line); }
+.cal-cabecera span{ padding:7px 8px; text-align:center; font-size:11px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+.cal-semana{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); border-bottom:1px solid var(--line-2); }
+.cal-semana:last-child{ border-bottom:none; }
+.cal-dia{ display:flex; flex-direction:column; align-items:stretch; gap:3px; min-height:94px; min-width:0; padding:5px 6px 8px;
+  text-align:left; background:var(--surface); border:none; border-right:1px solid var(--line-2); transition:.12s; }
+.cal-dia:last-child{ border-right:none; }
+.cal-dia:hover{ background:var(--brand-soft); }
+.cal-dia.is-otro{ background:var(--surface-2); }
+.cal-dia.is-otro .cal-num{ color:var(--ink-tenue); }
+.cal-dia.is-sel{ box-shadow:inset 0 0 0 2px var(--brand); }
+.cal-num{ font-size:12.5px; font-weight:700; color:var(--ink-2); align-self:flex-start; }
+.cal-dia.is-hoy .cal-num{ background:var(--brand); color:var(--brand-ink); border-radius:99px;
+  width:21px; height:21px; display:grid; place-items:center; }
+.cal-chip{ display:block; font-size:11px; font-weight:600; line-height:1.45; padding:2px 5px; border-radius:5px;
+  border-left:3px solid var(--neutro); background:var(--surface-2); color:var(--ink-2);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cal-chip-normal{ border-left-color:var(--neutro); background:var(--surface-2); color:var(--ink-2); }
+.cal-chip-vencido{ border-left-color:var(--peligro-fuerte); background:var(--peligro-soft); color:var(--peligro-hondo); }
+.cal-chip-hoy{ border-left-color:var(--warn-fuerte); background:var(--warn-soft); color:var(--warn); }
+.cal-chip-proximo{ border-left-color:var(--info-3); background:var(--info-soft); color:var(--info-2); }
+.cal-mas{ font-size:10.5px; font-weight:600; color:var(--muted); padding-left:3px; }
+
+.cal-panel{ border:1px solid var(--line); border-radius:12px; background:var(--surface-2); padding:12px; }
+.cal-panel-tit{ display:block; font-size:14px; font-weight:700; color:var(--ink); }
+.cal-panel-sub{ display:block; font-size:12.5px; color:var(--muted); margin:1px 0 10px; }
+.cal-panel-vacio{ margin:0; font-size:13px; color:var(--muted); line-height:1.5; }
+.cal-rail{ width:4px; flex-shrink:0; }   /* la geometría es propia; el color lo dan las .ag-rail-* */
+.cal-item{ display:flex; align-items:stretch; background:var(--surface); border:1px solid var(--line);
+  border-radius:10px; overflow:hidden; margin-bottom:8px; }
+.cal-item:last-child{ margin-bottom:0; }
+.cal-item-main{ flex:1; min-width:0; text-align:left; padding:9px 11px; background:none; border:none; }
+.cal-item-main:hover{ background:var(--brand-soft); }
+.cal-item-cli{ display:block; font-size:13.5px; font-weight:700; color:var(--ink); }
+.cal-item-ges{ display:block; font-size:12.5px; color:var(--ink-2); margin-top:1px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cal-item-meta{ display:block; font-size:11.5px; color:var(--muted); margin-top:2px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cal-item-gcal{ margin:0 9px 0 0; align-self:center; padding:6px 8px; }
+
+.cal-leyendas{ display:flex; flex-wrap:wrap; gap:14px; margin-top:12px; font-size:12px; color:var(--ink-2); }
+.cal-leyenda{ display:inline-flex; align-items:center; gap:6px; }
+.cal-punto{ width:9px; height:9px; border-radius:99px; background:var(--neutro); }
+.cal-punto-vencido{ background:var(--peligro-fuerte); }
+.cal-punto-hoy{ background:var(--warn-fuerte); }
+.cal-punto-proximo{ background:var(--info-3); }
+
+@media (max-width:900px){
+  .cal-cuerpo{ grid-template-columns:1fr; }
+  .cal-dia{ min-height:74px; }
+}
+/* En pantalla chica no entra el nombre del cliente: cada gestión queda como una
+   barra de color, que igual dice lo único que se lee de un vistazo —cuántas hay
+   ese día y qué tan urgentes son—. El detalle sale al tocar el día. */
+@media (max-width:560px){
+  .cal-chip{ font-size:0; line-height:0; height:6px; padding:0; border-left:none; }
+  .cal-chip-normal{ background:var(--neutro); }
+  .cal-mas{ font-size:9.5px; }
+  .cal-dia{ min-height:58px; padding:4px 4px 6px; }
+  .cal-resumen{ margin-left:0; width:100%; }
+}
 
 /* ---------- tipografía ampliada (base 17px en todo el portal) ---------- */
 .table td{ font-size:14.5px; }

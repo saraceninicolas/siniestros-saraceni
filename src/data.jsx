@@ -184,7 +184,7 @@ Object.assign(window, {
   COBERTURAS, COBERTURAS_AUTO, esRamoAuto, coberturasDe, aplicaFranquicia,
   STATIONS, ESTADOS, ESTADO_LIST, URGENCIA,
   fmtDate, fmtDateShort, fmtTimeAgo, daysUntil, urgenciaDe, venceTexto, diasActivo, nowIso,
-  parseDate, today0, diasHabilesEntre, MESES,
+  parseDate, today0, diasHabilesEntre, MESES, pad,
   nextNum, sinId, buildSeed,
 });
 

@@ -67,6 +67,7 @@ Mientras dure el paso 1 siguen valiendo las reglas viejas:
 | `src/db.js` | Única capa de datos. Todo Supabase pasa por acá |
 | `src/data.jsx` | Constantes de negocio (ramos, compañías, estados) y helpers de fecha |
 | `src/ui.jsx` | Íconos, sidebar, topbar, tabla de siniestros, agenda, **menú de navegación** |
+| `src/calendar.jsx` | Calendario del mes con las gestiones en su fecha límite, y el enlace a Google Calendar. Ya no exporta `.ics`: el archivo lo abría Outlook y quedaba congelado si la fecha cambiaba |
 | `src/charts.jsx` | Gráficos en SVG hechos a mano (barras, dona, anillo, barras horizontales). No hay librería de gráficos: se dibujan acá y miden el ancho del contenedor para que el texto del eje no escale |
 | `src/estadisticas.jsx` | Estadísticas de siniestros: demora promedio por ramo, por hecho y el cruce entre los dos |
 | `src/objetivos-datos.jsx` | Objetivos: áreas, períodos y cálculo del avance. Sin interfaz |

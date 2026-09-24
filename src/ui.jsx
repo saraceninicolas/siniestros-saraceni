@@ -207,7 +207,7 @@ function Sidebar({ active, onNav, station, counts, open: drawerOpen, rol }) {
 
 // ---------- topbar ----------
 const HOY = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpenSync, onLogout, onChangePass, onMenu, isSiniestros, notifs, onOpenNotif, onMarkAllNotifs }) {
+function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpenCalendario, onLogout, onChangePass, onMenu, isSiniestros, notifs, onOpenNotif, onMarkAllNotifs }) {
   const info = NAV_LOOKUP[active] || { section: "Siniestros", title: "Panel de control" };
   return (
     <header className="tb">
@@ -230,7 +230,7 @@ function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpe
         )}
         <div className="tb-date"><Ico name="clock" size={14} /><span style={{ textTransform: "capitalize" }}>{HOY}</span></div>
         <div className="tb-sep" />
-        {isSiniestros && <button className="btn-ghost tb-icon" title="Sincronizar con Google Calendar" onClick={onOpenSync}><Ico name="agenda" size={18} /></button>}
+        {isSiniestros && <button className="btn-ghost tb-icon" title="Calendario de gestiones del mes" onClick={onOpenCalendario}><Ico name="agenda" size={18} /></button>}
         {notifs && <NotifBell notifs={notifs} onOpenNotif={onOpenNotif} onMarkAll={onMarkAllNotifs} />}
         <span className="tb-station-chip" title="Usuario conectado">
           <span className="sb-station-led" /><Ico name="user" size={14} />{station}
@@ -448,7 +448,7 @@ function ClaimsTable({ rows, selectedId, onSelect, onOpen, multi, onClientFilter
 }
 
 // ---------- agenda (worklist por fecha límite) ----------
-function Agenda({ data, onOpen, onSync, onGcal }) {
+function Agenda({ data, onOpen, onCalendario, onGcal }) {
   const abiertos = data.filter((d) => d.estado === "Abierto" && d.fechaLimite);
   const buckets = {
     vencido: { label: "Vencidas", icon: "alert", items: [] },
@@ -459,17 +459,21 @@ function Agenda({ data, onOpen, onSync, onGcal }) {
   abiertos.forEach((d) => buckets[urgenciaDe(d)]?.items.push(d));
   Object.values(buckets).forEach((b) => b.items.sort((a, c) => (daysUntil(a.fechaLimite) - daysUntil(c.fechaLimite))));
   const sinFecha = data.filter((d) => d.estado === "Abierto" && !d.fechaLimite);
-  const agendadas = abiertos.filter((d) => d.enCalendario).length;
+  const vencidas = buckets.vencido.items.length;
 
   return (
     <div className="agenda">
       <div className="ag-banner">
         <span className="ag-banner-ico"><Ico name="agenda" size={22} /></span>
         <div className="ag-banner-txt">
-          <span className="ag-banner-title">Google Calendar</span>
-          <span className="ag-banner-sub">{agendadas} de {abiertos.length} gestiones agendadas · recordatorio automático</span>
+          <span className="ag-banner-title">Calendario del mes</span>
+          <span className="ag-banner-sub">
+            {abiertos.length} gestiones con fecha límite
+            {vencidas > 0 ? ` · ${vencidas} vencida${vencidas === 1 ? "" : "s"}` : ""}
+            {" · "}esta lista va por urgencia; el calendario, por fecha
+          </span>
         </div>
-        <button className="btn-gcal lg" onClick={onSync}><Ico name="agenda" size={16} />Sincronizar gestiones</button>
+        <button className="btn-gcal lg" onClick={onCalendario}><Ico name="agenda" size={16} />Ver el mes</button>
       </div>
       {Object.entries(buckets).map(([key, b]) => b.items.length > 0 && (
         <section className="ag-group" key={key}>

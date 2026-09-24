@@ -327,7 +327,7 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit, usuarios })
 }
 
 // ---- Detail ----
-function DetailModal({ item, onClose, onEdit, onDelete, onGcal, onIcs }) {
+function DetailModal({ item, onClose, onEdit, onDelete, onGcal }) {
   const Row = ({ k, v, mono }) => (
     <div className="dt-row"><span className="dt-k">{k}</span><span className={"dt-v" + (mono ? " mono" : "")}>{v || "—"}</span></div>
   );
@@ -358,7 +358,6 @@ function DetailModal({ item, onClose, onEdit, onDelete, onGcal, onIcs }) {
           {item.fechaLimite && (
             <div className="dt-cal-actions">
               <button className="btn-gcal" onClick={() => onGcal(item)}><Ico name="agenda" size={14} />Agendar en Google Calendar</button>
-              <button className="btn-ghost sm" onClick={() => onIcs(item)}><Ico name="download" size={14} />.ics</button>
             </div>
           )}
         </div>
