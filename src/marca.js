@@ -236,6 +236,10 @@
 
     if (marca.logo) set("--logo", "url(" + JSON.stringify(marca.logo) + ")");
     window.MARCA = marca;
+    // La pestaña también es la marca del broker. Solo el portal manda el
+    // nombre acá; las páginas públicas escriben el suyo con el trámite adentro
+    // ("Denunciar un siniestro · Aicardi") y por eso no lo pasan.
+    if (marca.nombre) document.title = marca.nombre;
   }
 
   // El nombre que se imprime (PDF, pie de página). Mientras no haya marca
