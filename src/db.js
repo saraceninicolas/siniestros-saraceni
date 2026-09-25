@@ -926,11 +926,12 @@ async function dbMaxN() {
     if (window.achicarImagen) file = await window.achicarImagen(file);
     const safe = (file.name || "archivo").replace(/[^a-zA-Z0-9._-]/g, "_");
     // Cada archivo va en la carpeta de su empresa: es lo que mira la policy del
-    // bucket. Sin empresa no se sube nada — un archivo en la raíz quedaría a la
-    // vista del broker equivocado.
+    // bucket. En una base sin multiempresa no hay empresa que preguntar y se
+    // sube como siempre, a la raíz; si la base sí la tiene, es ella la que
+    // rechaza el archivo sin carpeta, con su propio mensaje.
     const org = await orgId();
-    if (!org) throw new Error("No se pudo determinar tu empresa: volvé a entrar antes de adjuntar archivos");
-    const path = `${org}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${safe}`;
+    const carpeta = org ? org + "/" : "";
+    const path = `${carpeta}${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${safe}`;
     const { error } = await c.storage.from(BUCKET).upload(path, file, { upsert: false, contentType: file.type || undefined });
     if (error) throw error;
     // El nombre que ve el usuario es el que eligió, aunque el archivo guardado
