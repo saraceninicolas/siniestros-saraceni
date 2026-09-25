@@ -19,6 +19,7 @@ body{ margin:0; font-family:"Public Sans",system-ui,sans-serif; font-size:17px; 
 .head{ padding:20px 26px 4px; text-align:center; }
 .logo{ display:inline-block; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 16px; }
 .logo img{ display:block; max-width:200px; height:auto; }
+.logo-texto{ font-size:19px; font-weight:800; color:var(--brand-txt,var(--brand)); letter-spacing:-.01em; }
 h1{ font-size:22px; margin:14px 0 5px; letter-spacing:-.01em; }
 .sub{ color:var(--ink-2); font-size:14px; margin:0 auto 4px; max-width:460px; line-height:1.45; }
 form{ padding:12px 26px 24px; }
@@ -86,7 +87,7 @@ textarea{ resize:vertical; min-height:62px; }
 <div class="wrap">
   <div class="card">
     <div class="head">
-      <span class="logo"><img src="/assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></span>
+      <span class="logo"><img id="logoEmpresa" src="/assets/saraceni-logo.jpg" alt="" /></span>
       <h1>Cotizá tu seguro de hogar</h1>
       <p class="sub">Completá estos datos y te preparamos una cotización a medida. Te contactamos con la propuesta a la brevedad.</p>
     </div>
@@ -192,13 +193,36 @@ textarea{ resize:vertical; min-height:62px; }
       <span class="ref" id="refcode"></span>
     </div>
   </div>
-  <div class="foot">SARACENI · BROKER DE SEGUROS</div>
+  <div class="foot" id="pieEmpresa">SARACENI · BROKER DE SEGUROS</div>
 </div>
 
 <script type="module" src="/src/publico.js"></script>
 <script type="module">
 (function () {
   var sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+  // A qué broker le llega esta cotización. Mismo mecanismo que la denuncia: el
+  // tramo de la ruta (/aicardi/cotizar-hogar) que config.js dejó en ORG_SLUG.
+  var EMPRESA = null;
+  var listaEmpresa = (async function () {
+    try {
+      var r = await sb.rpc("org_publica", { p_slug: window.ORG_SLUG || null });
+      if (r.error || !r.data || !r.data.length) return;
+      EMPRESA = r.data[0];
+      var marca = EMPRESA.marca || {};
+      document.title = "Cotizar seguro de hogar · " + EMPRESA.nombre;
+      var img = document.getElementById("logoEmpresa");
+      if (img && marca.logo) { img.alt = EMPRESA.nombre; img.src = marca.logo; }
+      else if (img) {
+        var caja = img.parentNode;
+        caja.textContent = EMPRESA.nombre;
+        caja.className = "logo logo-texto";
+      }
+      var pie = document.getElementById("pieEmpresa");
+      if (pie) pie.textContent = EMPRESA.nombre.toUpperCase();
+      if (window.aplicarMarca) window.aplicarMarca(marca);
+    } catch (e) { /* si falla, queda la marca de siempre: cotizar importa más */ }
+  })();
   var $ = function (id) { return document.getElementById(id); };
 
   // ---- casillas: destacan el recuadro y despliegan su bloque de datos ----
@@ -313,8 +337,11 @@ textarea{ resize:vertical; min-height:62px; }
     }
 
     var btn = $("send"); btn.disabled = true; btn.textContent = "Enviando…";
+    // Igual que en la denuncia: antes de escribir hay que saber a quién.
+    await listaEmpresa;
     try {
       var ins = await sb.from("cotizaciones").insert({
+        org_id: EMPRESA ? EMPRESA.id : undefined,
         ref: ref,
         ramo: "HOGAR",
         nombre: nombre,

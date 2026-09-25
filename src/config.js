@@ -44,14 +44,24 @@
   window.SUPABASE_ANON_KEY = elegida.key;
   window.AMBIENTE = esProduccion ? "produccion" : "test";
 
-  // De qué empresa es esta pantalla. Sale del primer tramo de la ruta
-  // (`/aicardi/denuncia`) o de `?empresa=aicardi`. La usan dos cosas: el
-  // registro, para que una cuenta nueva nazca en la empresa correcta, y las
-  // páginas públicas, para saber a quién le están dejando la denuncia. Vacío
-  // significa "la empresa original", que es como funcionó siempre.
+  // De qué empresa es esta pantalla. Sale del PRIMER tramo de la ruta, que es
+  // lo que le da a cada broker su dirección propia:
+  //
+  //   /aicardi                  el portal de Aicardi
+  //   /aicardi/denuncia         su formulario público de denuncia
+  //   /aicardi/cotizar-hogar    su formulario de cotización
+  //
+  // La usan tres cosas: la marca que se muestra antes de entrar, el registro
+  // (para que una cuenta nueva nazca en la empresa correcta) y las páginas
+  // públicas, para saber a quién le están dejando la denuncia. Vacío significa
+  // "la empresa de casa", que es como funcionó siempre en `/`.
+  //
+  // ⚠️ El slug NO da acceso a nada: es la membresía del usuario la que decide
+  // qué datos ve. Alguien de Aicardi que entre por /saraceni sigue viendo lo
+  // suyo. Sirve para la cara del portal, no para los permisos.
   var tramos = (window.location && window.location.pathname || "").toLowerCase().split("/").filter(Boolean);
   var PAGINAS = ["denuncia", "denuncia.html", "cotizar-hogar", "cotizar-hogar.html", "index.html", "assets"];
-  var deRuta = (tramos.length > 1 && PAGINAS.indexOf(tramos[0]) < 0) ? tramos[0] : "";
+  var deRuta = (tramos.length > 0 && PAGINAS.indexOf(tramos[0]) < 0) ? tramos[0] : "";
   var param = "";
   try { param = new URLSearchParams(window.location.search).get("empresa") || ""; } catch (e) { param = ""; }
   window.ORG_SLUG = String(deRuta || param).toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 40);
