@@ -81,7 +81,7 @@ Mientras dure el paso 1 siguen valiendo las reglas viejas:
 | `src/adjuntos.jsx` | Grilla de adjuntos, visor de fotos y descarga en zip |
 | `src/modals.jsx` / `src/detail.jsx` | Alta/edición y ficha completa de siniestro (+ PDF) |
 | `src/solicitudes.jsx` `src/facturas.jsx` `src/renovaciones.jsx` `src/comercial.jsx` `src/pendientes.jsx` `src/objetivos.jsx` `src/usuarios.jsx` | Un módulo por carpeta del menú |
-| `denuncia.html` / `cotizar-hogar.html` | Páginas **públicas** standalone (no cargan el portal) |
+| `denuncia.html` / `cotizar-hogar.html` | Páginas **públicas** standalone (no cargan el portal). La denuncia se pinta con la marca de la empresa de la ruta: `/aicardi/denuncia` |
 | `supabase/*.sql` | Esquema de referencia de cada tabla (documentación, no se ejecuta solo) |
 | `supabase/migrations/` | **Historial** de cambios de esquema. Archivos numerados que no se editan una vez aplicados. El README dice qué migración está en cada ambiente |
 
@@ -149,18 +149,44 @@ nueva nace `estado='pendiente'` y no ve nada hasta que un organizador la aprueba
 - Las páginas públicas insertan como `anon` y **nunca** pueden leer:
   `for insert to anon with check (true)` y ninguna policy de select.
 
-⚠️ **Multiempresa, en marcha (fase 1).** La migración 0009 agregó las tablas de
-empresas, membresías, módulos y cobros, con los helpers `org_actual()`,
-`es_super_admin()` y `tiene_modulo()`. Todavía **no** tocó las 12 tablas del
-portal: eso es la 0010. Mientras tanto conviven los dos modelos (`perfiles`
-sigue mandando). Reglas desde ahora:
+⚠️ **Multiempresa: terminado en test, pendiente en producción.** Las
+migraciones 0009 a 0016 arman las tablas de empresas y le ponen `org_id` a las
+diez tablas del portal, con sus policies, sus funciones y los archivos por
+carpeta. `perfiles` sigue mandando para los roles (organizador/empleado); la
+**membresía** es la que dice de qué empresa es cada uno.
+
+Cosas que costaron y no hay que volver a aprender:
+
+- **Las funciones `security definer` no las frena ninguna policy.** Las de
+  asegurados (buscar por documento, parecidos, unificar) buscaban en las fichas
+  de todas las empresas. El filtro por empresa va **adentro** de cada función.
+- **Los avisos también se cruzan.** El trigger de "nueva denuncia web" le
+  escribía a todos los organizadores de la base. Ahora filtra por la empresa de
+  la fila, vía `membresias`.
+- **El default de una columna se evalúa con los permisos de quien inserta.**
+  `default coalesce(org_actual(), org_defecto())` tiró "permission denied for
+  function org_actual" a `anon` y rompió la denuncia pública. Por eso existe
+  `org_de_la_carga()`, que es `security definer`.
+- **"La empresa más vieja" no es "la empresa de casa".** Dos veces: en test la
+  más vieja es Aicardi, que se creó para probar. Es la **activa** más vieja, y
+  se decide en un solo lugar (`org_defecto()`).
+- **Las unicidades globales pasan a ser por empresa**: el documento de un
+  asegurado, los códigos STR-/PEN-/REN-/OBJ- y el CUIT de una compañía.
+
+Reglas desde ahora:
 
 - **Toda tabla nueva nace con `org_id not null`** y sus cuatro policies
   filtrando por `org_id = (select public.org_actual())`. El `(select …)` no es
   cosmético: hace que Postgres evalúe la función una vez por consulta y no una
   vez por fila.
 - **Los módulos se aplican en las policies**, no escondiendo el menú: esconder
-  una opción no impide que los datos viajen.
+  una opción no impide que los datos viajen. El menú los esconde igual, por
+  comodidad (`mis_modulos()` → `navDeLaEmpresa()`), pero si esa consulta falla
+  se muestra todo: dejar a un broker sin menú por un error de red sería peor
+  que mostrarle una carpeta vacía, y las policies frenan igual.
+- **Los archivos van en la carpeta de su empresa** (`<org_id>/…`) en los tres
+  buckets. Los de antes del multiempresa quedaron sin carpeta y son de la
+  empresa de casa (`archivo_de_mi_org`).
 - **Después de tocar cualquier policy, correr `supabase/tests/aislamiento.sql`**
   en la base de test. Prueba que un broker no vea nada del otro simulando el
   token de cada uno, sin necesidad de contraseñas.
@@ -197,7 +223,9 @@ Cada rama tiene su **proyecto de Vercel y su base de Supabase**, separados:
   `dist/` (configurado en `vercel.json`).
 - **Trabajar siempre en `test`.** Pasar a producción solo cuando lo piden, con
   `git checkout main && git merge test && git push origin main`.
-- `vercel.json` tiene `cleanUrls`, por eso `/denuncia` sirve `denuncia.html`.
+- `vercel.json` tiene `cleanUrls`, por eso `/denuncia` sirve `denuncia.html`, y
+  un `rewrite` hace que `/<empresa>/denuncia` sirva el mismo archivo. De qué
+  empresa es lo decide `config.js` (`window.ORG_SLUG`), igual que decide la base.
 - **Vercel ignora las rutas que empiezan con `_`**: un archivo `_algo.html` da
   404 por más que esté desplegado.
 

@@ -40,6 +40,7 @@ button{ font-family:inherit; cursor:pointer; }
 .login-info{ font-size:12.5px; color:var(--ok); background:var(--ok-soft); border:1px solid var(--ok-line);
   border-radius:8px; padding:8px 11px; }
 .login-tabs{ display:flex; gap:0; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+.login-logo-texto{ font-size:19px; font-weight:800; color:var(--brand-txt); letter-spacing:-.01em; }
 .login-tab{ flex:1; padding:9px 10px; font-size:13px; font-weight:700; background:var(--surface); color:var(--muted); transition:.15s; }
 .login-tab.is-on{ background:var(--brand); color:var(--brand-ink); }
 .login-magic{ font-size:12.5px; color:var(--brand-txt); font-weight:600; text-decoration:underline;

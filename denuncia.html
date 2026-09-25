@@ -19,6 +19,7 @@ body{ margin:0; font-family:"Public Sans",system-ui,sans-serif; font-size:17px; 
 .head{ padding:26px 28px 6px; text-align:center; }
 .logo{ display:inline-block; background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 18px; }
 .logo img{ display:block; max-width:220px; height:auto; }
+.logo-texto{ font-size:19px; font-weight:800; color:var(--brand-txt,var(--brand)); letter-spacing:-.01em; }
 h1{ font-size:23px; margin:18px 0 6px; letter-spacing:-.01em; }
 .sub{ color:var(--ink-2); font-size:14.5px; margin:0 auto 8px; max-width:460px; line-height:1.5; }
 form{ padding:16px 28px 28px; }
@@ -124,7 +125,7 @@ textarea{ resize:vertical; min-height:110px; }
 <div class="wrap">
   <div class="card">
     <div class="head">
-      <span class="logo"><img src="/assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></span>
+      <span class="logo"><img id="logoEmpresa" src="/assets/saraceni-logo.jpg" alt="" /></span>
       <h1>Denunciar un siniestro</h1>
       <p class="sub">Completá tus datos y adjuntá la documentación. Nuestro equipo recibe la solicitud al instante y gestiona la denuncia ante la compañía.</p>
     </div>
@@ -248,7 +249,7 @@ textarea{ resize:vertical; min-height:110px; }
       <span class="ref" id="refcode"></span>
     </div>
   </div>
-  <div class="foot">SARACENI · BROKER DE SEGUROS</div>
+  <div class="foot" id="pieEmpresa">SARACENI · BROKER DE SEGUROS</div>
 </div>
 
 <script type="module" src="/src/publico.js"></script>
@@ -256,6 +257,32 @@ textarea{ resize:vertical; min-height:110px; }
 (function () {
   var sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
   var files = [];
+
+  // A qué broker le llega esta denuncia. Sale del tramo de la ruta
+  // (/aicardi/denuncia) que config.js dejó en ORG_SLUG; sin slug, la empresa
+  // original. Se resuelve contra la base y no en el HTML para que el mismo
+  // archivo sirva a todos los brokers: uno solo que mantener.
+  var EMPRESA = null;
+  var listaEmpresa = (async function () {
+    try {
+      var r = await sb.rpc("org_publica", { p_slug: window.ORG_SLUG || null });
+      if (r.error || !r.data || !r.data.length) return;
+      EMPRESA = r.data[0];
+      var marca = EMPRESA.marca || {};
+      document.title = "Denunciar un siniestro · " + EMPRESA.nombre;
+      var img = document.getElementById("logoEmpresa");
+      if (img && marca.logo) { img.alt = EMPRESA.nombre; img.src = marca.logo; }
+      else if (img) {
+        // Sin logo cargado NO se muestra el de otro broker: va el nombre escrito.
+        var caja = img.parentNode;
+        caja.textContent = EMPRESA.nombre;
+        caja.className = "logo logo-texto";
+      }
+      var pie = document.getElementById("pieEmpresa");
+      if (pie) pie.textContent = EMPRESA.nombre.toUpperCase();
+      if (window.aplicarMarca) window.aplicarMarca(marca);
+    } catch (e) { /* si falla, queda la marca de siempre: la denuncia importa más */ }
+  })();
   var $ = function (id) { return document.getElementById(id); };
   function todayISO() {
     var t = new Date();
@@ -670,6 +697,9 @@ textarea{ resize:vertical; min-height:110px; }
     var terceroIncompleto = terceros.some(function (p) { return !String(p.nombre || "").trim(); });
     if (terceroIncompleto) { showErr("Completá el nombre de las personas que agregaste, o quitalas con la ×."); return; }
     var btn = $("send"); btn.disabled = true; btn.textContent = "Enviando…";
+    // Si todavía no sabemos a qué broker le estamos escribiendo, se espera: una
+    // denuncia que cae en la empresa equivocada es mucho peor que un segundo más.
+    await listaEmpresa;
     try {
       // Primero las fotos de los marcos (cada una viaja con su etiqueta) y
       // después los archivos sueltos de "Otros archivos".
@@ -697,7 +727,7 @@ textarea{ resize:vertical; min-height:110px; }
       for (var i = 0; i < aSubir.length; i++) {
         var f = aSubir[i].file;
         var safe = (f.name || "archivo").replace(/[^a-zA-Z0-9._-]/g, "_");
-        var path = Date.now() + "_" + Math.random().toString(36).slice(2, 8) + "_" + safe;
+        var path = (EMPRESA ? EMPRESA.id + "/" : "") + Date.now() + "_" + Math.random().toString(36).slice(2, 8) + "_" + safe;
         btn.textContent = "Subiendo archivo " + (i + 1) + " de " + aSubir.length + "…";
         var up = await sb.storage.from("solicitudes").upload(path, f, { contentType: f.type || undefined });
         if (up.error) throw up.error;
@@ -705,6 +735,7 @@ textarea{ resize:vertical; min-height:110px; }
       }
       btn.textContent = "Enviando…";
       var ins = await sb.from("solicitudes").insert({
+        org_id: EMPRESA ? EMPRESA.id : undefined,
         ref: ref,
         nombre: nombre,
         dni_cuit: $("dni").value.trim() || null,

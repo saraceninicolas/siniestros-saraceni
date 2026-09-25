@@ -218,9 +218,15 @@
   async function authSignUp(email, password, nombre) {
     const c = client();
     if (!c) throw new Error("Supabase no configurado");
+    // `org_slug` viaja en los datos del usuario porque el trigger de alta lo lee
+    // para crear la membresía: sin empresa, el organizador no ve la cuenta nueva
+    // para aprobarla. Si no viene, la base la manda a la empresa original.
     const { data, error } = await c.auth.signUp({
       email, password,
-      options: { data: { nombre: nombre || "" }, emailRedirectTo: window.location.origin },
+      options: {
+        data: { nombre: nombre || "", org_slug: window.ORG_SLUG || "" },
+        emailRedirectTo: window.location.origin,
+      },
     });
     if (error) throw error;
     return data;
@@ -777,16 +783,50 @@ async function dbMaxN() {
     return data;
   }
 
-  // ============================ MARCA DE LA EMPRESA ==========================
-  // La tabla `organizaciones` todavía no existe en producción (migraciones 0009
-  // y 0010, por ahora solo en test). Por eso `orgMia` devuelve null en vez de
-  // romper: sin empresa, el portal usa la marca por defecto.
+  // ============================ LA EMPRESA DE QUIEN ENTRA ====================
+  // `organizaciones` puede no existir todavía en una base sin la 0009. Por eso
+  // `orgMia` devuelve null en vez de romper: sin empresa, el portal usa la
+  // marca por defecto.
+  //
+  // La policy ya limita la consulta a la empresa propia, así que un `limit 1`
+  // alcanza: no hay forma de que devuelva la de otro broker.
+  let _orgCache = null;
   async function orgMia() {
     const c = client(); if (!c) return null;
     const { data, error } = await c.from("organizaciones").select("*").limit(1).maybeSingle();
     if (error) return null;
-    return data ? { id: data.id, nombre: data.nombre || "", slug: data.slug || "",
-                    estado: data.estado || "", marca: data.marca || {} } : null;
+    _orgCache = data ? { id: data.id, nombre: data.nombre || "", slug: data.slug || "",
+                         estado: data.estado || "", marca: data.marca || {} } : null;
+    return _orgCache;
+  }
+
+  // El id de la empresa, para armar la carpeta donde van sus archivos. Se
+  // recuerda entre llamadas: subir tres fotos no puede ser tres consultas más.
+  async function orgId() {
+    if (_orgCache) return _orgCache.id;
+    const o = await orgMia();
+    return o ? o.id : null;
+  }
+
+  // La empresa a la que corresponde esta pantalla ANTES de que alguien entre:
+  // el login de un broker tiene que mostrar su marca, no la del vecino. Se
+  // resuelve por el slug de la dirección y es lo único que se puede leer de
+  // `organizaciones` sin sesión: nombre, slug y marca, nada más.
+  async function orgPublica(slug) {
+    const c = client(); if (!c) return null;
+    const { data, error } = await c.rpc("org_publica", { p_slug: slug || null });
+    if (error || !data || !data.length) return null;
+    const o = data[0];
+    return { id: o.id, nombre: o.nombre || "", slug: o.slug || "", marca: o.marca || {} };
+  }
+
+  // Los módulos contratados, para el menú. Que estén escondidos es comodidad;
+  // lo que de verdad los bloquea son las policies.
+  async function orgModulos() {
+    const c = client(); if (!c) return null;
+    const { data, error } = await c.rpc("mis_modulos");
+    if (error) return null;               // base vieja: el portal muestra todo
+    return Array.isArray(data) ? data : null;
   }
 
   async function orgGuardarMarca(id, marca) {
@@ -885,7 +925,12 @@ async function dbMaxN() {
     const original = file;
     if (window.achicarImagen) file = await window.achicarImagen(file);
     const safe = (file.name || "archivo").replace(/[^a-zA-Z0-9._-]/g, "_");
-    const path = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${safe}`;
+    // Cada archivo va en la carpeta de su empresa: es lo que mira la policy del
+    // bucket. Sin empresa no se sube nada — un archivo en la raíz quedaría a la
+    // vista del broker equivocado.
+    const org = await orgId();
+    if (!org) throw new Error("No se pudo determinar tu empresa: volvé a entrar antes de adjuntar archivos");
+    const path = `${org}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${safe}`;
     const { error } = await c.storage.from(BUCKET).upload(path, file, { upsert: false, contentType: file.type || undefined });
     if (error) throw error;
     // El nombre que ve el usuario es el que eligió, aunque el archivo guardado
@@ -947,7 +992,7 @@ async function dbMaxN() {
       enganchar: asegEnganchar,
       dup: { list: dupList, buscar: dupBuscar, unificar: dupUnificar, distintos: dupDistintos },
     },
-    org: { mia: orgMia, guardarMarca: orgGuardarMarca, subirLogo: orgSubirLogo },
+    org: { mia: orgMia, id: orgId, modulos: orgModulos, publica: orgPublica, guardarMarca: orgGuardarMarca, subirLogo: orgSubirLogo },
     sol: { list: solList, update: solUpdate, subscribe: solSubscribe },
     cot: { list: cotList, update: cotUpdate, subscribe: cotSubscribe },
     files: { upload: fileUpload, signedUrl: fileSignedUrl, remove: fileRemove },

@@ -36,6 +36,32 @@ Siempre **test primero**, se verifica, y recién después producción.
 | `20260921_0008_ficha_aprende_documento.sql` | aplicada | aplicada (2026-09-21) |
 | `20260922_0009_multiempresa_base.sql` | aplicada | pendiente |
 | `20260923_0010_marca_y_logos.sql` | aplicada | pendiente |
+| `20260925_0011_org_id_en_el_portal.sql` | aplicada | pendiente |
+| `20260925_0012_archivos_y_modulos_por_empresa.sql` | aplicada | pendiente |
+| `20260925_0013_empresa_por_defecto.sql` | aplicada | pendiente |
+| `20260925_0014_logo_de_la_empresa_de_casa.sql` | aplicada | pendiente |
+| `20260925_0015_org_publica_sin_slug.sql` | aplicada | pendiente |
+| `20260925_0016_default_de_carga_publica.sql` | aplicada | pendiente |
+
+## El pase a producción de la 0009 a la 0016 (multiempresa)
+
+Van todas juntas, y **el orden importa**, porque en el medio hay un momento en
+que la base pide algo que el código viejo todavía no manda:
+
+1. `0009` y `0010`: agregan tablas nuevas. No tocan nada de lo que usa el
+   portal actual, así que se pueden aplicar con el sitio andando.
+2. `0011`, `0013`, `0015`, `0016`: le ponen dueño a las filas. El portal
+   viejo sigue funcionando porque el dueño lo pone la base (los `default`).
+3. **Recién ahí, desplegar el código.** Desde este punto el portal sube los
+   archivos a la carpeta de cada empresa.
+4. `0012` al final: cierra los buckets por carpeta. Si se aplicara antes del
+   paso 3, el portal seguiría subiendo a la raíz y la base le rebotaría cada
+   archivo adjunto.
+5. `0014`: le deja a la empresa de casa su logo de siempre.
+
+Después de aplicar: correr `supabase/tests/aislamiento.sql` **en test** (no en
+producción: inserta para probar, y aunque hace rollback no vale el riesgo) y
+`npm test`, que pega contra test por red.
 
 ## Nota sobre producción
 

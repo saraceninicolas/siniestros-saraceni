@@ -26,6 +26,9 @@ function App() {
   const [notifs, setNotifs] = React.useState([]);
   const [modal, setModal] = React.useState(null);
   const [active, setActive] = React.useState("dashboard");
+  // Los módulos que contrató la empresa. null = todavía no sabemos (o la base
+  // no tiene multiempresa): el menú se muestra entero.
+  const [modulos, setModulos] = React.useState(null);
   const [navOpen, setNavOpen] = React.useState(false);
   const [toast, setToast] = React.useState(null);
   const toastTimer = React.useRef(null);
@@ -273,18 +276,32 @@ function App() {
   const usuariosActivos = perfiles.filter((p) => p.estado === "activo");
   const usuariosPend = perfiles.filter((p) => p.estado === "pendiente").length;
 
-  // La marca de la empresa (colores y logo), apenas hay sesión. En producción
-  // la tabla de empresas todavía no existe: `mia()` devuelve null y el portal
-  // se queda con la marca por defecto, que es justo lo que se quiere.
+  // La empresa de quien entró: su marca (colores y logo) y qué módulos compró.
+  // En una base sin las migraciones de multiempresa las dos consultas devuelven
+  // null, y el portal se queda con la marca por defecto y el menú completo, que
+  // es justo lo que se quiere.
   React.useEffect(() => {
     if (!usingDb || !session || !window.DB.org) return;
     let vivo = true;
     (async () => {
       const o = await window.DB.org.mia();
       if (vivo && o) window.aplicarMarca({ ...(o.marca || {}), nombre: o.nombre });
+      const m = window.DB.org.modulos ? await window.DB.org.modulos() : null;
+      if (vivo) setModulos(m);
     })();
     return () => { vivo = false; };
   }, [usingDb, session]);
+
+  // Si la pantalla en la que está parado pertenece a un módulo que la empresa no
+  // tiene, se vuelve a la primera carpeta que sí tenga. Pasa al entrar: todos
+  // arrancan en el panel de siniestros, y hay brokers que no compraron ese.
+  React.useEffect(() => {
+    if (!modulos) return;
+    const visibles = navDeLaEmpresa(rol, modulos);
+    if (visibles.some((g) => g.key === active || g.children.some((c) => c.key === active))) return;
+    const primera = visibles.find((g) => g.children.length);
+    if (primera) { setActive(primera.children[0].key); setDetailId(null); }
+  }, [modulos, rol, active]);
 
   // Engancha el siniestro a una ficha de asegurado. Si ya hay una elegida en el
   // formulario se respeta; si no, busca por documento y la crea si no existe.
@@ -520,7 +537,7 @@ function App() {
 
   return (
     <div className="app">
-      <Sidebar active={active} onNav={(k) => { setActive(k); setDetailId(null); setFichaSel(null); setNavOpen(false); }} station={quien} rol={rol}
+      <Sidebar active={active} onNav={(k) => { setActive(k); setDetailId(null); setFichaSel(null); setNavOpen(false); }} station={quien} rol={rol} modulos={modulos}
         counts={{ abiertos: abiertos.length, porVencer, solicitudes: solNuevas, usuariosPend, cotNuevas }} open={navOpen} />
       {navOpen && <div className="sb-scrim" onClick={() => setNavOpen(false)} />}
 

@@ -84,27 +84,27 @@ function RamoTag({ ramo, hecho }) {
 
 // ---------- navegación del portal (carpetas) ----------
 const PORTAL_NAV = [
-  { key: "objetivos", label: "Objetivos", icon: "target", org: true, children: [
+  { key: "objetivos", label: "Objetivos", icon: "target", org: true, modulo: "objetivos", children: [
     { key: "obj-panel", label: "Panel de control", icon: "grid" },
     { key: "obj-metas", label: "Metas y seguimiento", icon: "check" } ] },
-  { key: "siniestros", label: "Siniestros", icon: "shield", children: [
+  { key: "siniestros", label: "Siniestros", icon: "shield", modulo: "siniestros", children: [
     { key: "dashboard", label: "Panel de control", icon: "grid", count: "abiertos" },
     { key: "agenda", label: "Agenda de gestiones", icon: "agenda", count: "porVencer" },
     { key: "solicitudes", label: "Solicitudes recibidas", icon: "mail", count: "solicitudes" },
     { key: "sin-estadisticas", label: "Estadísticas", icon: "chart" },
     { key: "sin-asegurados", label: "Siniestralidad por asegurado", icon: "user" } ] },
-  { key: "facturacion", label: "Facturación", icon: "doc", org: true, children: [
+  { key: "facturacion", label: "Facturación", icon: "doc", org: true, modulo: "facturacion", children: [
     { key: "fact-estadisticas", label: "Estadísticas", icon: "chart" },
     { key: "fact-carga", label: "Carga mensual", icon: "edit" },
     { key: "fact-crecimiento", label: "Crecimiento anual", icon: "target" },
     { key: "fact-companias", label: "Compañías", icon: "folder" } ] },
-  { key: "comercial", label: "Comercial", icon: "store", children: [
+  { key: "comercial", label: "Comercial", icon: "store", modulo: "comercial", children: [
     { key: "com-panel", label: "Panel de control", icon: "grid" },
     { key: "com-cotizaciones", label: "Cotizaciones de hogar", icon: "home", count: "cotNuevas" } ] },
-  { key: "renovaciones", label: "Renovaciones", icon: "refresh", children: [
+  { key: "renovaciones", label: "Renovaciones", icon: "refresh", modulo: "renovaciones", children: [
     { key: "renov-proximas", label: "Próximas a vencer", icon: "clock" },
     { key: "renov-historial", label: "Historial", icon: "agenda" } ] },
-  { key: "pendientes", label: "Pendientes", icon: "flag", children: [
+  { key: "pendientes", label: "Pendientes", icon: "flag", modulo: "pendientes", children: [
     { key: "pend-panel", label: "Panel de control", icon: "grid" },
     { key: "pend-agenda", label: "Agenda por vencimiento", icon: "agenda" } ] },
   { key: "admin", label: "Administración", icon: "user", org: true, children: [
@@ -131,9 +131,20 @@ const ADMIN_KEYS = ["usuarios"];
 // carpeta, pero son igual de organizador.
 const ORG_ONLY_KEYS = [...FACTURACION_KEYS, ...OBJETIVOS_KEYS, ...ADMIN_KEYS, "ajustes", "asegurados-dup"];
 
+// Qué carpetas ve una empresa según lo que contrató. `modulos` en null es
+// "no sabemos" (base sin la 0012, o consulta fallida): ahí se muestra todo,
+// porque esconder el menú nunca fue la defensa — las policies son las que
+// frenan de verdad, y dejar a un broker sin menú por un error de red sería
+// peor que mostrarle una carpeta vacía.
+function navDeLaEmpresa(rol, modulos) {
+  return PORTAL_NAV.filter((g) =>
+    (!g.org || rol === "organizador") &&
+    (!g.modulo || !modulos || modulos.includes(g.modulo)));
+}
+
 // ---------- sidebar ----------
-function Sidebar({ active, onNav, station, counts, open: drawerOpen, rol }) {
-  const nav = PORTAL_NAV.filter((g) => !g.org || rol === "organizador");
+function Sidebar({ active, onNav, station, counts, open: drawerOpen, rol, modulos }) {
+  const nav = navDeLaEmpresa(rol, modulos);
   const sectionOf = (k) => (nav.find((g) => g.children.some((c) => c.key === k)) || {}).key;
   const [open, setOpen] = React.useState(() => ({ [sectionOf(active) || "siniestros"]: true }));
   const toggle = (k) => setOpen((o) => ({ ...o, [k]: !o[k] }));
@@ -197,9 +208,11 @@ function Sidebar({ active, onNav, station, counts, open: drawerOpen, rol }) {
         <div className="sb-station-name" title={station} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{station}</div>
         <div className="sb-station-note">{rol === "organizador" ? "Organizador" : rol === "empleado" ? "Empleado" : "Sesión activa"}</div>
       </div>
+      {/* El pie lleva el nombre de la empresa que entró, no el de casa: a un
+          broker que compró el portal no le puede aparecer otro nombre abajo. */}
       <div className="sb-foot">
-        <span className="sb-foot-mark">SARACENI</span>
-        <span className="sb-foot-meta">Broker de Seguros · v1.0</span>
+        <span className="sb-foot-mark">{(window.MARCA && window.MARCA.nombre) || "SARACENI"}</span>
+        <span className="sb-foot-meta">Portal de gestiones · v1.0</span>
       </div>
     </aside>
   );
@@ -552,7 +565,7 @@ function ModuleScreen({ info }) {
 
 Object.assign(window, {
   Ico, Icons, Badge, UrgBadge, RamoTag, Sidebar, Topbar, KpiCard, Kpis, sinKey, Toolbar, ClaimsTable, Agenda,
-  ModuleScreen, PORTAL_NAV, NAV_LOOKUP, SINIESTROS_KEYS, FACTURACION_KEYS, RENOVACION_KEYS, COMERCIAL_KEYS,
+  ModuleScreen, PORTAL_NAV, NAV_LOOKUP, navDeLaEmpresa, SINIESTROS_KEYS, FACTURACION_KEYS, RENOVACION_KEYS, COMERCIAL_KEYS,
   PENDIENTES_KEYS, OBJETIVOS_KEYS, ADMIN_KEYS, ORG_ONLY_KEYS,
 });
 

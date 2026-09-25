@@ -4,5 +4,15 @@
   "trailingSlash": false,
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "framework": "vite"
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/:empresa/denuncia",
+      "destination": "/denuncia.html"
+    },
+    {
+      "source": "/:empresa/cotizar-hogar",
+      "destination": "/cotizar-hogar.html"
+    }
+  ]
 }

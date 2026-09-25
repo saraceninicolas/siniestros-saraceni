@@ -114,6 +114,8 @@ describe("RLS · un visitante sin cuenta no toca la API de asegurados", () => {
     ["org_actual", {}],
     ["es_super_admin", {}],
     ["tiene_modulo", { p_clave: "siniestros" }],
+    ["mis_modulos", {}],
+    ["archivo_de_mi_org", { p_name: "algo.jpg" }],
   ])("%s no responde", async (fn, args) => {
     const r = await comoAnon(`rpc/${fn}`, { method: "POST", body: JSON.stringify(args) });
     expect(r.status).toBeGreaterThanOrEqual(400);
@@ -143,5 +145,54 @@ describe("RLS · las páginas públicas siguen pudiendo escribir", () => {
     const r = await comoAnon("solicitudes?select=nombre&limit=5");
     const filas = r.ok ? await r.json() : [];
     expect(filas).toHaveLength(0);
+  });
+});
+
+describe("Multiempresa · lo poco que un visitante SÍ puede saber", () => {
+  // La denuncia pública necesita saber a qué broker le está escribiendo: su
+  // nombre y su marca, para mostrar el logo correcto. Eso es público por
+  // definición (está impreso en la puerta de la oficina). Lo que no puede es
+  // listar las empresas del sistema ni saber qué paga cada una.
+  it("org_publica devuelve UNA empresa y solo sus datos de vidriera", async () => {
+    const r = await comoAnon("rpc/org_publica", {
+      method: "POST",
+      body: JSON.stringify({ p_slug: "aicardi" }),
+    });
+    expect(r.status).toBeLessThan(300);
+    const filas = await r.json();
+    expect(Array.isArray(filas)).toBe(true);
+    expect(filas.length).toBe(1);
+    expect(Object.keys(filas[0]).sort()).toEqual(["id", "marca", "nombre", "slug"]);
+  });
+
+  it("un slug que no existe cae en la empresa de casa, no en el vacío", async () => {
+    const r = await comoAnon("rpc/org_publica", {
+      method: "POST",
+      body: JSON.stringify({ p_slug: "no-existe-este-broker" }),
+    });
+    const filas = await r.json();
+    expect(filas.length).toBe(1);
+  });
+
+  it("no puede dejar una denuncia a nombre de una empresa inventada", async () => {
+    const r = await comoAnon("solicitudes", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        ref: "TEST" + Date.now().toString().slice(-6),
+        nombre: "PRUEBA AUTOMATICA - borrable",
+        org_id: "00000000-0000-4000-8000-000000000000",
+      }),
+    });
+    expect(r.status).toBeGreaterThanOrEqual(400);
+  });
+
+  it("no puede escribirle a la tabla de empresas", async () => {
+    const r = await comoAnon("organizaciones", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ nombre: "Intrusa", slug: "intrusa" }),
+    });
+    expect(r.status).toBeGreaterThanOrEqual(400);
   });
 });

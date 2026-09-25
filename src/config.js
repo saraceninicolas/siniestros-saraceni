@@ -44,6 +44,19 @@
   window.SUPABASE_ANON_KEY = elegida.key;
   window.AMBIENTE = esProduccion ? "produccion" : "test";
 
+  // De qué empresa es esta pantalla. Sale del primer tramo de la ruta
+  // (`/aicardi/denuncia`) o de `?empresa=aicardi`. La usan dos cosas: el
+  // registro, para que una cuenta nueva nazca en la empresa correcta, y las
+  // páginas públicas, para saber a quién le están dejando la denuncia. Vacío
+  // significa "la empresa original", que es como funcionó siempre.
+  var tramos = (window.location && window.location.pathname || "").toLowerCase().split("/").filter(Boolean);
+  var PAGINAS = ["denuncia", "denuncia.html", "cotizar-hogar", "cotizar-hogar.html", "index.html", "assets"];
+  var deRuta = (tramos.length > 1 && PAGINAS.indexOf(tramos[0]) < 0) ? tramos[0] : "";
+  var param = "";
+  try { param = new URLSearchParams(window.location.search).get("empresa") || ""; } catch (e) { param = ""; }
+  window.ORG_SLUG = String(deRuta || param).toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 40);
+
   // Queda en la consola para poder verificar de un vistazo dónde está escribiendo
-  console.log("[portal] ambiente:", window.AMBIENTE, "· base:", elegida.url);
+  console.log("[portal] ambiente:", window.AMBIENTE, "· base:", elegida.url,
+              window.ORG_SLUG ? "· empresa: " + window.ORG_SLUG : "");
 })();
