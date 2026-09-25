@@ -8,11 +8,11 @@
   "rewrites": [
     {
       "source": "/:empresa/denuncia",
-      "destination": "/denuncia.html"
+      "destination": "/denuncia"
     },
     {
       "source": "/:empresa/cotizar-hogar",
-      "destination": "/cotizar-hogar.html"
+      "destination": "/cotizar-hogar"
     }
   ]
 }
