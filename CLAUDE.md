@@ -72,6 +72,7 @@ Mientras dure el paso 1 siguen valiendo las reglas viejas:
 | `src/estadisticas.jsx` | Estadísticas de siniestros: demora promedio por ramo, por hecho y el cruce entre los dos |
 | `src/objetivos-datos.jsx` | Objetivos: áreas, períodos y cálculo del avance. Sin interfaz |
 | `src/objetivos-form.jsx` | Objetivos: asistente de 5 pasos para crear o editar |
+| `src/inicio.jsx` | **La pantalla principal.** Junta lo vencido y por vencer de todas las carpetas en una lista, y busca clientes con lo que ya hay cargado (fichas + siniestros + renovaciones). Se esconde sola lo que la empresa no contrató |
 | `src/app.jsx` | Orquestador: sesión, perfil/rol, ruteo por `active`, estado global |
 | `src/auth.jsx` | Login, registro y pantalla de "cuenta pendiente" |
 | `src/asegurados.jsx` | Buscador de asegurado con autocompletado por documento o nombre |

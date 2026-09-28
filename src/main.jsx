@@ -54,5 +54,6 @@ import "./pendientes.jsx";
 import "./objetivos-datos.jsx";
 import "./objetivos-form.jsx";
 import "./objetivos.jsx";
+import "./inicio.jsx";
 import "./calendar.jsx";
 import "./app.jsx";

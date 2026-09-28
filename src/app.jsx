@@ -25,7 +25,9 @@ function App() {
   const [cotNuevas, setCotNuevas] = React.useState(0);        // cotizaciones sin responder (badge del menú)
   const [notifs, setNotifs] = React.useState([]);
   const [modal, setModal] = React.useState(null);
-  const [active, setActive] = React.useState("dashboard");
+  // Se entra por Inicio, no por el panel de siniestros: la primera pregunta de
+  // la manana no es "como viene tal siniestro" sino "que tengo que hacer hoy".
+  const [active, setActive] = React.useState("inicio");
   // Los módulos que contrató la empresa. null = todavía no sabemos (o la base
   // no tiene multiempresa): el menú se muestra entero.
   const [modulos, setModulos] = React.useState(null);
@@ -482,7 +484,7 @@ function App() {
 
   // Control de acceso por rol: un empleado nunca entra a los módulos de organizador
   React.useEffect(() => {
-    if (rol !== "organizador" && ORG_ONLY_KEYS.includes(active)) setActive("dashboard");
+    if (rol !== "organizador" && ORG_ONLY_KEYS.includes(active)) setActive("inicio");
   }, [rol, active]);
 
   // ---- notificaciones: abrir / marcar leídas ----
@@ -551,7 +553,11 @@ function App() {
 
         {!isSiniestros ? (
           <div className="content">
-            {active === "ajustes" && rol === "organizador"
+            {active === "inicio"
+              ? <InicioView siniestros={siniestros} solicitudes={solicitudes} modulos={modulos}
+                  quien={quien} onNav={(k) => { setActive(k); setDetailId(null); }}
+                  onOpenSiniestro={(id) => { setActive("dashboard"); setDetailId(id); }} />
+              : active === "ajustes" && rol === "organizador"
               ? <ConfiguracionView quien={quien} onAviso={flash} />
               : active === "asegurados-dup" && rol === "organizador"
               ? <DuplicadosView quien={quien} onAviso={flash} onVolver={() => setActive("sin-asegurados")} />

@@ -84,6 +84,9 @@ function RamoTag({ ramo, hecho }) {
 
 // ---------- navegación del portal (carpetas) ----------
 const PORTAL_NAV = [
+  // `arriba`: va antes del rotulo de carpetas, porque no es una carpeta sino
+  // la pantalla donde cae todo el mundo al entrar.
+  { key: "inicio", label: "Inicio", icon: "home", suelto: true, arriba: true, children: [] },
   { key: "objetivos", label: "Objetivos", icon: "target", org: true, modulo: "objetivos", children: [
     { key: "obj-panel", label: "Panel de control", icon: "grid" },
     { key: "obj-metas", label: "Metas y seguimiento", icon: "check" } ] },
@@ -117,6 +120,7 @@ PORTAL_NAV.forEach((g) => g.children.forEach((c) => { NAV_LOOKUP[c.key] = { sect
 // Pantallas que existen pero no van en el menú: se llega a ellas desde otra
 // pantalla. Duplicados se abre desde Siniestralidad por asegurado, que es
 // donde el dato tiene sentido.
+NAV_LOOKUP["inicio"] = { section: "Inicio", sectionKey: "inicio", title: "Para hoy" };
 NAV_LOOKUP["ajustes"] = { section: "Ajustes", sectionKey: "ajustes", title: "Marca del portal" };
 NAV_LOOKUP["asegurados-dup"] = { section: "Siniestros", sectionKey: "siniestros", title: "Asegurados duplicados" };
 const SINIESTROS_KEYS = ["dashboard", "agenda", "solicitudes", "sin-estadisticas", "sin-asegurados"];
@@ -168,8 +172,15 @@ function Sidebar({ active, onNav, station, counts, open: drawerOpen, rol, modulo
         <div className="sb-sub"><span className="sb-sub-dot" />Portal de gestiones</div>
       </div>
       <nav className="sb-nav">
+        {nav.filter((g) => g.arriba).map((g) => (
+          <button key={g.key} className={"sb-folder-head sb-suelto" + (active === g.key ? " is-active" : "")}
+            onClick={() => onNav(g.key)}>
+            <span className="sb-item-ico"><Ico name={g.icon} size={17} /></span>
+            <span className="sb-folder-label">{g.label}</span>
+          </button>
+        ))}
         <div className="sb-group-label">Carpetas de gestión</div>
-        {nav.map((g) => {
+        {nav.filter((g) => !g.arriba).map((g) => {
           // Un módulo suelto (Ajustes) es un botón y no una carpeta: no tiene
           // pantallas adentro que valga la pena desplegar.
           if (g.suelto) {

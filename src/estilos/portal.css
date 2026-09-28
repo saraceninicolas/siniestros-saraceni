@@ -1365,3 +1365,103 @@ button.adj-card:focus-visible{ outline:2px solid var(--brand); outline-offset:3p
   .sa-dup-aviso{ flex-wrap:wrap; }
   .sa-dup-aviso .btn-ghost{ margin-left:0; width:100%; justify-content:center; }
 }
+
+/* ══════════════ Inicio ══════════════════════════════════════════════════════
+   La pantalla principal. Junta lo urgente de todas las carpetas, así que su
+   CSS no puede depender de ninguna: todo lo de acá empieza con `ini-`. */
+.ini{ display:flex; flex-direction:column; gap:16px; }
+.ini-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; }
+/* Sin text-transform:capitalize: le pondria mayuscula a cada palabra y
+   dejaria "Buenas Tardes". El nombre se capitaliza en el JS, una sola vez. */
+.ini-titulo{ margin:0; font-size:22px; font-weight:800; letter-spacing:-.015em; color:var(--ink); }
+.ini-fecha{ margin:3px 0 0; font-size:13.5px; color:var(--ink-2); }
+
+/* 145px y no 180: en un telefono entran dos por fila en vez de una sola, y
+   asi la lista de lo que hay que hacer no queda a seis tarjetas de distancia. */
+.ini-kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:12px; }
+.ini-kpi{ display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto; gap:2px 10px;
+  align-items:center; text-align:left; background:var(--surface); border:1px solid var(--line);
+  border-radius:var(--radius); padding:13px 15px; box-shadow:var(--shadow-sm); cursor:pointer; transition:.16s; }
+.ini-kpi:hover{ box-shadow:var(--shadow-md); transform:translateY(-1px); border-color:var(--line-fuerte-2); }
+.ini-kpi-ico{ grid-row:1/3; display:grid; place-items:center; width:34px; height:34px; border-radius:9px;
+  background:var(--brand-soft); color:var(--brand-txt); }
+.ini-kpi.is-warn .ini-kpi-ico{ background:var(--warn-soft); color:var(--warn); }
+.ini-kpi-valor{ font-size:20px; font-weight:800; line-height:1.1; color:var(--ink); }
+.ini-kpi-label{ font-size:12px; font-weight:600; color:var(--ink-2); line-height:1.25; }
+
+.ini-cols{ display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
+.ini-caja{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  box-shadow:var(--shadow-sm); overflow:hidden; }
+.ini-caja-head{ padding:14px 16px 11px; border-bottom:1px solid var(--line-2); }
+.ini-caja-head h2{ margin:0; font-size:15px; font-weight:800; letter-spacing:-.01em; color:var(--ink); }
+.ini-caja-sub{ display:block; margin-top:2px; font-size:12px; color:var(--muted); }
+
+.ini-lista{ display:flex; flex-direction:column; }
+.ini-tarea{ display:grid; grid-template-columns:auto auto 1fr auto; align-items:center; gap:10px;
+  width:100%; text-align:left; background:none; border:none; border-bottom:1px solid var(--line-2);
+  padding:10px 16px; cursor:pointer; transition:background .14s; }
+.ini-tarea:last-child{ border-bottom:none; }
+.ini-tarea:hover{ background:var(--surface-2); }
+.ini-tarea-dot{ width:7px; height:7px; border-radius:99px; }
+.ini-tarea-ico{ display:grid; place-items:center; color:var(--muted); }
+.ini-tarea-txt{ min-width:0; display:flex; flex-direction:column; }
+.ini-tarea-tit{ font-size:13.5px; font-weight:700; color:var(--ink);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ini-tarea-sub{ font-size:12px; color:var(--ink-2);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ini-tarea-cuando{ font-size:11.5px; font-weight:700; color:var(--muted);
+  padding:3px 8px; border-radius:99px; white-space:nowrap; }
+
+.ini-vacio{ display:flex; flex-direction:column; align-items:center; gap:8px; padding:30px 20px;
+  color:var(--muted); font-size:13px; text-align:center; }
+.ini-vacio-chico{ padding:10px 16px; color:var(--muted); font-size:12.5px; }
+.ini-mas{ padding:9px 16px; font-size:12px; color:var(--muted); border-top:1px solid var(--line-2); }
+
+/* ---- el buscador de clientes ---- */
+.ini-buscador{ display:flex; align-items:center; gap:9px; margin:12px 16px;
+  background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:9px 12px;
+  color:var(--muted); }
+.ini-buscador:focus-within{ border-color:var(--brand); box-shadow:0 0 0 3px var(--brand-ring); }
+.ini-buscador input{ flex:1; border:none; background:none; outline:none; font-size:14px; color:var(--ink); }
+.ini-limpiar{ background:none; border:none; color:var(--muted); cursor:pointer; display:grid; place-items:center; }
+
+.ini-clis{ display:flex; flex-direction:column; border-top:1px solid var(--line-2); }
+.ini-cli{ border-bottom:1px solid var(--line-2); }
+.ini-cli-head{ display:grid; grid-template-columns:auto 1fr auto auto; align-items:center; gap:11px;
+  width:100%; text-align:left; background:none; border:none; padding:11px 16px; cursor:pointer;
+  transition:background .14s; }
+.ini-cli-head:hover{ background:var(--surface-2); }
+.ini-cli-ini{ display:grid; place-items:center; width:32px; height:32px; border-radius:99px;
+  background:var(--brand-soft); color:var(--brand-txt); font-weight:800; font-size:14px; }
+.ini-cli-txt{ min-width:0; display:flex; flex-direction:column; }
+.ini-cli-nom{ font-size:13.5px; font-weight:700; color:var(--ink);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ini-cli-sub{ font-size:12px; color:var(--muted); }
+.ini-cli-chips{ display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+.ini-chip{ font-size:11px; font-weight:700; padding:3px 8px; border-radius:99px;
+  background:var(--line-2); color:var(--ink-2); white-space:nowrap; }
+.ini-chip.is-warn{ background:var(--warn-soft); color:var(--warn); }
+.ini-cli-chev{ display:grid; place-items:center; color:var(--ink-tenue); transition:transform .18s; }
+.ini-cli.is-open .ini-cli-chev{ transform:rotate(90deg); }
+
+.ini-cli-body{ padding:2px 16px 12px 59px; background:var(--surface-2); }
+.ini-cli-bloque{ margin-top:8px; }
+.ini-cli-lbl{ font-size:10.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:4px; }
+.ini-cli-fila{ display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:10px;
+  width:100%; text-align:left; background:var(--surface); border:1px solid var(--line);
+  border-radius:8px; padding:7px 10px; margin-bottom:5px; cursor:pointer; transition:.14s; }
+.ini-cli-fila:hover{ border-color:var(--line-fuerte); }
+.ini-cli-fila-id{ font-size:12px; font-weight:800; color:var(--brand-txt); }
+.ini-cli-fila-txt{ font-size:12.5px; color:var(--ink-2);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ini-cli-fila-fecha{ font-size:11.5px; color:var(--muted); white-space:nowrap; }
+.ini-est{ font-size:11px; font-weight:700; padding:2px 8px; border-radius:99px; white-space:nowrap; }
+.ini-est-abierto{ background:var(--warn-soft); color:var(--warn); }
+.ini-est-cerrado{ background:var(--ok-soft); color:var(--ok); }
+
+@media (max-width:900px){
+  .ini-cols{ grid-template-columns:1fr; }
+  .ini-cli-body{ padding-left:16px; }
+  .ini-cli-chips{ display:none; }
+}
