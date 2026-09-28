@@ -18,7 +18,7 @@ body{ margin:0; font-family:"Public Sans",system-ui,sans-serif; font-size:17px; 
 .card::before{ content:""; display:block; height:5px; background:var(--brand); }
 .head{ padding:26px 28px 6px; text-align:center; }
 .logo{ display:inline-block; background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 18px; }
-.logo img{ display:block; max-width:220px; height:auto; }
+.logo img{ display:block; max-width:220px; max-height:100px; height:auto; }
 .logo-esperando{ min-height:44px; min-width:150px; background:none; border-color:transparent; }
 .logo-texto{ font-size:19px; font-weight:800; color:var(--brand-txt,var(--brand)); letter-spacing:-.01em; }
 h1{ font-size:23px; margin:18px 0 6px; letter-spacing:-.01em; }
@@ -266,7 +266,9 @@ textarea{ resize:vertical; min-height:110px; }
   var EMPRESA = null;
 
   // Llena la caja del logo: la imagen del broker, o su nombre escrito si
-  // todavía no subió ninguno.
+  // todavía no subió ninguno. Nunca el de otro broker. Ademas saca la clase de
+  // espera, que deja la caja transparente: sin eso el logo quedaba sin su
+  // pastilla blanca.
   function mostrarLogo(logo, nombre) {
     var caja = document.getElementById("cajaLogo");
     var img = document.getElementById("logoEmpresa");
@@ -283,14 +285,7 @@ textarea{ resize:vertical; min-height:110px; }
       EMPRESA = r.data[0];
       var marca = EMPRESA.marca || {};
       document.title = "Denunciar un siniestro · " + EMPRESA.nombre;
-      var img = document.getElementById("logoEmpresa");
-      if (img && marca.logo) { img.alt = EMPRESA.nombre; img.src = marca.logo; }
-      else if (img) {
-        // Sin logo cargado NO se muestra el de otro broker: va el nombre escrito.
-        var caja = img.parentNode;
-        caja.textContent = EMPRESA.nombre;
-        caja.className = "logo logo-texto";
-      }
+      mostrarLogo(marca.logo, EMPRESA.nombre);
       var pie = document.getElementById("pieEmpresa");
       if (pie) pie.textContent = EMPRESA.nombre.toUpperCase();
       if (window.aplicarMarca) window.aplicarMarca(marca);

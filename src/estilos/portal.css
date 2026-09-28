@@ -28,7 +28,8 @@ button{ font-family:inherit; cursor:pointer; }
 .login-card::before{ content:""; position:absolute; top:0; left:0; right:0; height:4px; background:var(--brand); }
 .login-logo{ background:var(--surface); border-radius:12px; padding:14px 16px; box-shadow:var(--shadow-sm);
   border:1px solid var(--line); margin-bottom:4px; }
-.login-logo img{ display:block; width:100%; height:auto; }
+/* Ver el comentario de .sb-logo img: el alto manda, el ancho acompana. */
+.login-logo img{ display:block; max-width:100%; max-height:120px; height:auto; margin:0 auto; }
 .login-title{ margin:4px 0 0; font-size:19px; font-weight:800; letter-spacing:-.01em; }
 .login-sub{ margin:0 0 6px; font-size:13px; color:var(--muted); }
 .login-field{ display:flex; flex-direction:column; gap:6px; }
@@ -119,7 +120,10 @@ html[data-sidebar="claro"] .sb-brand{ border-bottom-color:var(--line); }
 /* Este blanco es a proposito: el logo del broker se apoya sobre una pastilla
    clara para que un logo oscuro se lea igual con el menu oscuro. */
 .sb-logo{ background:#fff; border-radius:10px; padding:11px 13px; box-shadow:var(--shadow-sm); }
-.sb-logo img{ display:block; width:100%; height:auto; }
+/* El alto va limitado porque no todo logo es ancho: uno cuadrado, con width:100%,
+   ocupaba medio menu. El tope esta donde un logo apaisado ya llegaba solo: a ese
+   no lo toca, y al cuadrado lo frena. */
+.sb-logo img{ display:block; max-width:100%; max-height:84px; height:auto; margin:0 auto; }
 /* La misma caja, cuando el broker todavía no subió su logo y va su nombre. */
 .sb-logo-texto{ display:grid; place-items:center; min-height:42px; text-align:center;
   font-size:15px; font-weight:800; line-height:1.25; color:var(--brand-txt); }
