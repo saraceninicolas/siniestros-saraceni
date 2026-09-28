@@ -142,6 +142,19 @@ function navDeLaEmpresa(rol, modulos) {
     (!g.modulo || !modulos || modulos.includes(g.modulo)));
 }
 
+// El logo de la empresa que entró. Si todavía no subió ninguno va su nombre
+// escrito, NUNCA el archivo del repositorio: ese es el logo del broker de casa,
+// y mostrárselo a otro es peor que no mostrar nada. El archivo solo vuelve a
+// aparecer cuando no hay base configurada, que es el modo de demostración.
+function MarcaLogo({ clase, claseTexto }) {
+  const m = window.MARCA || null;
+  if (m && m.logo) return <div className={clase}><img src={m.logo} alt={m.nombre || "Portal"} /></div>;
+  if (m && m.nombre) return <div className={clase + " " + claseTexto}>{m.nombre}</div>;
+  // Base de una sola empresa (o demostración sin base): el archivo es su logo.
+  if (!window.MULTIEMPRESA) return <div className={clase}><img src="/assets/saraceni-logo.jpg" alt="Portal" /></div>;
+  return <div className={clase + " " + claseTexto} aria-hidden="true" />;
+}
+
 // ---------- sidebar ----------
 function Sidebar({ active, onNav, station, counts, open: drawerOpen, rol, modulos }) {
   const nav = navDeLaEmpresa(rol, modulos);
@@ -151,13 +164,7 @@ function Sidebar({ active, onNav, station, counts, open: drawerOpen, rol, modulo
   return (
     <aside className={"sb" + (drawerOpen ? " is-open" : "")}>
       <div className="sb-brand">
-        {/* El logo sale de la marca de la empresa; el de Saraceni es el que se
-            usa mientras no haya ninguno cargado. Así cada broker sube el suyo
-            desde Configuración y no hay que tocar el código por cliente. */}
-        <div className="sb-logo">
-          <img src={(window.MARCA && window.MARCA.logo) || "/assets/saraceni-logo.jpg"}
-            alt={(window.MARCA && window.MARCA.nombre) || "Saraceni Seguros"} />
-        </div>
+        <MarcaLogo clase="sb-logo" claseTexto="sb-logo-texto" />
         <div className="sb-sub"><span className="sb-sub-dot" />Portal de gestiones</div>
       </div>
       <nav className="sb-nav">
@@ -564,7 +571,7 @@ function ModuleScreen({ info }) {
 }
 
 Object.assign(window, {
-  Ico, Icons, Badge, UrgBadge, RamoTag, Sidebar, Topbar, KpiCard, Kpis, sinKey, Toolbar, ClaimsTable, Agenda,
+  Ico, Icons, Badge, UrgBadge, RamoTag, MarcaLogo, Sidebar, Topbar, KpiCard, Kpis, sinKey, Toolbar, ClaimsTable, Agenda,
   ModuleScreen, PORTAL_NAV, NAV_LOOKUP, navDeLaEmpresa, SINIESTROS_KEYS, FACTURACION_KEYS, RENOVACION_KEYS, COMERCIAL_KEYS,
   PENDIENTES_KEYS, OBJETIVOS_KEYS, ADMIN_KEYS, ORG_ONLY_KEYS,
 });

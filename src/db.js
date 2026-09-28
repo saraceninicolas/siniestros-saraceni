@@ -794,6 +794,11 @@ async function dbMaxN() {
   async function orgMia() {
     const c = client(); if (!c) return null;
     const { data, error } = await c.from("organizaciones").select("*").limit(1).maybeSingle();
+    // Si la consulta anduvo, esta base sabe de empresas (aunque no devuelva
+    // ninguna). La diferencia importa para el logo: en una base de una sola
+    // empresa, el archivo del repositorio ES su logo; en una multiempresa,
+    // mostrarlo sería mostrarle a un broker el logo de otro.
+    window.MULTIEMPRESA = !error;
     if (error) return null;
     _orgCache = data ? { id: data.id, nombre: data.nombre || "", slug: data.slug || "",
                          estado: data.estado || "", marca: data.marca || {} } : null;
@@ -815,7 +820,12 @@ async function dbMaxN() {
   async function orgPublica(slug) {
     const c = client(); if (!c) return null;
     const { data, error } = await c.rpc("org_publica", { p_slug: slug || null });
+    // Un error acá suele ser "esa función no existe": base sin multiempresa.
+    // Es la única pista que tiene el login, que corre antes de cualquier otra
+    // consulta, para saber si el logo del repositorio le corresponde.
+    if (error) window.MULTIEMPRESA = false;
     if (error || !data || !data.length) return null;
+    window.MULTIEMPRESA = true;
     const o = data[0];
     return { id: o.id, nombre: o.nombre || "", slug: o.slug || "", marca: o.marca || {} };
   }

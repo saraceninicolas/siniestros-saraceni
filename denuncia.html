@@ -19,6 +19,7 @@ body{ margin:0; font-family:"Public Sans",system-ui,sans-serif; font-size:17px; 
 .head{ padding:26px 28px 6px; text-align:center; }
 .logo{ display:inline-block; background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 18px; }
 .logo img{ display:block; max-width:220px; height:auto; }
+.logo-esperando{ min-height:44px; min-width:150px; background:none; border-color:transparent; }
 .logo-texto{ font-size:19px; font-weight:800; color:var(--brand-txt,var(--brand)); letter-spacing:-.01em; }
 h1{ font-size:23px; margin:18px 0 6px; letter-spacing:-.01em; }
 .sub{ color:var(--ink-2); font-size:14.5px; margin:0 auto 8px; max-width:460px; line-height:1.5; }
@@ -125,7 +126,7 @@ textarea{ resize:vertical; min-height:110px; }
 <div class="wrap">
   <div class="card">
     <div class="head">
-      <span class="logo"><img id="logoEmpresa" src="/assets/saraceni-logo.jpg" alt="" /></span>
+      <span class="logo logo-esperando" id="cajaLogo"><img id="logoEmpresa" alt="" /></span>
       <h1>Denunciar un siniestro</h1>
       <p class="sub">Completá tus datos y adjuntá la documentación. Nuestro equipo recibe la solicitud al instante y gestiona la denuncia ante la compañía.</p>
     </div>
@@ -263,10 +264,22 @@ textarea{ resize:vertical; min-height:110px; }
   // original. Se resuelve contra la base y no en el HTML para que el mismo
   // archivo sirva a todos los brokers: uno solo que mantener.
   var EMPRESA = null;
+
+  // Llena la caja del logo: la imagen del broker, o su nombre escrito si
+  // todavía no subió ninguno.
+  function mostrarLogo(logo, nombre) {
+    var caja = document.getElementById("cajaLogo");
+    var img = document.getElementById("logoEmpresa");
+    if (!caja) return;
+    caja.className = "logo";
+    if (logo && img) { img.alt = nombre || ""; img.src = logo; return; }
+    caja.textContent = nombre || "";
+    caja.className = "logo logo-texto";
+  }
   var listaEmpresa = (async function () {
     try {
       var r = await sb.rpc("org_publica", { p_slug: window.ORG_SLUG || null });
-      if (r.error || !r.data || !r.data.length) return;
+      if (r.error || !r.data || !r.data.length) { mostrarLogo("/assets/saraceni-logo.jpg", ""); return; }
       EMPRESA = r.data[0];
       var marca = EMPRESA.marca || {};
       document.title = "Denunciar un siniestro · " + EMPRESA.nombre;
@@ -281,7 +294,7 @@ textarea{ resize:vertical; min-height:110px; }
       var pie = document.getElementById("pieEmpresa");
       if (pie) pie.textContent = EMPRESA.nombre.toUpperCase();
       if (window.aplicarMarca) window.aplicarMarca(marca);
-    } catch (e) { /* si falla, queda la marca de siempre: la denuncia importa más */ }
+    } catch (e) { mostrarLogo("/assets/saraceni-logo.jpg", ""); }
   })();
   var $ = function (id) { return document.getElementById(id); };
   function todayISO() {

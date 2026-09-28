@@ -40,7 +40,11 @@ button{ font-family:inherit; cursor:pointer; }
 .login-info{ font-size:12.5px; color:var(--ok); background:var(--ok-soft); border:1px solid var(--ok-line);
   border-radius:8px; padding:8px 11px; }
 .login-tabs{ display:flex; gap:0; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
-.login-logo-texto{ font-size:19px; font-weight:800; color:var(--brand-txt); letter-spacing:-.01em; }
+.login-logo-texto{ font-size:19px; font-weight:800; color:var(--brand-txt); letter-spacing:-.01em;
+  display:grid; place-items:center; min-height:34px; text-align:center; }
+/* Mientras no sabemos de quién es la pantalla, la caja guarda su lugar vacía
+   para que el formulario no salte cuando aparece el logo. */
+.login-logo-vacio{ min-height:34px; box-shadow:none; background:none; }
 .login-tab{ flex:1; padding:9px 10px; font-size:13px; font-weight:700; background:var(--surface); color:var(--muted); transition:.15s; }
 .login-tab.is-on{ background:var(--brand); color:var(--brand-ink); }
 .login-magic{ font-size:12.5px; color:var(--brand-txt); font-weight:600; text-decoration:underline;
@@ -116,6 +120,9 @@ html[data-sidebar="claro"] .sb-brand{ border-bottom-color:var(--line); }
    clara para que un logo oscuro se lea igual con el menu oscuro. */
 .sb-logo{ background:#fff; border-radius:10px; padding:11px 13px; box-shadow:var(--shadow-sm); }
 .sb-logo img{ display:block; width:100%; height:auto; }
+/* La misma caja, cuando el broker todavía no subió su logo y va su nombre. */
+.sb-logo-texto{ display:grid; place-items:center; min-height:42px; text-align:center;
+  font-size:15px; font-weight:800; line-height:1.25; color:var(--brand-txt); }
 .sb-sub{ display:flex; align-items:center; gap:7px; color:var(--sb-ink-dim); font-size:11px; font-weight:600;
   letter-spacing:.05em; text-transform:uppercase; margin-top:13px; padding-left:4px; }
 .sb-sub-dot{ width:6px; height:6px; border-radius:99px; background:var(--brand); }

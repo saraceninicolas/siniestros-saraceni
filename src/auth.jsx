@@ -7,12 +7,18 @@
 // dos que se ven antes de que el portal sepa quién entró.
 function useEmpresaPublica() {
   const [empresa, setEmpresa] = React.useState(null);
+  // `resuelto` no se lee: está para volver a dibujar cuando la consulta termina
+  // sin empresa. Ahí el logo pasa de "esperando" a lo que corresponda, que en
+  // una base sin multiempresa es el archivo del repositorio.
+  const [, setResuelto] = React.useState(false);
   React.useEffect(() => {
     if (!(window.DB && window.DB.configured() && window.DB.org && window.DB.org.publica)) return;
     let vivo = true;
     (async () => {
       const o = await window.DB.org.publica(window.ORG_SLUG);
-      if (!vivo || !o) return;
+      if (!vivo) return;
+      setResuelto(true);
+      if (!o) return;
       setEmpresa(o);
       window.aplicarMarca({ ...(o.marca || {}), nombre: o.nombre });
     })();
@@ -21,13 +27,18 @@ function useEmpresaPublica() {
   return empresa;
 }
 
-// El logo de la empresa, o su nombre escrito si todavía no subió ninguno. El
-// archivo del repositorio es el respaldo de la empresa de casa, no de todos:
-// mostrarle a un broker el logo de otro sería peor que no mostrar nada.
+// El logo de la empresa dueña de esta dirección, o su nombre escrito si todavía
+// no subió ninguno. Mientras no se resuelve no se muestra nada: un parpadeo con
+// el logo de otro broker es justo lo que no puede pasar. Sin base configurada
+// (modo demostración) vuelve el archivo del repositorio.
 function LoginMarca({ empresa }) {
-  const logo = empresa ? (empresa.marca || {}).logo : "/assets/saraceni-logo.jpg";
-  if (logo) return <div className="login-logo"><img src={logo} alt={empresa ? empresa.nombre : "Portal"} /></div>;
-  return <div className="login-logo login-logo-texto">{empresa.nombre}</div>;
+  // Mientras no se resuelve no se muestra nada, salvo que la base no tenga
+  // multiempresa: ahí la única empresa es la de casa y el archivo es su logo.
+  const unaSolaEmpresa = window.MULTIEMPRESA === false || !(window.DB && window.DB.configured());
+  const logo = empresa ? (empresa.marca || {}).logo : (unaSolaEmpresa ? "/assets/saraceni-logo.jpg" : "");
+  if (logo) return <div className="login-logo"><img src={logo} alt={(empresa && empresa.nombre) || "Portal"} /></div>;
+  if (empresa && empresa.nombre) return <div className="login-logo login-logo-texto">{empresa.nombre}</div>;
+  return <div className="login-logo login-logo-vacio" aria-hidden="true" />;
 }
 
 function LoginScreen({ onSignIn }) {
