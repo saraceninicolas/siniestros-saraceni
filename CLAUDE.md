@@ -172,6 +172,13 @@ Cosas que costaron y no hay que volver a aprender:
   se decide en un solo lugar (`org_defecto()`).
 - **Las unicidades globales pasan a ser por empresa**: el documento de un
   asegurado, los códigos STR-/PEN-/REN-/OBJ- y el CUIT de una compañía.
+- **Un formulario público solo va si el broker puede leer lo que entra.**
+  Aicardi compró solo Siniestros y su `/aicardi/cotizar-hogar` seguía abierto:
+  la cotización entraba y nadie de Aicardi podía leerla nunca, porque la policy
+  de select pide el módulo. `tiene_modulo()` mira la empresa **de quien
+  consulta**, y en una página pública no hay quién consulte; por eso la lógica
+  vive en `org_tiene_modulo(org, clave)` y `org_publica` devuelve los módulos
+  de cara al público (0017).
 
 Reglas desde ahora:
 

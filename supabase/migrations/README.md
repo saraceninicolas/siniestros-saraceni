@@ -42,8 +42,9 @@ Siempre **test primero**, se verifica, y recién después producción.
 | `20260925_0014_logo_de_la_empresa_de_casa.sql` | aplicada | pendiente |
 | `20260925_0015_org_publica_sin_slug.sql` | aplicada | pendiente |
 | `20260925_0016_default_de_carga_publica.sql` | aplicada | pendiente |
+| `20260928_0017_formularios_publicos_por_modulo.sql` | aplicada | pendiente |
 
-## El pase a producción de la 0009 a la 0016 (multiempresa)
+## El pase a producción de la 0009 a la 0017 (multiempresa)
 
 Van todas juntas, y **el orden importa**, porque en el medio hay un momento en
 que la base pide algo que el código viejo todavía no manda:
@@ -58,6 +59,10 @@ que la base pide algo que el código viejo todavía no manda:
    paso 3, el portal seguiría subiendo a la raíz y la base le rebotaría cada
    archivo adjunto.
 5. `0014`: le deja a la empresa de casa su logo de siempre.
+6. `0017` también al final, por lo mismo que la 0012: cierra los formularios
+   públicos de los brokers que no contrataron el módulo, y las páginas nuevas
+   son las que saben avisarlo. Aplicada antes de desplegar, un visitante vería
+   el error crudo de la policy en vez del aviso.
 
 Después de aplicar: correr `supabase/tests/aislamiento.sql` **en test** (no en
 producción: inserta para probar, y aunque hace rollback no vale el riesgo) y

@@ -162,7 +162,41 @@ describe("Multiempresa · lo poco que un visitante SÍ puede saber", () => {
     const filas = await r.json();
     expect(Array.isArray(filas)).toBe(true);
     expect(filas.length).toBe(1);
-    expect(Object.keys(filas[0]).sort()).toEqual(["id", "marca", "nombre", "slug"]);
+    // `modulos` son los de cara al publico (siniestros, comercial): la pagina
+    // los necesita para no ofrecer un formulario que el broker no puede leer.
+    expect(Object.keys(filas[0]).sort()).toEqual(["id", "marca", "modulos", "nombre", "slug"]);
+    expect(filas[0].modulos.every((m) => ["siniestros", "comercial"].includes(m))).toBe(true);
+  });
+
+  // Aicardi contrato solo Siniestros. Si su formulario de cotizacion siguiera
+  // abierto, juntaria consultas que nadie de Aicardi puede leer: la policy de
+  // lectura pide el modulo. Un pozo de consultas es peor que no tener link.
+  it("una empresa sin el modulo Comercial no figura como que lo tiene", async () => {
+    const r = await comoAnon("rpc/org_publica", {
+      method: "POST",
+      body: JSON.stringify({ p_slug: "aicardi" }),
+    });
+    const filas = await r.json();
+    expect(filas[0].modulos).toContain("siniestros");
+    expect(filas[0].modulos).not.toContain("comercial");
+  });
+
+  it("no puede dejarle una cotizacion de hogar a una empresa sin ese modulo", async () => {
+    const r0 = await comoAnon("rpc/org_publica", {
+      method: "POST",
+      body: JSON.stringify({ p_slug: "aicardi" }),
+    });
+    const org = (await r0.json())[0];
+    const r = await comoAnon("cotizaciones", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        ref: "TEST" + Date.now().toString().slice(-6),
+        nombre: "PRUEBA AUTOMATICA - borrable",
+        org_id: org.id,
+      }),
+    });
+    expect(r.status).toBeGreaterThanOrEqual(400);
   });
 
   it("un slug que no existe cae en la empresa de casa, no en el vacío", async () => {
