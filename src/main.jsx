@@ -56,6 +56,6 @@ import "./pendientes.jsx";
 import "./objetivos-datos.jsx";
 import "./objetivos-form.jsx";
 import "./objetivos.jsx";
-import "./inicio.jsx";
 import "./calendar.jsx";
+import "./inicio.jsx";   // usa el calculo de meses de calendar.jsx y los graficos de charts.jsx
 import "./app.jsx";

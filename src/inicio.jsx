@@ -123,12 +123,106 @@ function IniCliente({ c, abierto, onToggle, onOpenSiniestro, onNav }) {
   );
 }
 
-function InicioView({ siniestros, solicitudes, modulos, quien, onNav, onOpenSiniestro }) {
+// ---------- el mes, con todo lo que tiene fecha ----------
+// Reusa el calculo de semanas del calendario grande (calendar.jsx): la
+// matematica de los meses se escribe una vez. Lo que cambia es que este mira
+// TODO lo que vence —gestiones, pendientes y renovaciones— y no solo los
+// siniestros, porque esta pantalla es la del broker entero.
+const INI_MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio",
+  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const INI_DIAS = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"];
+const INI_TIPOS = {
+  siniestro:  { icon: "shield",  color: "var(--brand)" },
+  pendiente:  { icon: "flag",    color: "var(--warn-fuerte)" },
+  renovacion: { icon: "refresh", color: "var(--info-3)" },
+};
+
+function IniCalendario({ eventos, onAbrir }) {
+  const hoy = today0();
+  const hoyISO = calISO(hoy);
+  const [cursor, setCursor] = React.useState({ anio: hoy.getFullYear(), mes: hoy.getMonth() });
+  const [dia, setDia] = React.useState(hoyISO);
+
+  const porDia = React.useMemo(() => {
+    const m = {};
+    eventos.forEach((e) => { if (e.iso) (m[e.iso] = m[e.iso] || []).push(e); });
+    return m;
+  }, [eventos]);
+
+  const semanas = calSemanas(cursor.anio, cursor.mes);
+  const mover = (n) => {
+    const f = new Date(cursor.anio, cursor.mes + n, 1);
+    setCursor({ anio: f.getFullYear(), mes: f.getMonth() });
+  };
+  const delDia = porDia[dia] || [];
+
+  return (
+    <div className="ini-cal">
+      <div className="ini-cal-barra">
+        <span className="ini-cal-mes">{INI_MESES[cursor.mes]} {cursor.anio}</span>
+        <div className="ini-cal-nav">
+          <button className="row-open" onClick={() => mover(-1)} aria-label="Mes anterior"><Ico name="chevL" size={15} /></button>
+          <button className="btn-ghost sm" onClick={() => { setCursor({ anio: hoy.getFullYear(), mes: hoy.getMonth() }); setDia(hoyISO); }}>Hoy</button>
+          <button className="row-open" onClick={() => mover(1)} aria-label="Mes siguiente"><Ico name="chevR" size={15} /></button>
+        </div>
+      </div>
+      <div className="ini-cal-grilla">
+        {INI_DIAS.map((d) => <div className="ini-cal-dia-lbl" key={d}>{d}</div>)}
+        {semanas.flat().map((c) => {
+          const evs = porDia[c.iso] || [];
+          return (
+            <button key={c.iso}
+              className={"ini-cal-celda" + (c.otroMes ? " es-otro" : "") + (c.iso === hoyISO ? " es-hoy" : "") + (c.iso === dia ? " es-sel" : "")}
+              onClick={() => {
+                setDia(c.iso);
+                if (c.otroMes) { const f = parseDate(c.iso); setCursor({ anio: f.getFullYear(), mes: f.getMonth() }); }
+              }}>
+              <span className="ini-cal-num">{Number(c.iso.slice(8, 10))}</span>
+              {evs.length > 0 && (
+                <span className="ini-cal-puntos">
+                  {evs.slice(0, 3).map((e, i) => (
+                    <span key={i} className="ini-cal-punto" style={{ background: (INI_TIPOS[e.tipo] || {}).color }} />
+                  ))}
+                  {evs.length > 3 && <span className="ini-cal-mas">+{evs.length - 3}</span>}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <div className="ini-cal-panel">
+        <div className="ini-cal-panel-tit">{calDiaLargo(dia)}</div>
+        {delDia.length === 0
+          ? <div className="ini-vacio-chico">Sin vencimientos ese día.</div>
+          : delDia.map((e, i) => (
+              <button key={i} className="ini-cal-ev" onClick={() => e.onClick && e.onClick()}>
+                <span className="ini-cal-ev-ico" style={{ color: (INI_TIPOS[e.tipo] || {}).color }}>
+                  <Ico name={(INI_TIPOS[e.tipo] || {}).icon || "agenda"} size={14} />
+                </span>
+                <span className="ini-cal-ev-txt">
+                  <span className="ini-cal-ev-tit">{e.titulo}</span>
+                  <span className="ini-cal-ev-sub">{e.sub}</span>
+                </span>
+                {e.gcal && (
+                  <a className="ini-cal-ev-gcal" href={e.gcal} target="_blank" rel="noopener noreferrer"
+                    onClick={(ev) => ev.stopPropagation()} title="Agendar en Google Calendar">
+                    <Ico name="agenda" size={13} />
+                  </a>
+                )}
+              </button>
+            ))}
+      </div>
+    </div>
+  );
+}
+
+function InicioView({ siniestros, solicitudes, modulos, quien, usuarios, onNav, onOpenSiniestro }) {
   const tieneModulo = React.useCallback((m) => !modulos || modulos.includes(m), [modulos]);
   const [renov, setRenov] = React.useState([]);
   const [pend, setPend] = React.useState([]);
   const [cots, setCots] = React.useState([]);
   const [fichas, setFichas] = React.useState([]);
+  const [acciones, setAcciones] = React.useState([]);
   const [q, setQ] = React.useState("");
   const [cliAbierto, setCliAbierto] = React.useState(null);
 
@@ -150,6 +244,8 @@ function InicioView({ siniestros, solicitudes, modulos, quien, onNav, onOpenSini
     pedir(tieneModulo("pendientes"), DB.pend.list, setPend);
     pedir(tieneModulo("comercial"), DB.cot.list, setCots);
     pedir(tieneModulo("siniestros"), DB.aseg.list, setFichas);
+    // Lo que hizo el equipo. La policy ya decide qué puede ver cada uno.
+    pedir(true, () => (DB.acc ? DB.acc.list() : []), setAcciones);
     return () => { vivo = false; };
   }, [tieneModulo]);
 
@@ -262,6 +358,85 @@ function InicioView({ siniestros, solicitudes, modulos, quien, onNav, onOpenSini
     return clientes.filter((c) => iniNorm(c.nombre).includes(t) || iniNorm(c.documento).includes(t)).slice(0, 30);
   }, [clientes, q]);
 
+  // ---- lo que tiene fecha, para el calendario ----
+  const eventos = React.useMemo(() => {
+    const out = [];
+    if (tieneModulo("siniestros")) abiertos.forEach((sn) => {
+      if (!sn.fechaLimite) return;
+      out.push({ iso: sn.fechaLimite, tipo: "siniestro", titulo: sn.cliente,
+        sub: `${sn.id} · ${sn.gestionAR || "Gestión"}`,
+        gcal: window.gcalUrl ? window.gcalUrl(sn) : null,
+        onClick: () => onOpenSiniestro && onOpenSiniestro(sn.id) });
+    });
+    if (tieneModulo("pendientes")) pendVivos.forEach((pd) => {
+      if (!pd.fechaLimite) return;
+      out.push({ iso: pd.fechaLimite, tipo: "pendiente", titulo: pd.titulo,
+        sub: (pd.cliente ? pd.cliente + " · " : "") + (pd.asignado || "sin asignar"),
+        onClick: () => onNav("pend-agenda") });
+    });
+    if (tieneModulo("renovaciones")) renovVivas.forEach((rn) => {
+      out.push({ iso: rn.finVig, tipo: "renovacion", titulo: rn.cliente,
+        sub: `${rn.aseguradora || "—"} · ${rn.seccion || "póliza"}`,
+        onClick: () => onNav("renov-proximas") });
+    });
+    return out;
+  }, [abiertos, pendVivos, renovVivas, tieneModulo, onNav, onOpenSiniestro]);
+
+  // ---- quién tiene qué encima ----
+  // Los tres módulos guardan el responsable distinto (un id, un nombre, un
+  // mail), así que se normaliza acá y no en cada tarjeta.
+  const nombreDe = React.useCallback((u) => {
+    if (!u) return null;
+    const x = (usuarios || []).find((y) => y.id === u || y.email === u);
+    return x ? (x.nombre || x.email) : String(u);
+  }, [usuarios]);
+
+  const equipo = React.useMemo(() => {
+    const m = {};
+    const sumar = (quienEs, cuanto) => {
+      const k = quienEs || "Sin asignar";
+      m[k] = (m[k] || 0) + cuanto;
+    };
+    abiertos.forEach((sn) => sumar(nombreDe(sn.asignadoA), 1));
+    pendVivos.forEach((pd) => sumar(nombreDe(pd.asignadoA) || pd.asignado, 1));
+    cots.filter((c) => ["nueva", "cotizada"].includes(c.estado))
+        .forEach((c) => sumar(nombreDe(c.responsable), 1));
+    return Object.entries(m)
+      .map(([label, valor]) => ({ label, valor }))
+      .sort((a, b) => b.valor - a.valor);
+  }, [abiertos, pendVivos, cots, nombreDe]);
+
+  // ---- de dónde viene el trabajo ----
+  // Por ramo y no por compañía ni por responsable: es lo único que significa lo
+  // mismo en un siniestro y en una cotización, así que la torta suma peras con
+  // peras. Por responsable ya está el bloque de al lado.
+  const porRamo = React.useMemo(() => {
+    const m = {};
+    if (tieneModulo("siniestros")) abiertos.forEach((sn) => {
+      const r = sn.ramo || "OTRO"; m[r] = (m[r] || 0) + 1;
+    });
+    if (tieneModulo("comercial")) cots.filter((c) => ["nueva", "cotizada"].includes(c.estado))
+      .forEach((c) => { const r = c.ramo || "OTRO"; m[r] = (m[r] || 0) + 1; });
+    const paleta = (window.CH_COLOR || ["var(--brand)"]);
+    return Object.entries(m)
+      .sort((a, b) => b[1] - a[1])
+      .map(([r, v], i) => ({ nombre: RAMO_LABEL[r] || r, valor: v, color: paleta[i % paleta.length] }));
+  }, [abiertos, cots, tieneModulo]);
+
+  // ---- lo último que hizo el equipo ----
+  const actividad = React.useMemo(() => {
+    const nombreCot = {};
+    cots.forEach((c) => { nombreCot[c._dbId] = c.nombre; });
+    return (acciones || []).slice(0, 8).map((a) => ({
+      id: a.id,
+      quien: nombreDe(a.usuario) || a.usuario,
+      que: (window.accTipo ? window.accTipo(a.tipo).label : a.tipo),
+      donde: a.cotizacionId ? (nombreCot[a.cotizacionId] || "una cotización") : "un objetivo",
+      nota: a.nota, cuando: fmtTimeAgo(a.fecha),
+      onClick: () => onNav(a.cotizacionId ? "com-seguimiento" : "obj-metas"),
+    }));
+  }, [acciones, cots, nombreDe, onNav]);
+
   const hoy = new Date();
   // Del mail sale el nombre; la mayuscula se la ponemos acá y no en el CSS.
   const nombreCorto = String(quien || "").split("@")[0].replace(/^./, (x) => x.toUpperCase());
@@ -291,6 +466,14 @@ function InicioView({ siniestros, solicitudes, modulos, quien, onNav, onOpenSini
           label="Pendientes vencidos" tono="warn" onClick={() => onNav("pend-agenda")} />}
         {tieneModulo("comercial") && <IniKpi icono="home" valor={cotNuevas.length} label="Cotizaciones nuevas" onClick={() => onNav("com-cotizaciones")} />}
       </div>
+
+      <section className="ini-caja">
+        <div className="ini-caja-head">
+          <h2>El mes</h2>
+          <span className="ini-caja-sub">gestiones, pendientes y renovaciones, cada uno en su fecha</span>
+        </div>
+        <IniCalendario eventos={eventos} />
+      </section>
 
       <div className="ini-cols">
         <section className="ini-caja">
@@ -326,6 +509,58 @@ function InicioView({ siniestros, solicitudes, modulos, quien, onNav, onOpenSini
               </div>}
         </section>
       </div>
+
+      <div className="ini-cols">
+        <section className="ini-caja">
+          <div className="ini-caja-head">
+            <h2>Quién tiene qué</h2>
+            <span className="ini-caja-sub">siniestros abiertos, pendientes y cotizaciones en gestión</span>
+          </div>
+          <div className="ini-caja-cuerpo">
+            <ChBarrasH rows={equipo} vacio="Todavía no hay nada asignado." />
+          </div>
+        </section>
+
+        <section className="ini-caja">
+          <div className="ini-caja-head">
+            <h2>De dónde viene el trabajo</h2>
+            <span className="ini-caja-sub">por ramo, sumando siniestros y cotizaciones</span>
+          </div>
+          <div className="ini-caja-cuerpo ini-dona">
+            {porRamo.length === 0
+              ? <div className="ini-vacio-chico">Sin datos todavía.</div>
+              : <>
+                  <ChDona items={porRamo} centro={<>
+                    <tspan className="ch-dona-num" x="50%" dy="-2">{porRamo.reduce((a, r) => a + r.valor, 0)}</tspan>
+                    <tspan className="ch-dona-lbl" x="50%" dy="16">en curso</tspan>
+                  </>} />
+                  <ChLeyenda series={porRamo.map((r) => ({ nombre: r.nombre + " · " + r.valor, color: r.color }))} />
+                </>}
+          </div>
+        </section>
+      </div>
+
+      <section className="ini-caja">
+        <div className="ini-caja-head">
+          <h2>Lo último que hizo el equipo</h2>
+          <span className="ini-caja-sub">llamados, cotizaciones, cierres y avances, con nombre y hora</span>
+        </div>
+        {actividad.length === 0
+          ? <div className="ini-vacio"><Ico name="agenda" size={22} /><span>Todavía no hay movimientos anotados.</span></div>
+          : <div className="ini-lista">
+              {actividad.map((a) => (
+                <button key={a.id} className="ini-tarea" onClick={a.onClick}>
+                  <span className="ini-tarea-dot" style={{ background: "var(--brand)" }} />
+                  <span className="ini-tarea-ico"><Ico name="check" size={15} /></span>
+                  <span className="ini-tarea-txt">
+                    <span className="ini-tarea-tit">{a.quien} · {a.que} en {a.donde}</span>
+                    <span className="ini-tarea-sub">{a.nota || "sin nota"}</span>
+                  </span>
+                  <span className="ini-tarea-cuando">{a.cuando}</span>
+                </button>
+              ))}
+            </div>}
+      </section>
 
       <section className="ini-caja">
         <div className="ini-caja-head">

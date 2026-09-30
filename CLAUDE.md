@@ -74,7 +74,7 @@ Mientras dure el paso 1 siguen valiendo las reglas viejas:
 | `src/objetivos-form.jsx` | Objetivos: asistente de 5 pasos para crear o editar |
 | `src/acciones.jsx` | **Quién hizo qué**: los tipos de movimiento y la línea de tiempo. La usan Comercial y Objetivos, por eso no vive en ninguno de los dos |
 | `src/comercial-seguimiento.jsx` | El pipeline comercial: qué se cotizó, por cuánto, qué se cerró y qué se perdió, con el historial firmado de cada gestión |
-| `src/inicio.jsx` | **La pantalla principal.** Junta lo vencido y por vencer de todas las carpetas en una lista, y busca clientes con lo que ya hay cargado (fichas + siniestros + renovaciones). Se esconde sola lo que la empresa no contrató |
+| `src/inicio.jsx` | **La pantalla principal.** El CRM: lo vencido y por vencer de todas las carpetas, el calendario del mes con gestiones/pendientes/renovaciones, quién tiene qué encima, el trabajo por ramo, lo último que hizo el equipo y el buscador de clientes. Se esconde sola lo que la empresa no contrató |
 | `src/app.jsx` | Orquestador: sesión, perfil/rol, ruteo por `active`, estado global |
 | `src/auth.jsx` | Login, registro y pantalla de "cuenta pendiente" |
 | `src/asegurados.jsx` | Buscador de asegurado con autocompletado por documento o nombre |

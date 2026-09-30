@@ -565,7 +565,7 @@ function App() {
         {!isSiniestros ? (
           <div className="content">
             {active === "inicio"
-              ? <InicioView siniestros={siniestros} solicitudes={solicitudes} modulos={modulos}
+              ? <InicioView siniestros={siniestros} solicitudes={solicitudes} modulos={modulos} usuarios={usuariosActivos}
                   quien={quien} onNav={(k) => { setActive(k); setDetailId(null); }}
                   onOpenSiniestro={(id) => { setActive("dashboard"); setDetailId(id); }} />
               : active === "ajustes" && rol === "organizador"
