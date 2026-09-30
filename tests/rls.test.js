@@ -221,6 +221,23 @@ describe("Multiempresa · lo poco que un visitante SÍ puede saber", () => {
     expect(r.status).toBeGreaterThanOrEqual(400);
   });
 
+  // Con quien trabaja un broker no es asunto de un visitante, y ademas deja
+  // ver el tamano de su cartera.
+  it("no puede leer las companias de ningun broker", async () => {
+    const r = await comoAnon("companias?select=nombre&limit=5");
+    const filas = r.ok ? await r.json() : [];
+    expect(filas).toHaveLength(0);
+  });
+
+  it("no puede agregarle una compania a un broker", async () => {
+    const r = await comoAnon("companias", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ clave: "INTRUSA", nombre: "Intrusa" }),
+    });
+    expect(r.status).toBeGreaterThanOrEqual(400);
+  });
+
   it("no puede escribirle a la tabla de empresas", async () => {
     const r = await comoAnon("organizaciones", {
       method: "POST",

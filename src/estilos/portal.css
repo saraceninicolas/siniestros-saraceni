@@ -1465,3 +1465,23 @@ button.adj-card:focus-visible{ outline:2px solid var(--brand); outline-offset:3p
   .ini-cli-body{ padding-left:16px; }
   .ini-cli-chips{ display:none; }
 }
+
+/* ---- Ajustes: las compañías con las que trabaja el broker ---- */
+.cfg-grid-ancha{ grid-template-columns:1fr; margin-top:16px; }
+.cfg-cias-alta{ display:flex; gap:8px; margin-bottom:12px; }
+.cfg-cias-alta .input{ flex:1; }
+.cfg-cias-lista{ display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:6px; }
+.cfg-cia{ display:flex; align-items:center; gap:8px; padding:7px 9px;
+  border:1px solid var(--line); border-radius:9px; background:var(--surface); }
+.cfg-cia.is-off{ background:var(--surface-2); opacity:.75; }
+.cfg-cia-nom{ flex:1; min-width:0; text-align:left; background:none; border:none; padding:0;
+  font-size:13.5px; font-weight:600; color:var(--ink); cursor:pointer;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cfg-cia-nom:hover{ color:var(--brand-txt); text-decoration:underline; }
+.cfg-cia .input{ flex:1; min-width:0; padding:4px 7px; font-size:13.5px; }
+.cfg-cia-clave{ font-size:10.5px; color:var(--muted); background:var(--line-2);
+  padding:2px 6px; border-radius:5px; white-space:nowrap; }
+.cfg-cias-sacadas{ margin-top:12px; display:flex; flex-direction:column; gap:6px; }
+.cfg-cias-toggle{ align-self:flex-start; background:none; border:none; padding:2px 0; cursor:pointer;
+  display:flex; align-items:center; gap:5px; font-size:12.5px; font-weight:600; color:var(--ink-2); }
+.cfg-cias-toggle:hover{ color:var(--brand-txt); }

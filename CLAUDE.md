@@ -77,7 +77,7 @@ Mientras dure el paso 1 siguen valiendo las reglas viejas:
 | `src/auth.jsx` | Login, registro y pantalla de "cuenta pendiente" |
 | `src/asegurados.jsx` | Buscador de asegurado con autocompletado por documento o nombre |
 | `src/duplicados.jsx` | Revisión y unificación de asegurados duplicados (solo organizador) |
-| `src/configuracion.jsx` | Ajustes: todos los colores de cada broker (marca, menú, pantalla, estados) y su logo |
+| `src/configuracion.jsx` | Ajustes: todos los colores de cada broker (marca, menú, pantalla, estados), su logo y **las compañías con las que trabaja** |
 | `src/siniestralidad.jsx` | Siniestralidad por asegurado: ranking, reincidentes y la ficha de cada uno (donde se le carga el DNI si no lo tiene) |
 | `src/adjuntos.jsx` | Grilla de adjuntos, visor de fotos y descarga en zip |
 | `src/modals.jsx` / `src/detail.jsx` | Alta/edición y ficha completa de siniestro (+ PDF) |
@@ -173,6 +173,12 @@ Cosas que costaron y no hay que volver a aprender:
   se decide en un solo lugar (`org_defecto()`).
 - **Las unicidades globales pasan a ser por empresa**: el documento de un
   asegurado, los códigos STR-/PEN-/REN-/OBJ- y el CUIT de una compañía.
+- **Lo que parece una constante del negocio puede ser de un solo broker.** La
+  lista de compañías vivía en `data.jsx`: eran las siete de Saraceni, y
+  cualquier otro broker veía compañías ajenas al cargar un siniestro. Ahora es
+  la tabla `companias`, una por empresa, editable desde Ajustes (0018). Antes
+  de clavar una lista en el código, preguntarse si es del rubro o de **este**
+  broker. Siguen clavados a propósito ramos, hechos y coberturas: son del rubro.
 - **Un formulario público solo va si el broker puede leer lo que entra.**
   Aicardi compró solo Siniestros y su `/aicardi/cotizar-hogar` seguía abierto:
   la cotización entraba y nadie de Aicardi podía leerla nunca, porque la policy

@@ -31,6 +31,9 @@ function App() {
   // Los módulos que contrató la empresa. null = todavía no sabemos (o la base
   // no tiene multiempresa): el menú se muestra entero.
   const [modulos, setModulos] = React.useState(null);
+  // Las compañías con las que trabaja esta empresa. Vacío = no hay lista
+  // propia (base sin la 0018) y se usa la de siempre.
+  const [cias, setCias] = React.useState([]);
   const [navOpen, setNavOpen] = React.useState(false);
   const [toast, setToast] = React.useState(null);
   const toastTimer = React.useRef(null);
@@ -290,6 +293,14 @@ function App() {
       if (vivo && o) window.aplicarMarca({ ...(o.marca || {}), nombre: o.nombre });
       const m = window.DB.org.modulos ? await window.DB.org.modulos() : null;
       if (vivo) setModulos(m);
+      // El nombre de cada compañía lo leen 36 lugares desde window (ver
+      // ciaLabel en data.jsx), así que se deja ahí además de en el estado.
+      const cs = window.DB.cias ? await window.DB.cias.list() : [];
+      if (!vivo) return;
+      const nombres = {};
+      cs.forEach((c) => { nombres[c.clave] = c.nombre; });
+      window.CIA_NOMBRES = nombres;
+      setCias(cs);
     })();
     return () => { vivo = false; };
   }, [usingDb, session]);
@@ -610,7 +621,7 @@ function App() {
                 count={rows.length}
                 estadoFilter={estadoFilter} onEstado={cambiarEstado}
                 ramoFilter={ramoFilter} onRamo={setRamoFilter}
-                ciaFilter={ciaFilter} onCia={setCiaFilter}
+                ciaFilter={ciaFilter} onCia={setCiaFilter} cias={cias}
                 selected={selected}
                 onEdit={() => selected && openEdit(selected)}
                 onDelete={() => selected && askDelete(selected)} />
@@ -621,8 +632,8 @@ function App() {
         )}
       </main>
 
-      {modal?.type === "new" && <ClaimFormModal mode="new" initial={modal.prefill} station={quien} usuarios={usuariosActivos} onClose={() => setModal(null)} onSubmit={handleCreate} />}
-      {modal?.type === "edit" && <ClaimFormModal mode="edit" initial={modal.item} station={quien} usuarios={usuariosActivos} onClose={() => setModal(null)} onSubmit={handleUpdate} />}
+      {modal?.type === "new" && <ClaimFormModal mode="new" initial={modal.prefill} station={quien} usuarios={usuariosActivos} cias={cias} onClose={() => setModal(null)} onSubmit={handleCreate} />}
+      {modal?.type === "edit" && <ClaimFormModal mode="edit" initial={modal.item} station={quien} usuarios={usuariosActivos} cias={cias} onClose={() => setModal(null)} onSubmit={handleUpdate} />}
       {modal?.type === "delete" && <ConfirmDelete item={modal.item} station={quien} onClose={() => setModal(null)} onConfirm={handleDelete} />}
       {modal?.type === "calendario" && (
         <CalendarioMes data={activos} onClose={() => setModal(null)} onGcal={agendarGcal}

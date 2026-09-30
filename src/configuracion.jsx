@@ -79,6 +79,127 @@ function CfgColor({ label, pista, valor, defecto, onCambio, onAuto }) {
   );
 }
 
+// Con qué compañías trabaja el broker. Antes era una constante del código con
+// las siete de Saraceni, así que cualquier otro veía compañías ajenas al cargar
+// un siniestro y no había forma de arreglarlo sin tocar el código.
+//
+// Guarda en el momento, sin botón: son filas sueltas, no un formulario. Y no
+// borra de verdad al sacar una: `siniestros.cia` es texto libre, hay
+// siniestros viejos que la nombran, y esconderla alcanza para que no vuelva a
+// elegirse. Borrar del todo queda en la lista de las que no usa.
+function CfgCompanias({ onAviso }) {
+  const [lista, setLista] = React.useState(null);
+  const [nueva, setNueva] = React.useState("");
+  const [editando, setEditando] = React.useState(null);
+  const [texto, setTexto] = React.useState("");
+  const [verSacadas, setVerSacadas] = React.useState(false);
+
+  const cargar = React.useCallback(async () => {
+    try { setLista(await window.DB.cias.todas()); }
+    catch (e) { console.error(e); setLista([]); }
+  }, []);
+  React.useEffect(() => { cargar(); }, [cargar]);
+
+  // La clave es lo que queda escrito en cada siniestro: sin tildes, en
+  // mayúsculas y sin símbolos, para que no haya dos formas de escribir la misma.
+  const claveDe = (nombre) => String(nombre || "").normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toUpperCase().replace(/[^A-Z0-9 ]/g, "").trim().slice(0, 40);
+
+  const fallar = (e) => {
+    console.error(e);
+    const dup = String(e && e.message || "").includes("duplicate") || (e && e.code) === "23505";
+    onAviso(dup ? "Esa compañía ya está en la lista" : "No se pudo guardar el cambio", true);
+  };
+
+  const agregar = async () => {
+    const nombre = nueva.trim();
+    const clave = claveDe(nombre);
+    if (!clave) return;
+    try {
+      const orden = (lista || []).reduce((m, c) => Math.max(m, c.orden || 0), 0) + 10;
+      await window.DB.cias.create({ clave, nombre, orden });
+      setNueva(""); await cargar(); onAviso(nombre + " agregada");
+    } catch (e) { fallar(e); }
+  };
+
+  const renombrar = async (c) => {
+    const nombre = texto.trim();
+    setEditando(null);
+    if (!nombre || nombre === c.nombre) return;
+    // Solo cambia cómo se muestra: la clave se queda quieta, si no los
+    // siniestros ya cargados dejarían de reconocerla.
+    try { await window.DB.cias.update({ id: c.id, nombre }); await cargar(); }
+    catch (e) { fallar(e); }
+  };
+
+  const usar = async (c, activa) => {
+    try { await window.DB.cias.update({ id: c.id, activa }); await cargar(); }
+    catch (e) { fallar(e); }
+  };
+
+  const borrar = async (c) => {
+    try { await window.DB.cias.remove(c.id); await cargar(); onAviso(c.nombre + " borrada"); }
+    catch (e) { fallar(e); }
+  };
+
+  if (lista === null) return <div className="ch-vacio">Cargando compañías…</div>;
+
+  const activas = lista.filter((c) => c.activa);
+  const sacadas = lista.filter((c) => !c.activa);
+
+  return (
+    <div className="cfg-cias">
+      <div className="cfg-cias-alta">
+        <input className="input" value={nueva} placeholder="Agregar una compañía…"
+          onChange={(e) => setNueva(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") agregar(); }} />
+        <button className="btn-primary" onClick={agregar} disabled={!nueva.trim()}>
+          <Ico name="plus" size={15} />Agregar
+        </button>
+      </div>
+
+      {activas.length === 0 && <div className="ch-vacio">Todavía no cargaste ninguna compañía.</div>}
+
+      <div className="cfg-cias-lista">
+        {activas.map((c) => (
+          <div className="cfg-cia" key={c.id}>
+            {editando === c.id ? (
+              <input className="input" autoFocus value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                onBlur={() => renombrar(c)}
+                onKeyDown={(e) => { if (e.key === "Enter") renombrar(c); if (e.key === "Escape") setEditando(null); }} />
+            ) : (
+              <button className="cfg-cia-nom" onClick={() => { setEditando(c.id); setTexto(c.nombre); }}
+                title="Tocá para cambiarle el nombre">{c.nombre}</button>
+            )}
+            <span className="cfg-cia-clave mono">{c.clave}</span>
+            <button className="btn-ghost sm" onClick={() => usar(c, false)}>Sacar</button>
+          </div>
+        ))}
+      </div>
+
+      {sacadas.length > 0 && (
+        <div className="cfg-cias-sacadas">
+          <button className="cfg-cias-toggle" onClick={() => setVerSacadas(!verSacadas)}>
+            <Ico name={verSacadas ? "chevR" : "chevR"} size={14} />
+            {sacadas.length} que no usás
+          </button>
+          {verSacadas && sacadas.map((c) => (
+            <div className="cfg-cia is-off" key={c.id}>
+              <span className="cfg-cia-nom">{c.nombre}</span>
+              <span className="cfg-cia-clave mono">{c.clave}</span>
+              <button className="btn-ghost sm" onClick={() => usar(c, true)}>Volver a usar</button>
+              <button className="btn-ghost sm danger" onClick={() => borrar(c)} title="Borrar de la lista">
+                <Ico name="trash" size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ConfiguracionView({ quien, onAviso }) {
   const [org, setOrg] = React.useState(null);
   const [cargando, setCargando] = React.useState(true);
@@ -192,7 +313,7 @@ function ConfiguracionView({ quien, onAviso }) {
     <div className="est-wrap">
       <div className="cfg-cab">
         <div>
-          <h2>Colores de {org.nombre}</h2>
+          <h2>Ajustes de {org.nombre}</h2>
           <p>Lo que elijas se ve al instante mientras probás, sobre el portal entero. Recién
             queda para todo tu equipo cuando tocás Guardar.</p>
         </div>
@@ -296,11 +417,18 @@ function ConfiguracionView({ quien, onAviso }) {
           </div>
         </EstCard>
       </div>
+
+      <div className="est-grid cfg-grid-ancha">
+        <EstCard title="Compañías con las que trabajás"
+          sub="las que aparecen al cargar un siniestro y en el filtro de la tabla">
+          <CfgCompanias onAviso={onAviso} />
+        </EstCard>
+      </div>
     </div>
   );
 }
 
-Object.assign(window, { ConfiguracionView, CfgColor, cfgNormalizar });
+Object.assign(window, { ConfiguracionView, CfgColor, CfgCompanias, cfgNormalizar });
 
 // Marca este archivo como modulo ES. Sin esto el compilador lo toma por
 // script (no tiene ningun import/export todavia) y compila el JSX a require(),

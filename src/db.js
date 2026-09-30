@@ -927,6 +927,53 @@ async function dbMaxN() {
   }
 
   // ============================ ARCHIVOS (Storage) ============================
+  // ============================ COMPAÑÍAS ============================
+  // Con qué compañías trabaja cada broker. Antes era una constante en
+  // data.jsx con las siete de Saraceni: cualquier otro broker veía las
+  // compañías ajenas al cargar un siniestro.
+  //
+  // `siniestros.cia` sigue siendo texto libre, así que esto es un maestro de
+  // conveniencia: un siniestro viejo con una clave que ya no está en la lista
+  // se sigue viendo bien.
+  function fromRowCia(r) {
+    return { id: r.id, clave: r.clave || "", nombre: r.nombre || "", orden: r.orden || 0, activa: r.activa !== false };
+  }
+  async function ciasList() {
+    const c = client(); if (!c) return [];
+    const { data, error } = await c.from("companias").select("*").eq("activa", true).order("orden");
+    // Una base sin la 0018 (producción hoy) no tiene la tabla: se devuelve
+    // vacío y la pantalla cae en la lista de siempre.
+    if (error) return [];
+    return (data || []).map(fromRowCia);
+  }
+  async function ciasTodas() {
+    const c = client(); if (!c) return [];
+    const { data, error } = await c.from("companias").select("*").order("orden");
+    if (error) return [];
+    return (data || []).map(fromRowCia);
+  }
+  async function ciasCreate(it) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("companias")
+      .insert({ clave: it.clave, nombre: it.nombre, orden: it.orden || 0 }).select().single();
+    if (error) throw error; return fromRowCia(data);
+  }
+  async function ciasUpdate(it) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const row = {};
+    if (it.clave !== undefined) row.clave = it.clave;
+    if (it.nombre !== undefined) row.nombre = it.nombre;
+    if (it.orden !== undefined) row.orden = it.orden;
+    if (it.activa !== undefined) row.activa = it.activa;
+    const { data, error } = await c.from("companias").update(row).eq("id", it.id).select().single();
+    if (error) throw error; return fromRowCia(data);
+  }
+  async function ciasRemove(id) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { error } = await c.from("companias").delete().eq("id", id);
+    if (error) throw error;
+  }
+
   const BUCKET = "adjuntos";
   async function fileUpload(file) {
     const c = client(); if (!c) throw new Error("Supabase no configurado");
@@ -1003,6 +1050,7 @@ async function dbMaxN() {
       enganchar: asegEnganchar,
       dup: { list: dupList, buscar: dupBuscar, unificar: dupUnificar, distintos: dupDistintos },
     },
+    cias: { list: ciasList, todas: ciasTodas, create: ciasCreate, update: ciasUpdate, remove: ciasRemove },
     org: { mia: orgMia, id: orgId, modulos: orgModulos, publica: orgPublica, guardarMarca: orgGuardarMarca, subirLogo: orgSubirLogo },
     sol: { list: solList, update: solUpdate, subscribe: solSubscribe },
     cot: { list: cotList, update: cotUpdate, subscribe: cotSubscribe },

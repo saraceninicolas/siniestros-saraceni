@@ -11,7 +11,26 @@ const CIA_FULL = {
   "ZURICH": "Zurich",
 };
 const CIAS = Object.keys(CIA_FULL);
-const ciaLabel = (k) => CIA_FULL[k] || k;
+
+// El nombre para mostrar sale de la lista del broker que entró; si no la tiene
+// (base sin la 0018, o una clave vieja que ya borró de su lista) cae en la de
+// siempre, y al final en la clave cruda. Nunca queda vacío: un siniestro viejo
+// con una compañía que ya no trabajan se sigue leyendo.
+//
+// ⚠️ Lee de window a propósito: son 36 lugares los que muestran el nombre de
+// una compañía y pasarles la lista por props seria atravesar media pantalla.
+// `window.CIA_NOMBRES` lo llena app.jsx al entrar, igual que window.MARCA.
+function ciaLabel(k) {
+  const propias = window.CIA_NOMBRES;
+  if (propias && propias[k]) return propias[k];
+  return CIA_FULL[k] || k;
+}
+
+// La lista para un desplegable: la del broker, o la de siempre si no hay.
+function ciasParaElegir(cias) {
+  if (cias && cias.length) return cias.map((c) => ({ clave: c.clave, nombre: c.nombre || c.clave }));
+  return CIAS.map((c) => ({ clave: c, nombre: CIA_FULL[c] || c }));
+}
 
 // COMERCIO se quita del selector; INT_CONSORCIO se agrega.
 // (Se mantiene COMERCIO en los labels para que registros viejos se muestren bien.)
@@ -180,7 +199,7 @@ function buildSeed() {
 }
 
 Object.assign(window, {
-  CIA_FULL, CIAS, ciaLabel, RAMOS, RAMO_LABEL, RAMO_ICON, HECHOS, HECHO_LABEL, HECHO_COLOR, hechoColor,
+  CIA_FULL, CIAS, ciaLabel, ciasParaElegir, RAMOS, RAMO_LABEL, RAMO_ICON, HECHOS, HECHO_LABEL, HECHO_COLOR, hechoColor,
   COBERTURAS, COBERTURAS_AUTO, esRamoAuto, coberturasDe, aplicaFranquicia,
   STATIONS, ESTADOS, ESTADO_LIST, URGENCIA,
   fmtDate, fmtDateShort, fmtTimeAgo, daysUntil, urgenciaDe, venceTexto, diasActivo, nowIso,

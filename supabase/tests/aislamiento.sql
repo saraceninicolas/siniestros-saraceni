@@ -81,6 +81,18 @@ begin
   if n > 0 then fallas := fallas || format('· Aicardi ve %s denuncias web ajenas. ', n);
   else ok := ok || '· No ve denuncias ajenas. '; end if;
 
+  -- Su lista de compañías es suya: si viera la del otro broker sabría con
+  -- quién trabaja la competencia, y al cargar un siniestro elegiría de una
+  -- lista ajena.
+  select count(*) into n from public.companias c
+    join public.organizaciones o on o.id = c.org_id where o.slug <> 'aicardi';
+  if n > 0 then fallas := fallas || format('· Aicardi ve %s compañías del otro broker. ', n);
+  else ok := ok || '· No ve las compañías del otro broker. '; end if;
+
+  select count(*) into n from public.companias;
+  if n = 0 then fallas := fallas || '· Aicardi no ve NINGUNA compañía propia: no podría cargar un siniestro. ';
+  else ok := ok || format('· Ve sus %s compañías. ', n); end if;
+
   -- Del otro broker no tiene que ver ni los nombres del equipo. La fila propia
   -- (la del usuario que estamos simulando) sí: cada uno se ve a sí mismo.
   select count(*) into n from public.perfiles;
@@ -135,6 +147,10 @@ begin
   select count(*) into n from public.asegurados;
   if n = 0 then fallas := fallas || '· Saraceni no ve ninguna ficha propia. ';
   else ok := ok || '· Ve sus fichas de asegurado. '; end if;
+
+  select count(*) into n from public.companias;
+  if n <> 7 then fallas := fallas || format('· Saraceni ve %s compañías; tiene 7. ', n);
+  else ok := ok || '· Saraceni sigue con sus 7 compañías. '; end if;
   reset role;
 
   -- ── Sin sesión ────────────────────────────────────────────────────────────

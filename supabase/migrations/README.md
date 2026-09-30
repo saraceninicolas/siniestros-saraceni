@@ -43,8 +43,9 @@ Siempre **test primero**, se verifica, y recién después producción.
 | `20260925_0015_org_publica_sin_slug.sql` | aplicada | pendiente |
 | `20260925_0016_default_de_carga_publica.sql` | aplicada | pendiente |
 | `20260928_0017_formularios_publicos_por_modulo.sql` | aplicada | pendiente |
+| `20260929_0018_companias_por_empresa.sql` | aplicada | pendiente |
 
-## El pase a producción de la 0009 a la 0017 (multiempresa)
+## El pase a producción de la 0009 a la 0018 (multiempresa)
 
 Van todas juntas, y **el orden importa**, porque en el medio hay un momento en
 que la base pide algo que el código viejo todavía no manda:
@@ -63,6 +64,10 @@ que la base pide algo que el código viejo todavía no manda:
    públicos de los brokers que no contrataron el módulo, y las páginas nuevas
    son las que saben avisarlo. Aplicada antes de desplegar, un visitante vería
    el error crudo de la policy en vez del aviso.
+7. `0018` puede ir en cualquier momento: crea la tabla de compañías y la
+   siembra. El código viejo no la mira, y el nuevo, si no la encuentra, usa la
+   lista de siempre. **Al dar de alta una empresa hay que sembrarla**:
+   `select public.sembrar_companias('<org_id>')`.
 
 Después de aplicar: correr `supabase/tests/aislamiento.sql` **en test** (no en
 producción: inserta para probar, y aunque hace rollback no vale el riesgo) y

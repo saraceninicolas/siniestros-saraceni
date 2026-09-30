@@ -31,11 +31,11 @@ function Field({ label, children, required, full }) {
 function FormSection({ label }) { return <div className="form-section">{label}</div>; }
 
 // ---- Create / Edit ----
-function ClaimFormModal({ mode, initial, station, onClose, onSubmit, usuarios }) {
+function ClaimFormModal({ mode, initial, station, onClose, onSubmit, usuarios, cias }) {
   const todayISO = () => new Date().toISOString().slice(0, 10);
   const byFecha = (a, b) => (a.fecha || "").localeCompare(b.fecha || "");
   const blank = {
-    estado: "Abierto", cliente: "", dominio: "", referencia: "", cia: CIAS[0], ramo: "AUTO", hecho: HECHOS[0], cobertura: COBERTURAS_AUTO[0],
+    estado: "Abierto", cliente: "", dominio: "", referencia: "", cia: (ciasParaElegir(cias)[0] || {}).clave || "", ramo: "AUTO", hecho: HECHOS[0], cobertura: COBERTURAS_AUTO[0],
     poliza: "", nroSiniestro: "", fechaOcurrido: "", fechaDenuncia: "", fechaLimite: "", fechaInspeccion: "",
     gestionAR: "", gestionReal: "", gestiones: [], gestor: "", gestorEmail: "", gestorTel: "", obs: "", ticket: "",
     franquiciaPct: "", franquiciaMonto: "", adjuntos: [], enCalendario: false, asignadoA: null,
@@ -157,7 +157,12 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit, usuarios })
         </Field>
         <Field label="Compañía">
           <select className="input" value={f.cia} onChange={(e) => set("cia", e.target.value)}>
-            {CIAS.map((c) => <option key={c} value={c}>{ciaLabel(c)}</option>)}
+            {/* La compañía guardada puede no estar en la lista de hoy (un
+                siniestro viejo, o una que el broker saco): va igual, primera,
+                para no cambiarsela sin querer al abrir a editar. */}
+            {f.cia && !ciasParaElegir(cias).some((c) => c.clave === f.cia) &&
+              <option value={f.cia}>{ciaLabel(f.cia)}</option>}
+            {ciasParaElegir(cias).map((c) => <option key={c.clave} value={c.clave}>{c.nombre}</option>)}
           </select>
         </Field>
         <Field label="Ramo">

@@ -367,7 +367,7 @@ function Kpis({ data, foco, onFoco }) {
 }
 
 // ---------- toolbar ----------
-function Toolbar({ title, count, estadoFilter, onEstado, ramoFilter, onRamo, ciaFilter, onCia, selected, onEdit, onDelete }) {
+function Toolbar({ title, count, estadoFilter, onEstado, ramoFilter, onRamo, ciaFilter, onCia, selected, onEdit, onDelete, cias }) {
   return (
     <div className="toolbar">
       <div className="toolbar-left">
@@ -386,7 +386,7 @@ function Toolbar({ title, count, estadoFilter, onEstado, ramoFilter, onRamo, cia
         </select>
         <select className="select" value={ciaFilter} onChange={(e) => onCia(e.target.value)}>
           <option value="Todos">Todas las compañías</option>
-          {CIAS.map((c) => <option key={c} value={c}>{ciaLabel(c)}</option>)}
+          {ciasParaElegir(cias).map((c) => <option key={c.clave} value={c.clave}>{c.nombre}</option>)}
         </select>
         <div className="toolbar-divider" />
         <button className="btn-ghost" disabled={!selected} onClick={onEdit}><Ico name="edit" size={15} />Editar</button>
