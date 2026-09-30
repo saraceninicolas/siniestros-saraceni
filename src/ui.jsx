@@ -103,7 +103,8 @@ const PORTAL_NAV = [
     { key: "fact-companias", label: "Compañías", icon: "folder" } ] },
   { key: "comercial", label: "Comercial", icon: "store", modulo: "comercial", children: [
     { key: "com-panel", label: "Panel de control", icon: "grid" },
-    { key: "com-cotizaciones", label: "Cotizaciones de hogar", icon: "home", count: "cotNuevas" } ] },
+    { key: "com-cotizaciones", label: "Pedidos de la web", icon: "home", count: "cotNuevas" },
+    { key: "com-seguimiento", label: "Cotizaciones y cierres", icon: "trend" } ] },
   { key: "renovaciones", label: "Renovaciones", icon: "refresh", modulo: "renovaciones", children: [
     { key: "renov-proximas", label: "Próximas a vencer", icon: "clock" },
     { key: "renov-historial", label: "Historial", icon: "agenda" } ] },
@@ -125,7 +126,7 @@ NAV_LOOKUP["ajustes"] = { section: "Ajustes", sectionKey: "ajustes", title: "Mar
 NAV_LOOKUP["asegurados-dup"] = { section: "Siniestros", sectionKey: "siniestros", title: "Asegurados duplicados" };
 const SINIESTROS_KEYS = ["dashboard", "agenda", "solicitudes", "sin-estadisticas", "sin-asegurados"];
 const FACTURACION_KEYS = ["fact-estadisticas", "fact-carga", "fact-crecimiento", "fact-companias"];
-const COMERCIAL_KEYS = ["com-panel", "com-cotizaciones"];
+const COMERCIAL_KEYS = ["com-panel", "com-cotizaciones", "com-seguimiento"];
 const RENOVACION_KEYS = ["renov-proximas", "renov-historial"];
 const PENDIENTES_KEYS = ["pend-panel", "pend-agenda"];
 const OBJETIVOS_KEYS = ["obj-panel", "obj-metas"];

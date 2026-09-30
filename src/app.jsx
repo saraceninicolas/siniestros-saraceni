@@ -577,7 +577,8 @@ function App() {
               : FACTURACION_KEYS.includes(active)
               ? <FacturacionModule active={active} station={quien} query={query} onNav={(k) => { setActive(k); setDetailId(null); }} />
               : COMERCIAL_KEYS.includes(active)
-              ? <ComercialModule active={active} station={quien} query={query} />
+              ? <ComercialModule active={active} station={quien} query={query}
+                  usuarios={usuariosActivos} cias={cias} rol={rol} />
               : RENOVACION_KEYS.includes(active)
               ? <RenovacionesModule active={active} station={quien} query={query} />
               : PENDIENTES_KEYS.includes(active)

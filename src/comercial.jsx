@@ -258,8 +258,9 @@ function CotizacionesView({ data, onCotizar, onDescartar, onReabrir, onNotas }) 
 }
 
 // ---------- orquestador ----------
-function ComercialModule({ active, station, query }) {
+function ComercialModule({ active, station, query, usuarios, cias, rol }) {
   const [data, setData] = React.useState([]);
+  const [acciones, setAcciones] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [toast, setToast] = React.useState(null);
   const timer = React.useRef(null);
@@ -273,6 +274,9 @@ function ComercialModule({ active, station, query }) {
     if (!window.DB || !window.DB.configured() || !window.DB.cot) { setLoading(false); return; }
     try { setData(await window.DB.cot.list()); }
     catch (e) { console.error("Cotizaciones:", e); }
+    // Todas las acciones de la empresa en una consulta; la pantalla las agrupa.
+    try { if (window.DB.acc) setAcciones(await window.DB.acc.list({ soloCotizaciones: true })); }
+    catch (e) { console.error("Acciones:", e); }
     setLoading(false);
   }, []);
 
@@ -299,6 +303,49 @@ function ComercialModule({ active, station, query }) {
     } catch (e) { console.error(e); flash("No se pudieron guardar las notas", true); }
   };
 
+  // Cada movimiento queda firmado. El estado no se cambia "a mano y listo":
+  // cambiarlo escribe la accion que le corresponde, asi el historial no miente
+  // por olvido de nadie.
+  const anotar = async (cot, accion) => {
+    if (!window.DB.acc) return null;
+    const a = await window.DB.acc.create({ cotizacionId: cot._dbId, tipo: accion.tipo, nota: accion.nota, usuario: station });
+    setAcciones((p) => [a, ...p]);
+    return a;
+  };
+  const agregarAccion = async (cot, accion) => {
+    try { await anotar(cot, accion); flash("Movimiento anotado"); }
+    catch (e) { console.error(e); flash("No se pudo anotar el movimiento", true); }
+  };
+  const borrarAccion = async (a) => {
+    if (!window.confirm("¿Borrar este movimiento del historial?")) return;
+    try { await window.DB.acc.remove(a.id); setAcciones((p) => p.filter((x) => x.id !== a.id)); }
+    catch (e) { console.error(e); flash("No se pudo borrar", true); }
+  };
+  const crearCotizacion = async (f) => {
+    try {
+      const nueva = await window.DB.cot.create({ ...f, estado: f.prima ? "cotizada" : "nueva" });
+      setData((p) => [nueva, ...p]);
+      await anotar(nueva, { tipo: f.prima ? "cotizacion" : "nota", nota: f.prima ? "Cotización cargada" : "Pedido cargado" });
+      flash("Cotización creada");
+    } catch (e) { console.error(e); flash("No se pudo crear la cotización", true); }
+  };
+  // `estadoNuevo` opcional: si viene, ademas de guardar los datos mueve el
+  // estado y deja la accion (cierre, perdida, cotizacion) firmada.
+  const actualizarCotizacion = async (cot, campos, estadoNuevo) => {
+    try {
+      const cambios = { _dbId: cot._dbId, estado: estadoNuevo || cot.estado, gestionadaPor: station, ...campos };
+      if (estadoNuevo === "cerrada" && !campos.fechaCierre) cambios.fechaCierre = new Date().toISOString().slice(0, 10);
+      if (estadoNuevo === "cotizada" && !campos.fechaCotizacion) cambios.fechaCotizacion = new Date().toISOString().slice(0, 10);
+      const up = await window.DB.cot.update(cambios);
+      setData((p) => p.map((x) => (x._dbId === cot._dbId ? up : x)));
+      if (estadoNuevo) {
+        const tipo = estadoNuevo === "cerrada" ? "cierre" : estadoNuevo === "perdida" ? "perdida" : "cotizacion";
+        await anotar(up, { tipo, nota: "" });
+      }
+      flash(estadoNuevo === "cerrada" ? "¡Cerrada!" : "Guardado");
+    } catch (e) { console.error(e); flash("No se pudo guardar", true); }
+  };
+
   const filtrada = React.useMemo(() => {
     const q = (query || "").trim().toLowerCase();
     if (!q) return data;
@@ -312,6 +359,10 @@ function ComercialModule({ active, station, query }) {
     <>
       {active === "com-panel"
         ? <ComercialPanel data={filtrada} />
+        : active === "com-seguimiento"
+        ? <SeguimientoView data={filtrada} acciones={acciones} station={station} usuarios={usuarios}
+            cias={cias} query={query} rol={rol} onCrear={crearCotizacion}
+            onActualizar={actualizarCotizacion} onAccion={agregarAccion} onBorrarAccion={borrarAccion} />
         : <CotizacionesView data={filtrada}
             onCotizar={(c) => cambiarEstado(c, "cotizada", "Cotización marcada como enviada")}
             onDescartar={(c) => { if (window.confirm(`¿Descartar el pedido de ${c.nombre}?`)) cambiarEstado(c, "descartada", "Pedido descartado"); }}

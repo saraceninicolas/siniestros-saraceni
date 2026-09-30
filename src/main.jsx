@@ -49,6 +49,8 @@ import "./siniestralidad.jsx";
 import "./configuracion.jsx";
 import "./facturas.jsx";
 import "./renovaciones.jsx";
+import "./acciones.jsx";
+import "./comercial-seguimiento.jsx";
 import "./comercial.jsx";
 import "./pendientes.jsx";
 import "./objetivos-datos.jsx";

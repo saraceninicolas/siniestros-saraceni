@@ -599,6 +599,13 @@ async function dbMaxN() {
       observaciones: r.observaciones || "",
       estado: r.estado || "nueva", notasInternas: r.notas_internas || "",
       gestionadaPor: r.gestionada_por || "",
+      // El pipeline comercial (0019). Una cotización que entró por el
+      // formulario los trae vacíos hasta que alguien la trabaja.
+      detalle: r.detalle || "", fechaCotizacion: r.fecha_cotizacion || "",
+      compania: r.compania || "", prima: r.prima,
+      fechaCierre: r.fecha_cierre || "", poliza: r.poliza || "",
+      motivoPerdida: r.motivo_perdida || "", responsable: r.responsable || "",
+      origen: r.origen || "web",
       creado: r.created_at || null,
     };
   }
@@ -607,10 +614,38 @@ async function dbMaxN() {
     const { data, error } = await c.from("cotizaciones").select("*").order("id", { ascending: false });
     if (error) throw error; return (data || []).map(fromRowC);
   }
+  // Lo que carga el equipo, de cualquier ramo. Lo que entra por el formulario
+  // público sigue su propio camino (nace con origen 'web' y lo pone la base).
+  async function cotCreate(it) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const row = {
+      ref: it.ref || Math.random().toString(36).slice(2, 8).toUpperCase(),
+      ramo: it.ramo || "HOGAR", nombre: it.nombre,
+      documento: orNull(it.documento), telefono: orNull(it.telefono), email: orNull(it.email),
+      localidad: orNull(it.localidad), observaciones: orNull(it.observaciones),
+      detalle: orNull(it.detalle), compania: orNull(it.compania),
+      prima: numOrNull(it.prima), fecha_cotizacion: orNull(it.fechaCotizacion),
+      responsable: orNull(it.responsable), estado: it.estado || "nueva", origen: "manual",
+    };
+    const { data, error } = await c.from("cotizaciones").insert(row).select().single();
+    if (error) throw error; return fromRowC(data);
+  }
   async function cotUpdate(it) {
     const c = client(); if (!c) throw new Error("Supabase no configurado");
     const row = { estado: it.estado, gestionada_por: orNull(it.gestionadaPor) };
     if (it.notasInternas !== undefined) row.notas_internas = orNull(it.notasInternas);
+    if (it.detalle !== undefined) row.detalle = orNull(it.detalle);
+    if (it.ramo !== undefined) row.ramo = it.ramo;
+    if (it.nombre !== undefined) row.nombre = it.nombre;
+    if (it.telefono !== undefined) row.telefono = orNull(it.telefono);
+    if (it.email !== undefined) row.email = orNull(it.email);
+    if (it.fechaCotizacion !== undefined) row.fecha_cotizacion = orNull(it.fechaCotizacion);
+    if (it.compania !== undefined) row.compania = orNull(it.compania);
+    if (it.prima !== undefined) row.prima = numOrNull(it.prima);
+    if (it.fechaCierre !== undefined) row.fecha_cierre = orNull(it.fechaCierre);
+    if (it.poliza !== undefined) row.poliza = orNull(it.poliza);
+    if (it.motivoPerdida !== undefined) row.motivo_perdida = orNull(it.motivoPerdida);
+    if (it.responsable !== undefined) row.responsable = orNull(it.responsable);
     const { data, error } = await c.from("cotizaciones").update(row).eq("id", it._dbId).select().single();
     if (error) throw error; return fromRowC(data);
   }
@@ -927,6 +962,47 @@ async function dbMaxN() {
   }
 
   // ============================ ARCHIVOS (Storage) ============================
+  // ============================ ACCIONES ============================
+  // Qué se hizo, cuándo y quién: llamados, cotizaciones enviadas, cierres,
+  // emisiones. Cuelga de una cotización o de un objetivo (0019).
+  function fromRowAcc(r) {
+    return {
+      id: r.id, cotizacionId: r.cotizacion_id, objetivoId: r.objetivo_id,
+      tipo: r.tipo || "nota", nota: r.nota || "",
+      fecha: r.fecha || r.created_at, usuario: r.usuario || "",
+      usuarioId: r.usuario_id || null,
+    };
+  }
+  // Se traen TODAS las de la empresa de una y se agrupan en la pantalla: son
+  // pocas y pedirlas de a una por cotización serían veinte viajes por pantalla.
+  async function accList(filtro) {
+    const c = client(); if (!c) return [];
+    let q = c.from("acciones").select("*").order("fecha", { ascending: false });
+    if (filtro && filtro.cotizacionId) q = q.eq("cotizacion_id", filtro.cotizacionId);
+    if (filtro && filtro.objetivoId) q = q.eq("objetivo_id", filtro.objetivoId);
+    if (filtro && filtro.soloCotizaciones) q = q.not("cotizacion_id", "is", null);
+    if (filtro && filtro.soloObjetivos) q = q.not("objetivo_id", "is", null);
+    const { data, error } = await q;
+    // Una base sin la 0019 no tiene la tabla: sin acciones, no roto.
+    if (error) return [];
+    return (data || []).map(fromRowAcc);
+  }
+  async function accCreate(it) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const row = {
+      cotizacion_id: it.cotizacionId || null, objetivo_id: it.objetivoId || null,
+      tipo: it.tipo, nota: orNull(it.nota), usuario: it.usuario,
+    };
+    if (it.fecha) row.fecha = it.fecha;
+    const { data, error } = await c.from("acciones").insert(row).select().single();
+    if (error) throw error; return fromRowAcc(data);
+  }
+  async function accRemove(id) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { error } = await c.from("acciones").delete().eq("id", id);
+    if (error) throw error;
+  }
+
   // ============================ COMPAÑÍAS ============================
   // Con qué compañías trabaja cada broker. Antes era una constante en
   // data.jsx con las siete de Saraceni: cualquier otro broker veía las
@@ -1053,7 +1129,8 @@ async function dbMaxN() {
     cias: { list: ciasList, todas: ciasTodas, create: ciasCreate, update: ciasUpdate, remove: ciasRemove },
     org: { mia: orgMia, id: orgId, modulos: orgModulos, publica: orgPublica, guardarMarca: orgGuardarMarca, subirLogo: orgSubirLogo },
     sol: { list: solList, update: solUpdate, subscribe: solSubscribe },
-    cot: { list: cotList, update: cotUpdate, subscribe: cotSubscribe },
+    cot: { list: cotList, create: cotCreate, update: cotUpdate, subscribe: cotSubscribe },
+    acc: { list: accList, create: accCreate, remove: accRemove },
     files: { upload: fileUpload, signedUrl: fileSignedUrl, remove: fileRemove },
   };
 })();

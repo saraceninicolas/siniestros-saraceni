@@ -72,6 +72,8 @@ Mientras dure el paso 1 siguen valiendo las reglas viejas:
 | `src/estadisticas.jsx` | Estadísticas de siniestros: demora promedio por ramo, por hecho y el cruce entre los dos |
 | `src/objetivos-datos.jsx` | Objetivos: áreas, períodos y cálculo del avance. Sin interfaz |
 | `src/objetivos-form.jsx` | Objetivos: asistente de 5 pasos para crear o editar |
+| `src/acciones.jsx` | **Quién hizo qué**: los tipos de movimiento y la línea de tiempo. La usan Comercial y Objetivos, por eso no vive en ninguno de los dos |
+| `src/comercial-seguimiento.jsx` | El pipeline comercial: qué se cotizó, por cuánto, qué se cerró y qué se perdió, con el historial firmado de cada gestión |
 | `src/inicio.jsx` | **La pantalla principal.** Junta lo vencido y por vencer de todas las carpetas en una lista, y busca clientes con lo que ya hay cargado (fichas + siniestros + renovaciones). Se esconde sola lo que la empresa no contrató |
 | `src/app.jsx` | Orquestador: sesión, perfil/rol, ruteo por `active`, estado global |
 | `src/auth.jsx` | Login, registro y pantalla de "cuenta pendiente" |
@@ -173,6 +175,11 @@ Cosas que costaron y no hay que volver a aprender:
   se decide en un solo lugar (`org_defecto()`).
 - **Las unicidades globales pasan a ser por empresa**: el documento de un
   asegurado, los códigos STR-/PEN-/REN-/OBJ- y el CUIT de una compañía.
+- **Un estado que cambia sin dejar rastro es media verdad.** En el pipeline
+  comercial el estado no se toca "a mano y listo": marcarlo cerrado o perdido
+  escribe la acción correspondiente en `acciones`, con quién y cuándo. Lo mismo
+  al cargar el avance de un objetivo. Si el registro dependiera de que alguien
+  se acuerde de anotarlo, en dos semanas no sirve para nada (0019).
 - **Lo que parece una constante del negocio puede ser de un solo broker.** La
   lista de compañías vivía en `data.jsx`: eran las siete de Saraceni, y
   cualquier otro broker veía compañías ajenas al cargar un siniestro. Ahora es

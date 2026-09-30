@@ -1485,3 +1485,71 @@ button.adj-card:focus-visible{ outline:2px solid var(--brand); outline-offset:3p
 .cfg-cias-toggle{ align-self:flex-start; background:none; border:none; padding:2px 0; cursor:pointer;
   display:flex; align-items:center; gap:5px; font-size:12.5px; font-weight:600; color:var(--ink-2); }
 .cfg-cias-toggle:hover{ color:var(--brand-txt); }
+
+/* ══════════════ Comercial · seguimiento de cotizaciones ════════════════════
+   El pipeline: qué se cotizó, qué se cerró y quién hizo cada cosa. */
+.seg-wrap{ display:flex; flex-direction:column; gap:14px; }
+.seg-kpis{ grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); }
+.seg-kpi-num{ font-size:26px; font-weight:800; letter-spacing:-.02em; color:var(--ink); }
+
+.seg-barra{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.seg-chips{ display:flex; gap:4px; background:var(--surface-2); border:1px solid var(--line);
+  border-radius:10px; padding:3px; }
+.seg-chip{ padding:6px 11px; font-size:12.5px; font-weight:700; border:none; border-radius:7px;
+  background:none; color:var(--ink-2); cursor:pointer; transition:.14s; }
+.seg-chip:hover{ color:var(--ink); }
+.seg-chip.is-on{ background:var(--brand); color:var(--brand-ink); }
+
+.seg-tabla-wrap{ overflow-x:auto; }
+.seg-tabla td{ vertical-align:middle; }
+.seg-fila{ cursor:pointer; }
+.seg-fila.is-on{ background:var(--brand-soft); }
+.seg-detalle{ max-width:230px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.seg-tenue{ color:var(--muted); }
+.seg-web{ margin-left:6px; font-size:10px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.06em; color:var(--info-2); background:var(--info-soft); padding:1px 5px; border-radius:4px; }
+.seg-dias{ color:var(--muted); }
+.seg-dias.is-tibia{ color:var(--warn); font-weight:700; }
+.seg-dias.is-alerta{ color:var(--peligro); font-weight:700; }
+
+/* ---- la ficha ---- */
+.seg-ficha{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  box-shadow:var(--shadow-sm); padding:16px 18px 18px; }
+.seg-ficha-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px;
+  padding-bottom:12px; border-bottom:1px solid var(--line-2); margin-bottom:14px; }
+.seg-ficha-head h3{ margin:0; font-size:17px; font-weight:800; letter-spacing:-.01em; }
+.seg-ficha-sub{ font-size:12.5px; color:var(--muted); }
+
+.seg-campos{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:11px; }
+.seg-campos label{ display:flex; flex-direction:column; gap:5px; min-width:0; }
+.seg-campos label span{ font-size:12px; font-weight:600; color:var(--ink-2); }
+.seg-ancho{ grid-column:1/-1; }
+
+.seg-acciones{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:14px;
+  padding-top:14px; border-top:1px solid var(--line-2); }
+.seg-acciones-sep{ flex:1; }
+
+.seg-hist-tit{ margin-top:18px; margin-bottom:8px; font-size:12px; font-weight:800;
+  text-transform:uppercase; letter-spacing:.07em; color:var(--muted); }
+.acc-alta{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+.acc-alta .input:first-child{ max-width:190px; }
+.acc-alta .input:nth-child(2){ flex:1; min-width:180px; }
+.acc-vacio{ color:var(--muted); font-size:12.5px; padding:6px 0; }
+
+.acc-linea{ display:flex; flex-direction:column; }
+.acc-mov{ display:grid; grid-template-columns:auto 1fr auto; align-items:start; gap:10px;
+  padding:9px 0; border-bottom:1px solid var(--line-2); }
+.acc-mov:last-child{ border-bottom:none; }
+.acc-mov-ico{ display:grid; place-items:center; width:26px; height:26px; border-radius:99px;
+  background:var(--brand-soft); color:var(--brand-txt); }
+.acc-mov-txt{ min-width:0; }
+.acc-mov-tit{ font-size:13.5px; color:var(--ink); }
+.acc-mov-nota{ color:var(--ink-2); }
+.acc-mov-pie{ font-size:11.5px; color:var(--muted); margin-top:1px; }
+.acc-mov-x{ background:none; border:none; color:var(--ink-tenue); cursor:pointer; padding:2px; }
+.acc-mov-x:hover{ color:var(--peligro); }
+
+@media (max-width:760px){
+  .seg-barra{ gap:8px; }
+  .acc-alta .input:first-child{ max-width:none; }
+}

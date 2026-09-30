@@ -44,6 +44,7 @@ Siempre **test primero**, se verifica, y recién después producción.
 | `20260925_0016_default_de_carga_publica.sql` | aplicada | pendiente |
 | `20260928_0017_formularios_publicos_por_modulo.sql` | aplicada | pendiente |
 | `20260929_0018_companias_por_empresa.sql` | aplicada | pendiente |
+| `20260930_0019_pipeline_comercial_y_acciones.sql` | aplicada | pendiente |
 
 ## El pase a producción de la 0009 a la 0018 (multiempresa)
 

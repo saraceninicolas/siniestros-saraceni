@@ -191,7 +191,7 @@ function ObjProximos({ lista, fuentes, onAbrir }) {
 }
 
 // ---------- tabla ----------
-function ObjTabla({ lista, fuentes, compacta, onEditar, onEliminar, onAvance }) {
+function ObjTabla({ lista, fuentes, compacta, onEditar, onEliminar, onAvance, onHistorial }) {
   const [orden, setOrden] = React.useState({ k: "fecha", dir: "asc" });
   const [pagina, setPagina] = React.useState(1);
   const [editando, setEditando] = React.useState(null);   // id del objetivo con el avance abierto
@@ -304,6 +304,10 @@ function ObjTabla({ lista, fuentes, compacta, onEditar, onEliminar, onAvance }) 
                             <Ico name="target" size={15} />
                           </button>
                         )}
+                        {onHistorial && (
+                          <button className="row-open" title="Quién hizo qué" aria-label="Quién hizo qué"
+                            onClick={() => onHistorial(o)}><Ico name="agenda" size={15} /></button>
+                        )}
                         <button className="row-open" title="Editar objetivo" aria-label="Editar objetivo" onClick={() => onEditar(o)}><Ico name="edit" size={15} /></button>
                         <button className="row-open danger" title="Eliminar objetivo" aria-label="Eliminar objetivo" onClick={() => setBorrando(o.id)}><Ico name="trash" size={15} /></button>
                       </div>
@@ -380,6 +384,9 @@ function ObjFiltros({ f, setF, usuarios, anios, resultados }) {
 // ---------- orquestador ----------
 function ObjetivosModule({ active, station, query, usuarios, onNav }) {
   const [objetivos, setObjetivos] = React.useState([]);
+  // Quién hizo qué en cada objetivo (0019). Se traen todas de una y se agrupan.
+  const [acciones, setAcciones] = React.useState([]);
+  const [histDe, setHistDe] = React.useState(null);      // objetivo con el historial abierto
   const [movs, setMovs] = React.useState([]);
   const [renovaciones, setRenovaciones] = React.useState([]);
   const [cargando, setCargando] = React.useState(true);
@@ -402,12 +409,13 @@ function ObjetivosModule({ active, station, query, usuarios, onNav }) {
     (async () => {
       if (window.DB && window.DB.configured() && window.DB.obj) {
         try {
-          const [objs, ms, rs] = await Promise.all([
+          const [objs, ms, rs, accs] = await Promise.all([
             window.DB.obj.list(),
             window.DB.fact ? window.DB.fact.mensual.list().catch(() => []) : Promise.resolve([]),
             window.DB.renov ? window.DB.renov.list().catch(() => []) : Promise.resolve([]),
+            window.DB.acc ? window.DB.acc.list({ soloObjetivos: true }).catch(() => []) : Promise.resolve([]),
           ]);
-          if (vivo) { setObjetivos(objs); setMovs(ms); setRenovaciones(rs); setUsingDb(true); }
+          if (vivo) { setObjetivos(objs); setMovs(ms); setRenovaciones(rs); setAcciones(accs); setUsingDb(true); }
         } catch (e) { console.error("Objetivos:", e); if (vivo) flash("No se pudieron cargar los objetivos", true); }
       }
       if (vivo) setCargando(false);
@@ -475,11 +483,28 @@ function ObjetivosModule({ active, station, query, usuarios, onNav }) {
     setObjetivos((p) => [item, ...p]);
     setForm(null); flash("Objetivo creado");
   };
+  const anotar = React.useCallback(async (o, accion) => {
+    if (!usingDb || !window.DB.acc || !o._dbId) return;
+    try {
+      const a = await window.DB.acc.create({ objetivoId: o._dbId, tipo: accion.tipo, nota: accion.nota, usuario: station });
+      setAcciones((p) => [a, ...p]);
+    } catch (e) { console.error("Acciones:", e); flash("No se pudo anotar el movimiento", true); }
+  }, [usingDb, station, flash]);
+
   const actualizarAvance = async (o, valor) => {
     const up = { ...o, valorActual: valor, ultimaModPor: station, ultimaModFecha: new Date().toISOString() };
     setObjetivos((p) => p.map((x) => (x.id === o.id ? up : x)));
     try { if (usingDb) await window.DB.obj.update(up); }
     catch (e) { console.error(e); flash("No se pudo guardar el avance", true); }
+    // Cargar un avance ES una acción: queda firmada sin que nadie se acuerde
+    // de anotarla, que es la única forma de que el historial sirva.
+    anotar(o, { tipo: "avance", nota: objFmt(o, valor) });
+  };
+
+  const borrarAccion = async (a) => {
+    if (!window.confirm("¿Borrar este movimiento del historial?")) return;
+    try { await window.DB.acc.remove(a.id); setAcciones((p) => p.filter((x) => x.id !== a.id)); }
+    catch (e) { console.error(e); flash("No se pudo borrar", true); }
   };
   const eliminar = async (o) => {
     try { if (usingDb) await window.DB.obj.remove(o); }
@@ -554,7 +579,7 @@ function ObjetivosModule({ active, station, query, usuarios, onNav }) {
             <div><h3>Últimos objetivos</h3><p>los {Math.min(5, lista.length)} más próximos a cerrar</p></div>
             <button className="btn-ghost sm" onClick={() => onNav && onNav("obj-metas")}>Ver todos<Ico name="arrowR" size={14} /></button>
           </div>
-          <ObjTabla lista={lista} fuentes={fuentes} compacta onEditar={abrirForm} onEliminar={eliminar} onAvance={actualizarAvance} />
+          <ObjTabla lista={lista} fuentes={fuentes} compacta onEditar={abrirForm} onEliminar={eliminar} onAvance={actualizarAvance} onHistorial={setHistDe} />
         </section>
       </div>
     ) : (
@@ -565,8 +590,19 @@ function ObjetivosModule({ active, station, query, usuarios, onNav }) {
             <span className="toolbar-count">{lista.length}</span>
           </div>
         </div>
-        <ObjTabla lista={lista} fuentes={fuentes} onEditar={abrirForm} onEliminar={eliminar} onAvance={actualizarAvance} />
+        <ObjTabla lista={lista} fuentes={fuentes} onEditar={abrirForm} onEliminar={eliminar} onAvance={actualizarAvance} onHistorial={setHistDe} />
       </div>
+    )}
+    {histDe && (
+      <ModalShell title={"Quién hizo qué · " + (histDe.titulo || "Objetivo")}
+        sub="Cargar un avance queda anotado solo; el resto se anota a mano."
+        onClose={() => setHistDe(null)}>
+        <HistorialAcciones
+          acciones={acciones.filter((a) => a.objetivoId === histDe._dbId)}
+          tipos={ACC_TIPOS_OBJ} tipoInicial="nota"
+          placeholder="Qué se hizo por este objetivo…"
+          onAccion={(a) => anotar(histDe, a)} onBorrar={borrarAccion} />
+      </ModalShell>
     )}
     {barraToast}
   </>);

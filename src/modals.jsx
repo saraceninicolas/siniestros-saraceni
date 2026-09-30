@@ -450,7 +450,7 @@ function Toast({ toast }) {
 // `Field` y `FormSection` van a window porque los usa asegurados.jsx.
 // Con Vite cada archivo es un módulo aparte: lo que no se expone acá no existe
 // para los demás, aunque antes —con todo en el scope global— sí se veía.
-Object.assign(window, { ClaimFormModal, DetailModal, ConfirmDelete, Toast, Field, FormSection });
+Object.assign(window, { ModalShell, ClaimFormModal, DetailModal, ConfirmDelete, Toast, Field, FormSection });
 
 // Marca este archivo como modulo ES. Sin esto el compilador lo toma por
 // script (no tiene ningun import/export todavia) y compila el JSX a require(),
