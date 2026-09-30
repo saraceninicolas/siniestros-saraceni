@@ -248,7 +248,14 @@ textarea{ resize:vertical; min-height:62px; }
       var pie = document.getElementById("pieEmpresa");
       if (pie) pie.textContent = EMPRESA.nombre.toUpperCase();
       if (window.aplicarMarca) window.aplicarMarca(marca);
-      if (!(EMPRESA.modulos || []).includes("comercial")) cerrarFormulario(EMPRESA.nombre);
+      // Solo se cierra si la base DIJO que no tiene el modulo. Si no contesta
+      // —una base sin la 0017, o el segundo que hay entre desplegar el codigo y
+      // aplicar la migracion— el formulario se muestra: dejar sin denunciar a
+      // los asegurados de un broker por un dato que no vino es peor que de mas.
+      // Es el mismo criterio del menu (navDeLaEmpresa): no saber no es que no.
+      if (Array.isArray(EMPRESA.modulos) && !EMPRESA.modulos.includes("comercial")) {
+        cerrarFormulario(EMPRESA.nombre);
+      }
     } catch (e) { mostrarLogo("/assets/saraceni-logo.jpg", ""); }
   })();
   var $ = function (id) { return document.getElementById(id); };
