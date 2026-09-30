@@ -18,9 +18,9 @@ const TIPO_SOL_HECHO = {
 };
 
 const SOL_ESTADO = {
-  "nueva":      { fg: "#B91C1C", bg: "#FBE3E3", t: "Nueva" },
-  "procesada":  { fg: "#15803D", bg: "#E6F4EA", t: "Procesada" },
-  "descartada": { fg: "#475569", bg: "#EEF1F4", t: "Descartada" },
+  "nueva":      { fg: "var(--peligro-hondo)", bg: "var(--peligro-soft)", t: "Nueva" },
+  "procesada":  { fg: "var(--ok)", bg: "var(--ok-soft)", t: "Procesada" },
+  "descartada": { fg: "var(--ink-2)", bg: "var(--line-2)", t: "Descartada" },
 };
 function solBadge(estado) {
   const c = SOL_ESTADO[estado] || SOL_ESTADO.nueva;
@@ -118,7 +118,7 @@ function SolCard({ s, onConvertir, onDescartar, onReabrir }) {
         {s.lesionados && (
           <div>
             <div className="sol-k">¿Lesionados?</div>
-            <div className="sol-v" style={s.lesionados === "SI" ? { color: "#C0241D", fontWeight: 800 } : null}>
+            <div className="sol-v" style={s.lesionados === "SI" ? { color: "var(--peligro)", fontWeight: 800 } : null}>
               {s.lesionados === "SI" ? "⚠ SÍ" : "No"}
             </div>
           </div>
@@ -152,14 +152,14 @@ function SolicitudesView({ solicitudes, onConvertir, onDescartar, onReabrir }) {
   const [verHist, setVerHist] = React.useState(false);
   const nuevas = solicitudes.filter((s) => s.estado === "nueva");
   const resto = solicitudes.filter((s) => s.estado !== "nueva");
-  const linkPublico = window.location.origin + "/denuncia";
+  const linkPublico = useLinkPublico("denuncia");
   const copiarLink = () => {
     try { navigator.clipboard.writeText(linkPublico); } catch (e) { /* noop */ }
   };
   return (
     <div className="sol-wrap">
       <div className="ag-banner">
-        <span className="ag-banner-ico" style={{ background: "#fdecec", color: "var(--brand)" }}><Ico name="mail" size={22} /></span>
+        <span className="ag-banner-ico" style={{ background: "var(--brand-soft)", color: "var(--brand-txt)" }}><Ico name="mail" size={22} /></span>
         <div className="ag-banner-txt">
           <span className="ag-banner-title">Denuncias online de asegurados</span>
           <span className="ag-banner-sub">Compartí este link con tus clientes: <b className="mono">{linkPublico}</b></span>

@@ -60,25 +60,31 @@ Mientras dure el paso 1 siguen valiendo las reglas viejas:
 | `src/andamio.js` | Temporal: pone React y Supabase en `window` (paso 1) |
 | `src/publico.js` | Entrada de las dos páginas públicas |
 | `src/estilos/tokens.css` | **Las variables de diseño.** Acá vive todo lo que cambia entre una marca y otra |
+| `src/marca.js` | De los colores elegidos deriva todos los tonos del portal, midiendo contraste. Aplica también el logo y el tema del menú. Tiene los valores de fábrica (`MARCA_FABRICA`) |
 | `src/estilos/portal.css` | El resto del CSS del portal |
 | `src/config.js` | Elige **a qué base** se conecta el portal, según el dominio |
 | `src/imagenes.js` | Achica las fotos antes de subirlas (1600px, WebP). Ante cualquier problema devuelve el original: optimizar nunca puede hacer fallar una carga |
 | `src/db.js` | Única capa de datos. Todo Supabase pasa por acá |
 | `src/data.jsx` | Constantes de negocio (ramos, compañías, estados) y helpers de fecha |
 | `src/ui.jsx` | Íconos, sidebar, topbar, tabla de siniestros, agenda, **menú de navegación** |
+| `src/calendar.jsx` | Calendario del mes con las gestiones en su fecha límite, y el enlace a Google Calendar. Ya no exporta `.ics`: el archivo lo abría Outlook y quedaba congelado si la fecha cambiaba |
 | `src/charts.jsx` | Gráficos en SVG hechos a mano (barras, dona, anillo, barras horizontales). No hay librería de gráficos: se dibujan acá y miden el ancho del contenedor para que el texto del eje no escale |
 | `src/estadisticas.jsx` | Estadísticas de siniestros: demora promedio por ramo, por hecho y el cruce entre los dos |
 | `src/objetivos-datos.jsx` | Objetivos: áreas, períodos y cálculo del avance. Sin interfaz |
 | `src/objetivos-form.jsx` | Objetivos: asistente de 5 pasos para crear o editar |
+| `src/acciones.jsx` | **Quién hizo qué**: los tipos de movimiento y la línea de tiempo. La usan Comercial y Objetivos, por eso no vive en ninguno de los dos |
+| `src/comercial-seguimiento.jsx` | El pipeline comercial: qué se cotizó, por cuánto, qué se cerró y qué se perdió, con el historial firmado de cada gestión |
+| `src/inicio.jsx` | **La pantalla principal.** El CRM: lo vencido y por vencer de todas las carpetas, el calendario del mes con gestiones/pendientes/renovaciones, quién tiene qué encima, el trabajo por ramo, lo último que hizo el equipo y el buscador de clientes. Se esconde sola lo que la empresa no contrató |
 | `src/app.jsx` | Orquestador: sesión, perfil/rol, ruteo por `active`, estado global |
 | `src/auth.jsx` | Login, registro y pantalla de "cuenta pendiente" |
 | `src/asegurados.jsx` | Buscador de asegurado con autocompletado por documento o nombre |
 | `src/duplicados.jsx` | Revisión y unificación de asegurados duplicados (solo organizador) |
+| `src/configuracion.jsx` | Ajustes: todos los colores de cada broker (marca, menú, pantalla, estados), su logo y **las compañías con las que trabaja** |
 | `src/siniestralidad.jsx` | Siniestralidad por asegurado: ranking, reincidentes y la ficha de cada uno (donde se le carga el DNI si no lo tiene) |
 | `src/adjuntos.jsx` | Grilla de adjuntos, visor de fotos y descarga en zip |
 | `src/modals.jsx` / `src/detail.jsx` | Alta/edición y ficha completa de siniestro (+ PDF) |
 | `src/solicitudes.jsx` `src/facturas.jsx` `src/renovaciones.jsx` `src/comercial.jsx` `src/pendientes.jsx` `src/objetivos.jsx` `src/usuarios.jsx` | Un módulo por carpeta del menú |
-| `denuncia.html` / `cotizar-hogar.html` | Páginas **públicas** standalone (no cargan el portal) |
+| `denuncia.html` / `cotizar-hogar.html` | Páginas **públicas** standalone (no cargan el portal). La denuncia se pinta con la marca de la empresa de la ruta: `/aicardi/denuncia` |
 | `supabase/*.sql` | Esquema de referencia de cada tabla (documentación, no se ejecuta solo) |
 | `supabase/migrations/` | **Historial** de cambios de esquema. Archivos numerados que no se editan una vez aplicados. El README dice qué migración está en cada ambiente |
 
@@ -98,6 +104,42 @@ Mientras dure el paso 1 siguen valiendo las reglas viejas:
 6. **`src/main.jsx`**: el `import` en la posición correcta del orden.
 7. **`src/estilos/portal.css`**: su CSS. Si agrega un color, va en `tokens.css`.
 
+## Colores: ningún valor clavado
+
+Desde 2026-09-23 `portal.css` no tiene colores propios, y desde 2026-09-24
+tampoco los `style` inline de los `.jsx` (201 hexadecimales pasaron a
+`var(--token)`). Quedan clavados a propósito, y solo ahí:
+
+- `src/detail.jsx`: el PDF se imprime en **otro documento**, donde las
+  variables del portal no existen.
+- `src/charts.jsx` (`CH_COLOR`) y los colores de `HECHO_COLOR` que no coinciden
+  con ningún token: son paletas **categóricas**, no roles.
+- El visor de fotos, la pastilla del logo y los blancos sobre fondos oscuros.
+
+⚠️ **En JSX nuevo tampoco va un hexadecimal.** `style={{ color: "#15803D" }}`
+rompe la personalización: ese verde se queda verde aunque el broker cambie sus
+colores. Va `var(--ok)`, que también funciona en atributos SVG (`fill`,
+`stroke`).
+
+Hay dos familias que **no** hay que mezclar:
+
+- **Marca y pantalla** (`--brand*`, `--sb-*`, `--bg`, `--surface*`, `--ink*`,
+  `--line*`): cambia con cada broker. `marca.js` las calcula a partir de los
+  pocos colores que eligió.
+- **Estado** (`--ok*`, `--warn*`, `--peligro*`, `--info*`): arranca igual en
+  todos los portales. Verde es terminado y rojo es alerta. Se pueden cambiar
+  desde Ajustes, pero **no se derivan de la marca**: si siguieran al color del
+  cliente, un broker con marca verde vería sus alertas en verde.
+
+Los dos roles de texto de la marca son distintos y hay que elegir bien:
+`--brand-ink` es el texto que va **encima** del relleno de marca (un botón), y
+`--brand-txt` es el color de marca usado **como texto** sobre blanco. Con el
+amarillo de Aicardi, blanco sobre amarillo no se lee y amarillo sobre blanco
+tampoco: `marca.js` oscurece el color hasta pasar 4.5:1 de contraste (WCAG).
+
+⚠️ Al escribir CSS nuevo: `color:var(--brand)` casi siempre está mal. Si el
+fondo es claro va `--brand-txt`; si el fondo es el relleno de marca, `--brand-ink`.
+
 ## Roles y seguridad (RLS)
 
 Dos roles, en la tabla `perfiles`: **organizador** y **empleado**. Toda cuenta
@@ -109,6 +151,68 @@ nueva nace `estado='pendiente'` y no ve nada hasta que un organizador la aprueba
 - **Administrativo** (facturación, objetivos, usuarios): todo solo organizador.
 - Las páginas públicas insertan como `anon` y **nunca** pueden leer:
   `for insert to anon with check (true)` y ninguna policy de select.
+
+⚠️ **Multiempresa: terminado en test, pendiente en producción.** Las
+migraciones 0009 a 0016 arman las tablas de empresas y le ponen `org_id` a las
+diez tablas del portal, con sus policies, sus funciones y los archivos por
+carpeta. `perfiles` sigue mandando para los roles (organizador/empleado); la
+**membresía** es la que dice de qué empresa es cada uno.
+
+Cosas que costaron y no hay que volver a aprender:
+
+- **Las funciones `security definer` no las frena ninguna policy.** Las de
+  asegurados (buscar por documento, parecidos, unificar) buscaban en las fichas
+  de todas las empresas. El filtro por empresa va **adentro** de cada función.
+- **Los avisos también se cruzan.** El trigger de "nueva denuncia web" le
+  escribía a todos los organizadores de la base. Ahora filtra por la empresa de
+  la fila, vía `membresias`.
+- **El default de una columna se evalúa con los permisos de quien inserta.**
+  `default coalesce(org_actual(), org_defecto())` tiró "permission denied for
+  function org_actual" a `anon` y rompió la denuncia pública. Por eso existe
+  `org_de_la_carga()`, que es `security definer`.
+- **"La empresa más vieja" no es "la empresa de casa".** Dos veces: en test la
+  más vieja es Aicardi, que se creó para probar. Es la **activa** más vieja, y
+  se decide en un solo lugar (`org_defecto()`).
+- **Las unicidades globales pasan a ser por empresa**: el documento de un
+  asegurado, los códigos STR-/PEN-/REN-/OBJ- y el CUIT de una compañía.
+- **Un estado que cambia sin dejar rastro es media verdad.** En el pipeline
+  comercial el estado no se toca "a mano y listo": marcarlo cerrado o perdido
+  escribe la acción correspondiente en `acciones`, con quién y cuándo. Lo mismo
+  al cargar el avance de un objetivo. Si el registro dependiera de que alguien
+  se acuerde de anotarlo, en dos semanas no sirve para nada (0019).
+- **Lo que parece una constante del negocio puede ser de un solo broker.** La
+  lista de compañías vivía en `data.jsx`: eran las siete de Saraceni, y
+  cualquier otro broker veía compañías ajenas al cargar un siniestro. Ahora es
+  la tabla `companias`, una por empresa, editable desde Ajustes (0018). Antes
+  de clavar una lista en el código, preguntarse si es del rubro o de **este**
+  broker. Siguen clavados a propósito ramos, hechos y coberturas: son del rubro.
+- **Un formulario público solo va si el broker puede leer lo que entra.**
+  Aicardi compró solo Siniestros y su `/aicardi/cotizar-hogar` seguía abierto:
+  la cotización entraba y nadie de Aicardi podía leerla nunca, porque la policy
+  de select pide el módulo. `tiene_modulo()` mira la empresa **de quien
+  consulta**, y en una página pública no hay quién consulte; por eso la lógica
+  vive en `org_tiene_modulo(org, clave)` y `org_publica` devuelve los módulos
+  de cara al público (0017).
+
+Reglas desde ahora:
+
+- **Toda tabla nueva nace con `org_id not null`** y sus cuatro policies
+  filtrando por `org_id = (select public.org_actual())`. El `(select …)` no es
+  cosmético: hace que Postgres evalúe la función una vez por consulta y no una
+  vez por fila.
+- **Los módulos se aplican en las policies**, no escondiendo el menú: esconder
+  una opción no impide que los datos viajen. El menú los esconde igual, por
+  comodidad (`mis_modulos()` → `navDeLaEmpresa()`), pero si esa consulta falla
+  se muestra todo: dejar a un broker sin menú por un error de red sería peor
+  que mostrarle una carpeta vacía, y las policies frenan igual.
+- **Los archivos van en la carpeta de su empresa** (`<org_id>/…`) en los tres
+  buckets. Los de antes del multiempresa quedaron sin carpeta y son de la
+  empresa de casa (`archivo_de_mi_org`).
+- **Después de tocar cualquier policy, correr `supabase/tests/aislamiento.sql`**
+  en la base de test. Prueba que un broker no vea nada del otro simulando el
+  token de cada uno, sin necesidad de contraseñas.
+- La **organización es el límite de seguridad; la oficina no** (es un filtro
+  interno de cada broker).
 
 > Al crear policies por comando (`select`/`insert`/`update`/`delete`) es fácil
 > olvidarse una. Ya pasó: `solicitudes` quedó sin `insert` para `authenticated`
@@ -140,7 +244,9 @@ Cada rama tiene su **proyecto de Vercel y su base de Supabase**, separados:
   `dist/` (configurado en `vercel.json`).
 - **Trabajar siempre en `test`.** Pasar a producción solo cuando lo piden, con
   `git checkout main && git merge test && git push origin main`.
-- `vercel.json` tiene `cleanUrls`, por eso `/denuncia` sirve `denuncia.html`.
+- `vercel.json` tiene `cleanUrls`, por eso `/denuncia` sirve `denuncia.html`, y
+  un `rewrite` hace que `/<empresa>/denuncia` sirva el mismo archivo. De qué
+  empresa es lo decide `config.js` (`window.ORG_SLUG`), igual que decide la base.
 - **Vercel ignora las rutas que empiezan con `_`**: un archivo `_algo.html` da
   404 por más que esté desplegado.
 
@@ -200,3 +306,34 @@ pandas en su máquina: se leen con **PowerShell + Excel COM**.
 - Las fechas vienen como serial de Excel: `date '1899-12-30' + serial`.
 - Contrastar siempre los totales importados contra la planilla antes de dar por
   buena la carga.
+
+## Marca por empresa
+
+`Ajustes` (`src/configuracion.jsx`, módulo suelto del menú, solo organizador) deja
+que cada broker elija **todos** sus colores y suba su logo:
+
+| Grupo | Qué elige | Qué se deriva solo |
+|---|---|---|
+| Marca | un color | relleno, los dos textos, tonos suaves, bordes, anillo de foco |
+| Menú lateral | tema, fondo, texto y opción abierta (los dos últimos, opcionales) | lo que quede en automático, según el fondo |
+| Pantalla | fondo, tarjetas y texto | los seis grises del texto y los cuatro bordes |
+| Estado | terminado, por vencer, alerta e información | texto legible, punto, fondo y borde de cada píldora |
+
+Todo se guarda en `organizaciones.marca` (jsonb, así que sumar un color no
+necesita migración) y el logo en el bucket `marcas`, en la carpeta de su empresa.
+Los valores de fábrica viven en `MARCA_FABRICA` (`marca.js`), al lado de los
+cálculos, y son los mismos que `tokens.css`.
+
+- **Nunca se elige tono por tono**: el broker elige los pocos colores que
+  importan y `marca.js` deriva el resto midiendo contraste (WCAG 4.5:1). Pedirle
+  veinte grises es pedirle que sea diseñador, y el primer texto ilegible lo paga
+  su equipo todos los días.
+- **Se aplica en vivo mientras elige**, sobre el portal entero. Por eso la
+  pantalla, al desmontarse, vuelve a aplicar lo guardado: si no, alguien probaría
+  cinco colores y se quedaría con el último sin que su equipo lo tenga.
+- **En la base está cerrado por privilegios de columna**, no solo escondido en la
+  interfaz: `revoke update on organizaciones` + `grant update (marca, updated_at)`.
+  RLS filtra por fila; el nombre, el slug y el estado los maneja el super admin.
+- El bucket `marcas` es **público a propósito**: un logo institucional no es
+  secreto y las URLs firmadas vencen, lo que rompería el logo del menú cada hora.
+  Escribir sí está restringido a la carpeta `<org_id>/` de cada empresa.

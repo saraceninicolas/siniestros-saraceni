@@ -34,6 +34,45 @@ Siempre **test primero**, se verifica, y recién después producción.
 | `20260918_0006_endurecer_asegurados.sql` | aplicada | aplicada (2026-09-18) |
 | `20260918_0007_enganchar_por_documento.sql` | aplicada | aplicada (2026-09-18) |
 | `20260921_0008_ficha_aprende_documento.sql` | aplicada | aplicada (2026-09-21) |
+| `20260922_0009_multiempresa_base.sql` | aplicada | pendiente |
+| `20260923_0010_marca_y_logos.sql` | aplicada | pendiente |
+| `20260925_0011_org_id_en_el_portal.sql` | aplicada | pendiente |
+| `20260925_0012_archivos_y_modulos_por_empresa.sql` | aplicada | pendiente |
+| `20260925_0013_empresa_por_defecto.sql` | aplicada | pendiente |
+| `20260925_0014_logo_de_la_empresa_de_casa.sql` | aplicada | pendiente |
+| `20260925_0015_org_publica_sin_slug.sql` | aplicada | pendiente |
+| `20260925_0016_default_de_carga_publica.sql` | aplicada | pendiente |
+| `20260928_0017_formularios_publicos_por_modulo.sql` | aplicada | pendiente |
+| `20260929_0018_companias_por_empresa.sql` | aplicada | pendiente |
+| `20260930_0019_pipeline_comercial_y_acciones.sql` | aplicada | pendiente |
+
+## El pase a producción de la 0009 a la 0018 (multiempresa)
+
+Van todas juntas, y **el orden importa**, porque en el medio hay un momento en
+que la base pide algo que el código viejo todavía no manda:
+
+1. `0009` y `0010`: agregan tablas nuevas. No tocan nada de lo que usa el
+   portal actual, así que se pueden aplicar con el sitio andando.
+2. `0011`, `0013`, `0015`, `0016`: le ponen dueño a las filas. El portal
+   viejo sigue funcionando porque el dueño lo pone la base (los `default`).
+3. **Recién ahí, desplegar el código.** Desde este punto el portal sube los
+   archivos a la carpeta de cada empresa.
+4. `0012` al final: cierra los buckets por carpeta. Si se aplicara antes del
+   paso 3, el portal seguiría subiendo a la raíz y la base le rebotaría cada
+   archivo adjunto.
+5. `0014`: le deja a la empresa de casa su logo de siempre.
+6. `0017` también al final, por lo mismo que la 0012: cierra los formularios
+   públicos de los brokers que no contrataron el módulo, y las páginas nuevas
+   son las que saben avisarlo. Aplicada antes de desplegar, un visitante vería
+   el error crudo de la policy en vez del aviso.
+7. `0018` puede ir en cualquier momento: crea la tabla de compañías y la
+   siembra. El código viejo no la mira, y el nuevo, si no la encuentra, usa la
+   lista de siempre. **Al dar de alta una empresa hay que sembrarla**:
+   `select public.sembrar_companias('<org_id>')`.
+
+Después de aplicar: correr `supabase/tests/aislamiento.sql` **en test** (no en
+producción: inserta para probar, y aunque hace rollback no vale el riesgo) y
+`npm test`, que pega contra test por red.
 
 ## Nota sobre producción
 

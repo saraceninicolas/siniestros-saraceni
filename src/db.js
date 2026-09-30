@@ -218,9 +218,15 @@
   async function authSignUp(email, password, nombre) {
     const c = client();
     if (!c) throw new Error("Supabase no configurado");
+    // `org_slug` viaja en los datos del usuario porque el trigger de alta lo lee
+    // para crear la membresía: sin empresa, el organizador no ve la cuenta nueva
+    // para aprobarla. Si no viene, la base la manda a la empresa original.
     const { data, error } = await c.auth.signUp({
       email, password,
-      options: { data: { nombre: nombre || "" }, emailRedirectTo: window.location.origin },
+      options: {
+        data: { nombre: nombre || "", org_slug: window.ORG_SLUG || "" },
+        emailRedirectTo: window.location.origin,
+      },
     });
     if (error) throw error;
     return data;
@@ -593,6 +599,13 @@ async function dbMaxN() {
       observaciones: r.observaciones || "",
       estado: r.estado || "nueva", notasInternas: r.notas_internas || "",
       gestionadaPor: r.gestionada_por || "",
+      // El pipeline comercial (0019). Una cotización que entró por el
+      // formulario los trae vacíos hasta que alguien la trabaja.
+      detalle: r.detalle || "", fechaCotizacion: r.fecha_cotizacion || "",
+      compania: r.compania || "", prima: r.prima,
+      fechaCierre: r.fecha_cierre || "", poliza: r.poliza || "",
+      motivoPerdida: r.motivo_perdida || "", responsable: r.responsable || "",
+      origen: r.origen || "web",
       creado: r.created_at || null,
     };
   }
@@ -601,10 +614,38 @@ async function dbMaxN() {
     const { data, error } = await c.from("cotizaciones").select("*").order("id", { ascending: false });
     if (error) throw error; return (data || []).map(fromRowC);
   }
+  // Lo que carga el equipo, de cualquier ramo. Lo que entra por el formulario
+  // público sigue su propio camino (nace con origen 'web' y lo pone la base).
+  async function cotCreate(it) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const row = {
+      ref: it.ref || Math.random().toString(36).slice(2, 8).toUpperCase(),
+      ramo: it.ramo || "HOGAR", nombre: it.nombre,
+      documento: orNull(it.documento), telefono: orNull(it.telefono), email: orNull(it.email),
+      localidad: orNull(it.localidad), observaciones: orNull(it.observaciones),
+      detalle: orNull(it.detalle), compania: orNull(it.compania),
+      prima: numOrNull(it.prima), fecha_cotizacion: orNull(it.fechaCotizacion),
+      responsable: orNull(it.responsable), estado: it.estado || "nueva", origen: "manual",
+    };
+    const { data, error } = await c.from("cotizaciones").insert(row).select().single();
+    if (error) throw error; return fromRowC(data);
+  }
   async function cotUpdate(it) {
     const c = client(); if (!c) throw new Error("Supabase no configurado");
     const row = { estado: it.estado, gestionada_por: orNull(it.gestionadaPor) };
     if (it.notasInternas !== undefined) row.notas_internas = orNull(it.notasInternas);
+    if (it.detalle !== undefined) row.detalle = orNull(it.detalle);
+    if (it.ramo !== undefined) row.ramo = it.ramo;
+    if (it.nombre !== undefined) row.nombre = it.nombre;
+    if (it.telefono !== undefined) row.telefono = orNull(it.telefono);
+    if (it.email !== undefined) row.email = orNull(it.email);
+    if (it.fechaCotizacion !== undefined) row.fecha_cotizacion = orNull(it.fechaCotizacion);
+    if (it.compania !== undefined) row.compania = orNull(it.compania);
+    if (it.prima !== undefined) row.prima = numOrNull(it.prima);
+    if (it.fechaCierre !== undefined) row.fecha_cierre = orNull(it.fechaCierre);
+    if (it.poliza !== undefined) row.poliza = orNull(it.poliza);
+    if (it.motivoPerdida !== undefined) row.motivo_perdida = orNull(it.motivoPerdida);
+    if (it.responsable !== undefined) row.responsable = orNull(it.responsable);
     const { data, error } = await c.from("cotizaciones").update(row).eq("id", it._dbId).select().single();
     if (error) throw error; return fromRowC(data);
   }
@@ -777,6 +818,83 @@ async function dbMaxN() {
     return data;
   }
 
+  // ============================ LA EMPRESA DE QUIEN ENTRA ====================
+  // `organizaciones` puede no existir todavía en una base sin la 0009. Por eso
+  // `orgMia` devuelve null en vez de romper: sin empresa, el portal usa la
+  // marca por defecto.
+  //
+  // La policy ya limita la consulta a la empresa propia, así que un `limit 1`
+  // alcanza: no hay forma de que devuelva la de otro broker.
+  let _orgCache = null;
+  async function orgMia() {
+    const c = client(); if (!c) return null;
+    const { data, error } = await c.from("organizaciones").select("*").limit(1).maybeSingle();
+    // Si la consulta anduvo, esta base sabe de empresas (aunque no devuelva
+    // ninguna). La diferencia importa para el logo: en una base de una sola
+    // empresa, el archivo del repositorio ES su logo; en una multiempresa,
+    // mostrarlo sería mostrarle a un broker el logo de otro.
+    window.MULTIEMPRESA = !error;
+    if (error) return null;
+    _orgCache = data ? { id: data.id, nombre: data.nombre || "", slug: data.slug || "",
+                         estado: data.estado || "", marca: data.marca || {} } : null;
+    return _orgCache;
+  }
+
+  // El id de la empresa, para armar la carpeta donde van sus archivos. Se
+  // recuerda entre llamadas: subir tres fotos no puede ser tres consultas más.
+  async function orgId() {
+    if (_orgCache) return _orgCache.id;
+    const o = await orgMia();
+    return o ? o.id : null;
+  }
+
+  // La empresa a la que corresponde esta pantalla ANTES de que alguien entre:
+  // el login de un broker tiene que mostrar su marca, no la del vecino. Se
+  // resuelve por el slug de la dirección y es lo único que se puede leer de
+  // `organizaciones` sin sesión: nombre, slug y marca, nada más.
+  async function orgPublica(slug) {
+    const c = client(); if (!c) return null;
+    const { data, error } = await c.rpc("org_publica", { p_slug: slug || null });
+    // Un error acá suele ser "esa función no existe": base sin multiempresa.
+    // Es la única pista que tiene el login, que corre antes de cualquier otra
+    // consulta, para saber si el logo del repositorio le corresponde.
+    if (error) window.MULTIEMPRESA = false;
+    if (error || !data || !data.length) return null;
+    window.MULTIEMPRESA = true;
+    const o = data[0];
+    return { id: o.id, nombre: o.nombre || "", slug: o.slug || "", marca: o.marca || {} };
+  }
+
+  // Los módulos contratados, para el menú. Que estén escondidos es comodidad;
+  // lo que de verdad los bloquea son las policies.
+  async function orgModulos() {
+    const c = client(); if (!c) return null;
+    const { data, error } = await c.rpc("mis_modulos");
+    if (error) return null;               // base vieja: el portal muestra todo
+    return Array.isArray(data) ? data : null;
+  }
+
+  async function orgGuardarMarca(id, marca) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("organizaciones")
+      .update({ marca, updated_at: new Date().toISOString() })
+      .eq("id", id).select("marca").single();
+    if (error) throw error;
+    return data.marca;
+  }
+
+  // Cada subida estrena nombre de archivo: si se pisara el mismo, el navegador
+  // seguiría mostrando el logo viejo hasta que se le venza la caché.
+  async function orgSubirLogo(id, file) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const ext = String(file.name || "logo.png").split(".").pop().toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
+    const path = id + "/logo-" + Date.now() + "." + ext;
+    const { error } = await c.storage.from("marcas")
+      .upload(path, file, { contentType: file.type || undefined });
+    if (error) throw error;
+    return c.storage.from("marcas").getPublicUrl(path).data.publicUrl;
+  }
+
   // ---- posibles duplicados ----
   // La lista trae las dos fichas con sus datos y cuántos siniestros tiene cada
   // una: sin eso no se puede decidir cuál conservar.
@@ -844,6 +962,94 @@ async function dbMaxN() {
   }
 
   // ============================ ARCHIVOS (Storage) ============================
+  // ============================ ACCIONES ============================
+  // Qué se hizo, cuándo y quién: llamados, cotizaciones enviadas, cierres,
+  // emisiones. Cuelga de una cotización o de un objetivo (0019).
+  function fromRowAcc(r) {
+    return {
+      id: r.id, cotizacionId: r.cotizacion_id, objetivoId: r.objetivo_id,
+      tipo: r.tipo || "nota", nota: r.nota || "",
+      fecha: r.fecha || r.created_at, usuario: r.usuario || "",
+      usuarioId: r.usuario_id || null,
+    };
+  }
+  // Se traen TODAS las de la empresa de una y se agrupan en la pantalla: son
+  // pocas y pedirlas de a una por cotización serían veinte viajes por pantalla.
+  async function accList(filtro) {
+    const c = client(); if (!c) return [];
+    let q = c.from("acciones").select("*").order("fecha", { ascending: false });
+    if (filtro && filtro.cotizacionId) q = q.eq("cotizacion_id", filtro.cotizacionId);
+    if (filtro && filtro.objetivoId) q = q.eq("objetivo_id", filtro.objetivoId);
+    if (filtro && filtro.soloCotizaciones) q = q.not("cotizacion_id", "is", null);
+    if (filtro && filtro.soloObjetivos) q = q.not("objetivo_id", "is", null);
+    const { data, error } = await q;
+    // Una base sin la 0019 no tiene la tabla: sin acciones, no roto.
+    if (error) return [];
+    return (data || []).map(fromRowAcc);
+  }
+  async function accCreate(it) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const row = {
+      cotizacion_id: it.cotizacionId || null, objetivo_id: it.objetivoId || null,
+      tipo: it.tipo, nota: orNull(it.nota), usuario: it.usuario,
+    };
+    if (it.fecha) row.fecha = it.fecha;
+    const { data, error } = await c.from("acciones").insert(row).select().single();
+    if (error) throw error; return fromRowAcc(data);
+  }
+  async function accRemove(id) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { error } = await c.from("acciones").delete().eq("id", id);
+    if (error) throw error;
+  }
+
+  // ============================ COMPAÑÍAS ============================
+  // Con qué compañías trabaja cada broker. Antes era una constante en
+  // data.jsx con las siete de Saraceni: cualquier otro broker veía las
+  // compañías ajenas al cargar un siniestro.
+  //
+  // `siniestros.cia` sigue siendo texto libre, así que esto es un maestro de
+  // conveniencia: un siniestro viejo con una clave que ya no está en la lista
+  // se sigue viendo bien.
+  function fromRowCia(r) {
+    return { id: r.id, clave: r.clave || "", nombre: r.nombre || "", orden: r.orden || 0, activa: r.activa !== false };
+  }
+  async function ciasList() {
+    const c = client(); if (!c) return [];
+    const { data, error } = await c.from("companias").select("*").eq("activa", true).order("orden");
+    // Una base sin la 0018 (producción hoy) no tiene la tabla: se devuelve
+    // vacío y la pantalla cae en la lista de siempre.
+    if (error) return [];
+    return (data || []).map(fromRowCia);
+  }
+  async function ciasTodas() {
+    const c = client(); if (!c) return [];
+    const { data, error } = await c.from("companias").select("*").order("orden");
+    if (error) return [];
+    return (data || []).map(fromRowCia);
+  }
+  async function ciasCreate(it) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("companias")
+      .insert({ clave: it.clave, nombre: it.nombre, orden: it.orden || 0 }).select().single();
+    if (error) throw error; return fromRowCia(data);
+  }
+  async function ciasUpdate(it) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const row = {};
+    if (it.clave !== undefined) row.clave = it.clave;
+    if (it.nombre !== undefined) row.nombre = it.nombre;
+    if (it.orden !== undefined) row.orden = it.orden;
+    if (it.activa !== undefined) row.activa = it.activa;
+    const { data, error } = await c.from("companias").update(row).eq("id", it.id).select().single();
+    if (error) throw error; return fromRowCia(data);
+  }
+  async function ciasRemove(id) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { error } = await c.from("companias").delete().eq("id", id);
+    if (error) throw error;
+  }
+
   const BUCKET = "adjuntos";
   async function fileUpload(file) {
     const c = client(); if (!c) throw new Error("Supabase no configurado");
@@ -852,7 +1058,13 @@ async function dbMaxN() {
     const original = file;
     if (window.achicarImagen) file = await window.achicarImagen(file);
     const safe = (file.name || "archivo").replace(/[^a-zA-Z0-9._-]/g, "_");
-    const path = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${safe}`;
+    // Cada archivo va en la carpeta de su empresa: es lo que mira la policy del
+    // bucket. En una base sin multiempresa no hay empresa que preguntar y se
+    // sube como siempre, a la raíz; si la base sí la tiene, es ella la que
+    // rechaza el archivo sin carpeta, con su propio mensaje.
+    const org = await orgId();
+    const carpeta = org ? org + "/" : "";
+    const path = `${carpeta}${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${safe}`;
     const { error } = await c.storage.from(BUCKET).upload(path, file, { upsert: false, contentType: file.type || undefined });
     if (error) throw error;
     // El nombre que ve el usuario es el que eligió, aunque el archivo guardado
@@ -914,8 +1126,11 @@ async function dbMaxN() {
       enganchar: asegEnganchar,
       dup: { list: dupList, buscar: dupBuscar, unificar: dupUnificar, distintos: dupDistintos },
     },
+    cias: { list: ciasList, todas: ciasTodas, create: ciasCreate, update: ciasUpdate, remove: ciasRemove },
+    org: { mia: orgMia, id: orgId, modulos: orgModulos, publica: orgPublica, guardarMarca: orgGuardarMarca, subirLogo: orgSubirLogo },
     sol: { list: solList, update: solUpdate, subscribe: solSubscribe },
-    cot: { list: cotList, update: cotUpdate, subscribe: cotSubscribe },
+    cot: { list: cotList, create: cotCreate, update: cotUpdate, subscribe: cotSubscribe },
+    acc: { list: accList, create: accCreate, remove: accRemove },
     files: { upload: fileUpload, signedUrl: fileSignedUrl, remove: fileRemove },
   };
 })();

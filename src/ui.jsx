@@ -45,12 +45,14 @@ const Icons = {
   chart:  ["M3 21h18", "M6 21v-6", "M12 21V4", "M18 21v-10"],
   mega:   ["M4 10v4a1 1 0 0 0 1 1h3l5 4V5L8 9H5a1 1 0 0 0-1 1z", "M17 9a4 4 0 0 1 0 6"],
   trend:  ["M3 17l6-6 4 4 7-7", "M15 8h5v5"],
+  ajustes:["M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z",
+           "M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"],
 };
 const Ico = ({ name, ...rest }) => <Icon d={Icons[name]} {...rest} />;
 
 // ---------- badges ----------
 function Badge({ estado, size = "md" }) {
-  const e = ESTADOS[estado] || { fg: "#475569", bg: "#EEF1F4", dot: "#64748B" };
+  const e = ESTADOS[estado] || { fg: "var(--ink-2)", bg: "var(--line-2)", dot: "var(--muted)" };
   return (
     <span className="badge" style={{ background: e.bg, color: e.fg, fontSize: size === "sm" ? 11.5 : 12.5 }}>
       <span className="badge-dot" style={{ background: e.dot }} />{estado}
@@ -82,60 +84,142 @@ function RamoTag({ ramo, hecho }) {
 
 // ---------- navegación del portal (carpetas) ----------
 const PORTAL_NAV = [
-  { key: "objetivos", label: "Objetivos", icon: "target", org: true, children: [
+  // `arriba`: va antes del rotulo de carpetas, porque no es una carpeta sino
+  // la pantalla donde cae todo el mundo al entrar.
+  { key: "inicio", label: "Inicio", icon: "home", suelto: true, arriba: true, children: [] },
+  { key: "objetivos", label: "Objetivos", icon: "target", org: true, modulo: "objetivos", children: [
     { key: "obj-panel", label: "Panel de control", icon: "grid" },
     { key: "obj-metas", label: "Metas y seguimiento", icon: "check" } ] },
-  { key: "siniestros", label: "Siniestros", icon: "shield", children: [
+  { key: "siniestros", label: "Siniestros", icon: "shield", modulo: "siniestros", children: [
     { key: "dashboard", label: "Panel de control", icon: "grid", count: "abiertos" },
     { key: "agenda", label: "Agenda de gestiones", icon: "agenda", count: "porVencer" },
     { key: "solicitudes", label: "Solicitudes recibidas", icon: "mail", count: "solicitudes" },
     { key: "sin-estadisticas", label: "Estadísticas", icon: "chart" },
     { key: "sin-asegurados", label: "Siniestralidad por asegurado", icon: "user" } ] },
-  { key: "facturacion", label: "Facturación", icon: "doc", org: true, children: [
+  { key: "facturacion", label: "Facturación", icon: "doc", org: true, modulo: "facturacion", children: [
     { key: "fact-estadisticas", label: "Estadísticas", icon: "chart" },
     { key: "fact-carga", label: "Carga mensual", icon: "edit" },
     { key: "fact-crecimiento", label: "Crecimiento anual", icon: "target" },
     { key: "fact-companias", label: "Compañías", icon: "folder" } ] },
-  { key: "comercial", label: "Comercial", icon: "store", children: [
+  { key: "comercial", label: "Comercial", icon: "store", modulo: "comercial", children: [
     { key: "com-panel", label: "Panel de control", icon: "grid" },
-    { key: "com-cotizaciones", label: "Cotizaciones de hogar", icon: "home", count: "cotNuevas" } ] },
-  { key: "renovaciones", label: "Renovaciones", icon: "refresh", children: [
+    { key: "com-cotizaciones", label: "Pedidos de la web", icon: "home", count: "cotNuevas" },
+    { key: "com-seguimiento", label: "Cotizaciones y cierres", icon: "trend" } ] },
+  { key: "renovaciones", label: "Renovaciones", icon: "refresh", modulo: "renovaciones", children: [
     { key: "renov-proximas", label: "Próximas a vencer", icon: "clock" },
     { key: "renov-historial", label: "Historial", icon: "agenda" } ] },
-  { key: "pendientes", label: "Pendientes", icon: "flag", children: [
+  { key: "pendientes", label: "Pendientes", icon: "flag", modulo: "pendientes", children: [
     { key: "pend-panel", label: "Panel de control", icon: "grid" },
     { key: "pend-agenda", label: "Agenda por vencimiento", icon: "agenda" } ] },
   { key: "admin", label: "Administración", icon: "user", org: true, children: [
-    { key: "usuarios", label: "Usuarios y roles", icon: "user", count: "usuariosPend" },
-    { key: "asegurados-dup", label: "Asegurados duplicados", icon: "search", count: "duplicados" } ] },
+    { key: "usuarios", label: "Usuarios y roles", icon: "user", count: "usuariosPend" } ] },
+  // `suelto`: no es una carpeta que se abre, es un botón directo con su ícono.
+  { key: "ajustes", label: "Ajustes", icon: "ajustes", org: true, suelto: true, children: [] },
 ];
 const NAV_LOOKUP = {};
 PORTAL_NAV.forEach((g) => g.children.forEach((c) => { NAV_LOOKUP[c.key] = { section: g.label, sectionKey: g.key, title: c.label }; }));
+// Pantallas que existen pero no van en el menú: se llega a ellas desde otra
+// pantalla. Duplicados se abre desde Siniestralidad por asegurado, que es
+// donde el dato tiene sentido.
+NAV_LOOKUP["inicio"] = { section: "Inicio", sectionKey: "inicio", title: "Para hoy" };
+NAV_LOOKUP["ajustes"] = { section: "Ajustes", sectionKey: "ajustes", title: "Marca del portal" };
+NAV_LOOKUP["asegurados-dup"] = { section: "Siniestros", sectionKey: "siniestros", title: "Asegurados duplicados" };
 const SINIESTROS_KEYS = ["dashboard", "agenda", "solicitudes", "sin-estadisticas", "sin-asegurados"];
 const FACTURACION_KEYS = ["fact-estadisticas", "fact-carga", "fact-crecimiento", "fact-companias"];
-const COMERCIAL_KEYS = ["com-panel", "com-cotizaciones"];
+const COMERCIAL_KEYS = ["com-panel", "com-cotizaciones", "com-seguimiento"];
 const RENOVACION_KEYS = ["renov-proximas", "renov-historial"];
 const PENDIENTES_KEYS = ["pend-panel", "pend-agenda"];
 const OBJETIVOS_KEYS = ["obj-panel", "obj-metas"];
-const ADMIN_KEYS = ["usuarios", "asegurados-dup"];
-// Módulos reservados al organizador (los empleados no los ven ni acceden)
-const ORG_ONLY_KEYS = [...FACTURACION_KEYS, ...OBJETIVOS_KEYS, ...ADMIN_KEYS];
+const ADMIN_KEYS = ["usuarios"];
+// Módulos reservados al organizador (los empleados no los ven ni acceden).
+// `ajustes` y `asegurados-dup` no están en ADMIN_KEYS porque no viven en esa
+// carpeta, pero son igual de organizador.
+const ORG_ONLY_KEYS = [...FACTURACION_KEYS, ...OBJETIVOS_KEYS, ...ADMIN_KEYS, "ajustes", "asegurados-dup"];
+
+// Qué carpetas ve una empresa según lo que contrató. `modulos` en null es
+// "no sabemos" (base sin la 0012, o consulta fallida): ahí se muestra todo,
+// porque esconder el menú nunca fue la defensa — las policies son las que
+// frenan de verdad, y dejar a un broker sin menú por un error de red sería
+// peor que mostrarle una carpeta vacía.
+function navDeLaEmpresa(rol, modulos) {
+  return PORTAL_NAV.filter((g) =>
+    (!g.org || rol === "organizador") &&
+    (!g.modulo || !modulos || modulos.includes(g.modulo)));
+}
+
+// El link público de la empresa que entró: /aicardi/denuncia, no /denuncia.
+//
+// ⚠️ El slug sale de la empresa DEL USUARIO, no de la ruta (`ORG_SLUG`). Si
+// saliera de la ruta, alguien de Aicardi que entrara por la dirección de
+// siempre copiaría el link de la empresa de casa y sus asegurados le dejarían
+// las denuncias a otro broker.
+//
+// Sin empresa (base de una sola, que es producción hoy) queda el de siempre.
+function useLinkPublico(pagina) {
+  const [link, setLink] = React.useState("");
+  React.useEffect(() => {
+    let vivo = true;
+    (async () => {
+      let slug = "";
+      try {
+        const o = window.DB && window.DB.org ? await window.DB.org.mia() : null;
+        if (o) slug = o.slug || "";
+      } catch (e) { console.error("Link publico:", e); }
+      if (!vivo) return;
+      const origen = (window.location && window.location.origin) || "";
+      setLink(origen + (slug ? "/" + slug : "") + "/" + pagina);
+    })();
+    return () => { vivo = false; };
+  }, [pagina]);
+  return link;
+}
+
+// El logo de la empresa que entró. Si todavía no subió ninguno va su nombre
+// escrito, NUNCA el archivo del repositorio: ese es el logo del broker de casa,
+// y mostrárselo a otro es peor que no mostrar nada. El archivo solo vuelve a
+// aparecer cuando no hay base configurada, que es el modo de demostración.
+function MarcaLogo({ clase, claseTexto }) {
+  const m = window.MARCA || null;
+  if (m && m.logo) return <div className={clase}><img src={m.logo} alt={m.nombre || "Portal"} /></div>;
+  if (m && m.nombre) return <div className={clase + " " + claseTexto}>{m.nombre}</div>;
+  // Base de una sola empresa (o demostración sin base): el archivo es su logo.
+  if (!window.MULTIEMPRESA) return <div className={clase}><img src="/assets/saraceni-logo.jpg" alt="Portal" /></div>;
+  return <div className={clase + " " + claseTexto} aria-hidden="true" />;
+}
 
 // ---------- sidebar ----------
-function Sidebar({ active, onNav, station, counts, open: drawerOpen, rol }) {
-  const nav = PORTAL_NAV.filter((g) => !g.org || rol === "organizador");
+function Sidebar({ active, onNav, station, counts, open: drawerOpen, rol, modulos }) {
+  const nav = navDeLaEmpresa(rol, modulos);
   const sectionOf = (k) => (nav.find((g) => g.children.some((c) => c.key === k)) || {}).key;
   const [open, setOpen] = React.useState(() => ({ [sectionOf(active) || "siniestros"]: true }));
   const toggle = (k) => setOpen((o) => ({ ...o, [k]: !o[k] }));
   return (
     <aside className={"sb" + (drawerOpen ? " is-open" : "")}>
       <div className="sb-brand">
-        <div className="sb-logo"><img src="/assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></div>
+        <MarcaLogo clase="sb-logo" claseTexto="sb-logo-texto" />
         <div className="sb-sub"><span className="sb-sub-dot" />Portal de gestiones</div>
       </div>
       <nav className="sb-nav">
+        {nav.filter((g) => g.arriba).map((g) => (
+          <button key={g.key} className={"sb-folder-head sb-suelto" + (active === g.key ? " is-active" : "")}
+            onClick={() => onNav(g.key)}>
+            <span className="sb-item-ico"><Ico name={g.icon} size={17} /></span>
+            <span className="sb-folder-label">{g.label}</span>
+          </button>
+        ))}
         <div className="sb-group-label">Carpetas de gestión</div>
-        {nav.map((g) => {
+        {nav.filter((g) => !g.arriba).map((g) => {
+          // Un módulo suelto (Ajustes) es un botón y no una carpeta: no tiene
+          // pantallas adentro que valga la pena desplegar.
+          if (g.suelto) {
+            return (
+              <button key={g.key} className={"sb-folder-head sb-suelto" + (active === g.key ? " is-active" : "")}
+                onClick={() => onNav(g.key)}>
+                <span className="sb-item-ico"><Ico name={g.icon} size={17} /></span>
+                <span className="sb-folder-label">{g.label}</span>
+              </button>
+            );
+          }
           const isOpen = !!open[g.key];
           const hasActive = g.children.some((c) => c.key === active);
           return (
@@ -170,9 +254,11 @@ function Sidebar({ active, onNav, station, counts, open: drawerOpen, rol }) {
         <div className="sb-station-name" title={station} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{station}</div>
         <div className="sb-station-note">{rol === "organizador" ? "Organizador" : rol === "empleado" ? "Empleado" : "Sesión activa"}</div>
       </div>
+      {/* El pie lleva el nombre de la empresa que entró, no el de casa: a un
+          broker que compró el portal no le puede aparecer otro nombre abajo. */}
       <div className="sb-foot">
-        <span className="sb-foot-mark">SARACENI</span>
-        <span className="sb-foot-meta">Broker de Seguros · v1.0</span>
+        <span className="sb-foot-mark">{(window.MARCA && window.MARCA.nombre) || "SARACENI"}</span>
+        <span className="sb-foot-meta">Portal de gestiones · v1.0</span>
       </div>
     </aside>
   );
@@ -180,7 +266,7 @@ function Sidebar({ active, onNav, station, counts, open: drawerOpen, rol }) {
 
 // ---------- topbar ----------
 const HOY = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpenSync, onLogout, onChangePass, onMenu, isSiniestros, notifs, onOpenNotif, onMarkAllNotifs }) {
+function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpenCalendario, onLogout, onChangePass, onMenu, isSiniestros, notifs, onOpenNotif, onMarkAllNotifs }) {
   const info = NAV_LOOKUP[active] || { section: "Siniestros", title: "Panel de control" };
   return (
     <header className="tb">
@@ -203,7 +289,7 @@ function Topbar({ active, query, onQuery, station, onSwitchStation, onNew, onOpe
         )}
         <div className="tb-date"><Ico name="clock" size={14} /><span style={{ textTransform: "capitalize" }}>{HOY}</span></div>
         <div className="tb-sep" />
-        {isSiniestros && <button className="btn-ghost tb-icon" title="Sincronizar con Google Calendar" onClick={onOpenSync}><Ico name="agenda" size={18} /></button>}
+        {isSiniestros && <button className="btn-ghost tb-icon" title="Calendario de gestiones del mes" onClick={onOpenCalendario}><Ico name="agenda" size={18} /></button>}
         {notifs && <NotifBell notifs={notifs} onOpenNotif={onOpenNotif} onMarkAll={onMarkAllNotifs} />}
         <span className="tb-station-chip" title="Usuario conectado">
           <span className="sb-station-led" /><Ico name="user" size={14} />{station}
@@ -267,7 +353,7 @@ function Kpis({ data, foco, onFoco }) {
   const cards = [
     { key: "activos", label: "Siniestros activos", value: abiertos.length, hint: `${total} en total`, tone: ESTADOS["Abierto"], icon: "folder" },
     { key: "porVencer", label: "Gestiones por vencer", value: porVencer, hint: "vencen en ≤ 3 días", tone: URGENCIA.proximo, icon: "clock" },
-    { key: "vencidas", label: "Gestiones vencidas", value: vencidas, hint: "requieren acción", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "alert" },
+    { key: "vencidas", label: "Gestiones vencidas", value: vencidas, hint: "requieren acción", tone: { bg: "var(--peligro-soft)", fg: "var(--peligro)" }, icon: "alert" },
     { key: "terminados", label: "Terminados", value: terminados, hint: "cerrados", tone: ESTADOS["Terminado"], icon: "check" },
   ];
   return (
@@ -282,7 +368,7 @@ function Kpis({ data, foco, onFoco }) {
 }
 
 // ---------- toolbar ----------
-function Toolbar({ title, count, estadoFilter, onEstado, ramoFilter, onRamo, ciaFilter, onCia, selected, onEdit, onDelete }) {
+function Toolbar({ title, count, estadoFilter, onEstado, ramoFilter, onRamo, ciaFilter, onCia, selected, onEdit, onDelete, cias }) {
   return (
     <div className="toolbar">
       <div className="toolbar-left">
@@ -301,7 +387,7 @@ function Toolbar({ title, count, estadoFilter, onEstado, ramoFilter, onRamo, cia
         </select>
         <select className="select" value={ciaFilter} onChange={(e) => onCia(e.target.value)}>
           <option value="Todos">Todas las compañías</option>
-          {CIAS.map((c) => <option key={c} value={c}>{ciaLabel(c)}</option>)}
+          {ciasParaElegir(cias).map((c) => <option key={c.clave} value={c.clave}>{c.nombre}</option>)}
         </select>
         <div className="toolbar-divider" />
         <button className="btn-ghost" disabled={!selected} onClick={onEdit}><Ico name="edit" size={15} />Editar</button>
@@ -421,7 +507,7 @@ function ClaimsTable({ rows, selectedId, onSelect, onOpen, multi, onClientFilter
 }
 
 // ---------- agenda (worklist por fecha límite) ----------
-function Agenda({ data, onOpen, onSync, onGcal }) {
+function Agenda({ data, onOpen, onCalendario, onGcal }) {
   const abiertos = data.filter((d) => d.estado === "Abierto" && d.fechaLimite);
   const buckets = {
     vencido: { label: "Vencidas", icon: "alert", items: [] },
@@ -432,17 +518,21 @@ function Agenda({ data, onOpen, onSync, onGcal }) {
   abiertos.forEach((d) => buckets[urgenciaDe(d)]?.items.push(d));
   Object.values(buckets).forEach((b) => b.items.sort((a, c) => (daysUntil(a.fechaLimite) - daysUntil(c.fechaLimite))));
   const sinFecha = data.filter((d) => d.estado === "Abierto" && !d.fechaLimite);
-  const agendadas = abiertos.filter((d) => d.enCalendario).length;
+  const vencidas = buckets.vencido.items.length;
 
   return (
     <div className="agenda">
       <div className="ag-banner">
         <span className="ag-banner-ico"><Ico name="agenda" size={22} /></span>
         <div className="ag-banner-txt">
-          <span className="ag-banner-title">Google Calendar</span>
-          <span className="ag-banner-sub">{agendadas} de {abiertos.length} gestiones agendadas · recordatorio automático</span>
+          <span className="ag-banner-title">Calendario del mes</span>
+          <span className="ag-banner-sub">
+            {abiertos.length} gestiones con fecha límite
+            {vencidas > 0 ? ` · ${vencidas} vencida${vencidas === 1 ? "" : "s"}` : ""}
+            {" · "}esta lista va por urgencia; el calendario, por fecha
+          </span>
         </div>
-        <button className="btn-gcal lg" onClick={onSync}><Ico name="agenda" size={16} />Sincronizar gestiones</button>
+        <button className="btn-gcal lg" onClick={onCalendario}><Ico name="agenda" size={16} />Ver el mes</button>
       </div>
       {Object.entries(buckets).map(([key, b]) => b.items.length > 0 && (
         <section className="ag-group" key={key}>
@@ -520,8 +610,8 @@ function ModuleScreen({ info }) {
 }
 
 Object.assign(window, {
-  Ico, Icons, Badge, UrgBadge, RamoTag, Sidebar, Topbar, KpiCard, Kpis, sinKey, Toolbar, ClaimsTable, Agenda,
-  ModuleScreen, PORTAL_NAV, NAV_LOOKUP, SINIESTROS_KEYS, FACTURACION_KEYS, RENOVACION_KEYS, COMERCIAL_KEYS,
+  Ico, Icons, Badge, UrgBadge, RamoTag, MarcaLogo, Sidebar, Topbar, KpiCard, Kpis, sinKey, Toolbar, ClaimsTable, Agenda,
+  ModuleScreen, PORTAL_NAV, NAV_LOOKUP, navDeLaEmpresa, useLinkPublico, SINIESTROS_KEYS, FACTURACION_KEYS, RENOVACION_KEYS, COMERCIAL_KEYS,
   PENDIENTES_KEYS, OBJETIVOS_KEYS, ADMIN_KEYS, ORG_ONLY_KEYS,
 });
 

@@ -2,8 +2,48 @@
 // Ingreso con contraseña, acceso por Magic Link y registro con email real.
 // Los registros nuevos quedan PENDIENTES hasta que un organizador los apruebe.
 
+// De qué empresa es esta pantalla, resuelto SIN sesión por el slug de la
+// dirección. Lo usan el login y la pantalla de "cuenta pendiente", que son las
+// dos que se ven antes de que el portal sepa quién entró.
+function useEmpresaPublica() {
+  const [empresa, setEmpresa] = React.useState(null);
+  // `resuelto` no se lee: está para volver a dibujar cuando la consulta termina
+  // sin empresa. Ahí el logo pasa de "esperando" a lo que corresponda, que en
+  // una base sin multiempresa es el archivo del repositorio.
+  const [, setResuelto] = React.useState(false);
+  React.useEffect(() => {
+    if (!(window.DB && window.DB.configured() && window.DB.org && window.DB.org.publica)) return;
+    let vivo = true;
+    (async () => {
+      const o = await window.DB.org.publica(window.ORG_SLUG);
+      if (!vivo) return;
+      setResuelto(true);
+      if (!o) return;
+      setEmpresa(o);
+      window.aplicarMarca({ ...(o.marca || {}), nombre: o.nombre });
+    })();
+    return () => { vivo = false; };
+  }, []);
+  return empresa;
+}
+
+// El logo de la empresa dueña de esta dirección, o su nombre escrito si todavía
+// no subió ninguno. Mientras no se resuelve no se muestra nada: un parpadeo con
+// el logo de otro broker es justo lo que no puede pasar. Sin base configurada
+// (modo demostración) vuelve el archivo del repositorio.
+function LoginMarca({ empresa }) {
+  // Mientras no se resuelve no se muestra nada, salvo que la base no tenga
+  // multiempresa: ahí la única empresa es la de casa y el archivo es su logo.
+  const unaSolaEmpresa = window.MULTIEMPRESA === false || !(window.DB && window.DB.configured());
+  const logo = empresa ? (empresa.marca || {}).logo : (unaSolaEmpresa ? "/assets/saraceni-logo.jpg" : "");
+  if (logo) return <div className="login-logo"><img src={logo} alt={(empresa && empresa.nombre) || "Portal"} /></div>;
+  if (empresa && empresa.nombre) return <div className="login-logo login-logo-texto">{empresa.nombre}</div>;
+  return <div className="login-logo login-logo-vacio" aria-hidden="true" />;
+}
+
 function LoginScreen({ onSignIn }) {
   const [mode, setMode] = React.useState("login"); // login | signup
+  const empresa = useEmpresaPublica();
   const [nombre, setNombre] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [pass, setPass] = React.useState("");
@@ -46,7 +86,7 @@ function LoginScreen({ onSignIn }) {
   return (
     <div className="login">
       <form className="login-card" onSubmit={submit}>
-        <div className="login-logo"><img src="/assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></div>
+        <LoginMarca empresa={empresa} />
         <h1 className="login-title">Portal de Siniestros</h1>
         <p className="login-sub">{mode === "signup" ? "Creá tu cuenta con tu email" : "Ingresá para continuar"}</p>
         {window.AMBIENTE === "test" && (
@@ -86,7 +126,7 @@ function LoginScreen({ onSignIn }) {
           {busy ? "Un momento…" : mode === "signup" ? "Crear cuenta" : "Ingresar"}
         </button>
 
-        <div className="login-foot">SARACENI · Broker de Seguros</div>
+        <div className="login-foot">{(empresa && empresa.nombre) || "SARACENI · Broker de Seguros"}</div>
       </form>
     </div>
   );
@@ -94,11 +134,12 @@ function LoginScreen({ onSignIn }) {
 
 // Cuenta creada pero sin acceso todavía (pendiente de aprobación o suspendida)
 function PendingScreen({ perfil, email, onLogout, onRefresh }) {
+  const empresa = useEmpresaPublica();
   const suspendida = perfil && perfil.estado === "suspendido";
   return (
     <div className="login">
       <div className="login-card">
-        <div className="login-logo"><img src="/assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></div>
+        <LoginMarca empresa={empresa} />
         <h1 className="login-title">{suspendida ? "Acceso suspendido" : "Cuenta pendiente de aprobación"}</h1>
         <p className="login-sub" style={{ marginBottom: 14 }}>
           {suspendida
@@ -110,7 +151,7 @@ function PendingScreen({ perfil, email, onLogout, onRefresh }) {
         <button className="btn-ghost" type="button" style={{ width: "100%", justifyContent: "center", marginTop: 8 }} onClick={onLogout}>
           <Ico name="logout" size={15} />Salir
         </button>
-        <div className="login-foot">SARACENI · Broker de Seguros</div>
+        <div className="login-foot">{(empresa && empresa.nombre) || "SARACENI · Broker de Seguros"}</div>
       </div>
     </div>
   );

@@ -3,9 +3,9 @@
 // Panel con KPIs + bandeja de cotizaciones para gestionar y cerrar.
 
 const COT_ESTADO = {
-  "nueva":      { fg: "#B91C1C", bg: "#FBE3E3", t: "Nueva" },
-  "cotizada":   { fg: "#15803D", bg: "#E6F4EA", t: "Cotizada" },
-  "descartada": { fg: "#475569", bg: "#EEF1F4", t: "Descartada" },
+  "nueva":      { fg: "var(--peligro-hondo)", bg: "var(--peligro-soft)", t: "Nueva" },
+  "cotizada":   { fg: "var(--ok)", bg: "var(--ok-soft)", t: "Cotizada" },
+  "descartada": { fg: "var(--ink-2)", bg: "var(--line-2)", t: "Descartada" },
 };
 function cotBadge(estado) {
   const c = COT_ESTADO[estado] || COT_ESTADO.nueva;
@@ -55,7 +55,7 @@ function CotCard({ c, onCotizar, onDescartar, onReabrir, onNotas }) {
         {c.enCountry != null && (
           <div>
             <div className="sol-k">Country / barrio cerrado</div>
-            <div className="sol-v" style={c.enCountry ? { color: "#15803D", fontWeight: 700 } : null}>
+            <div className="sol-v" style={c.enCountry ? { color: "var(--ok)", fontWeight: 700 } : null}>
               {c.enCountry ? "Sí — con vallado perimetral" : "No"}
             </div>
           </div>
@@ -63,7 +63,7 @@ function CotCard({ c, onCotizar, onDescartar, onReabrir, onNotas }) {
         {c.tienePileta != null && (
           <div>
             <div className="sol-k">Pileta</div>
-            <div className="sol-v" style={c.tienePileta ? { color: "#1D4ED8", fontWeight: 700 } : null}>
+            <div className="sol-v" style={c.tienePileta ? { color: "var(--info-2)", fontWeight: 700 } : null}>
               {c.tienePileta ? "Sí" : "No"}
             </div>
           </div>
@@ -155,10 +155,10 @@ function ComercialPanel({ data }) {
   const delMes = data.filter((c) => (c.creado || "").slice(0, 7) === hoy.slice(0, 7)).length;
 
   const cards = [
-    { key: "nuevas", label: "Pedidos sin responder", value: nuevas.length, hint: "esperando cotización", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "mail" },
-    { key: "cotizadas", label: "Cotizadas", value: cotizadas.length, hint: "propuesta enviada", tone: { bg: "#E6F4EA", fg: "#15803D" }, icon: "check" },
-    { key: "delMes", label: "Pedidos del mes", value: delMes, hint: "entraron este mes", tone: { bg: "#E8F0FE", fg: "#1D4ED8" }, icon: "grid" },
-    { label: "Cotizadas / cerradas", value: conversion + "%", hint: cerradas + " cerradas en total", tone: { bg: "#FDF1DC", fg: "#B45309" }, icon: "target" },
+    { key: "nuevas", label: "Pedidos sin responder", value: nuevas.length, hint: "esperando cotización", tone: { bg: "var(--peligro-soft)", fg: "var(--peligro)" }, icon: "mail" },
+    { key: "cotizadas", label: "Cotizadas", value: cotizadas.length, hint: "propuesta enviada", tone: { bg: "var(--ok-soft)", fg: "var(--ok)" }, icon: "check" },
+    { key: "delMes", label: "Pedidos del mes", value: delMes, hint: "entraron este mes", tone: { bg: "var(--info-soft)", fg: "var(--info-2)" }, icon: "grid" },
+    { label: "Cotizadas / cerradas", value: conversion + "%", hint: cerradas + " cerradas en total", tone: { bg: "var(--warn-soft)", fg: "var(--warn)" }, icon: "target" },
   ];
 
   const filas = React.useMemo(() => {
@@ -217,13 +217,13 @@ function CotizacionesView({ data, onCotizar, onDescartar, onReabrir, onNotas }) 
   const [verHist, setVerHist] = React.useState(false);
   const nuevas = data.filter((c) => c.estado === "nueva");
   const resto = data.filter((c) => c.estado !== "nueva");
-  const linkPublico = window.location.origin + "/cotizar-hogar";
+  const linkPublico = useLinkPublico("cotizar-hogar");
   const copiar = () => { try { navigator.clipboard.writeText(linkPublico); } catch (e) { /* noop */ } };
 
   return (
     <div className="sol-wrap">
       <div className="ag-banner">
-        <span className="ag-banner-ico" style={{ background: "#fdecec", color: "var(--brand)" }}><Ico name="home" size={22} /></span>
+        <span className="ag-banner-ico" style={{ background: "var(--brand-soft)", color: "var(--brand-txt)" }}><Ico name="home" size={22} /></span>
         <div className="ag-banner-txt">
           <span className="ag-banner-title">Cotizaciones de seguro de hogar</span>
           <span className="ag-banner-sub">Compartí este link con tus clientes: <b className="mono">{linkPublico}</b></span>
@@ -258,8 +258,9 @@ function CotizacionesView({ data, onCotizar, onDescartar, onReabrir, onNotas }) 
 }
 
 // ---------- orquestador ----------
-function ComercialModule({ active, station, query }) {
+function ComercialModule({ active, station, query, usuarios, cias, rol }) {
   const [data, setData] = React.useState([]);
+  const [acciones, setAcciones] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [toast, setToast] = React.useState(null);
   const timer = React.useRef(null);
@@ -273,6 +274,9 @@ function ComercialModule({ active, station, query }) {
     if (!window.DB || !window.DB.configured() || !window.DB.cot) { setLoading(false); return; }
     try { setData(await window.DB.cot.list()); }
     catch (e) { console.error("Cotizaciones:", e); }
+    // Todas las acciones de la empresa en una consulta; la pantalla las agrupa.
+    try { if (window.DB.acc) setAcciones(await window.DB.acc.list({ soloCotizaciones: true })); }
+    catch (e) { console.error("Acciones:", e); }
     setLoading(false);
   }, []);
 
@@ -299,6 +303,49 @@ function ComercialModule({ active, station, query }) {
     } catch (e) { console.error(e); flash("No se pudieron guardar las notas", true); }
   };
 
+  // Cada movimiento queda firmado. El estado no se cambia "a mano y listo":
+  // cambiarlo escribe la accion que le corresponde, asi el historial no miente
+  // por olvido de nadie.
+  const anotar = async (cot, accion) => {
+    if (!window.DB.acc) return null;
+    const a = await window.DB.acc.create({ cotizacionId: cot._dbId, tipo: accion.tipo, nota: accion.nota, usuario: station });
+    setAcciones((p) => [a, ...p]);
+    return a;
+  };
+  const agregarAccion = async (cot, accion) => {
+    try { await anotar(cot, accion); flash("Movimiento anotado"); }
+    catch (e) { console.error(e); flash("No se pudo anotar el movimiento", true); }
+  };
+  const borrarAccion = async (a) => {
+    if (!window.confirm("¿Borrar este movimiento del historial?")) return;
+    try { await window.DB.acc.remove(a.id); setAcciones((p) => p.filter((x) => x.id !== a.id)); }
+    catch (e) { console.error(e); flash("No se pudo borrar", true); }
+  };
+  const crearCotizacion = async (f) => {
+    try {
+      const nueva = await window.DB.cot.create({ ...f, estado: f.prima ? "cotizada" : "nueva" });
+      setData((p) => [nueva, ...p]);
+      await anotar(nueva, { tipo: f.prima ? "cotizacion" : "nota", nota: f.prima ? "Cotización cargada" : "Pedido cargado" });
+      flash("Cotización creada");
+    } catch (e) { console.error(e); flash("No se pudo crear la cotización", true); }
+  };
+  // `estadoNuevo` opcional: si viene, ademas de guardar los datos mueve el
+  // estado y deja la accion (cierre, perdida, cotizacion) firmada.
+  const actualizarCotizacion = async (cot, campos, estadoNuevo) => {
+    try {
+      const cambios = { _dbId: cot._dbId, estado: estadoNuevo || cot.estado, gestionadaPor: station, ...campos };
+      if (estadoNuevo === "cerrada" && !campos.fechaCierre) cambios.fechaCierre = new Date().toISOString().slice(0, 10);
+      if (estadoNuevo === "cotizada" && !campos.fechaCotizacion) cambios.fechaCotizacion = new Date().toISOString().slice(0, 10);
+      const up = await window.DB.cot.update(cambios);
+      setData((p) => p.map((x) => (x._dbId === cot._dbId ? up : x)));
+      if (estadoNuevo) {
+        const tipo = estadoNuevo === "cerrada" ? "cierre" : estadoNuevo === "perdida" ? "perdida" : "cotizacion";
+        await anotar(up, { tipo, nota: "" });
+      }
+      flash(estadoNuevo === "cerrada" ? "¡Cerrada!" : "Guardado");
+    } catch (e) { console.error(e); flash("No se pudo guardar", true); }
+  };
+
   const filtrada = React.useMemo(() => {
     const q = (query || "").trim().toLowerCase();
     if (!q) return data;
@@ -312,6 +359,10 @@ function ComercialModule({ active, station, query }) {
     <>
       {active === "com-panel"
         ? <ComercialPanel data={filtrada} />
+        : active === "com-seguimiento"
+        ? <SeguimientoView data={filtrada} acciones={acciones} station={station} usuarios={usuarios}
+            cias={cias} query={query} rol={rol} onCrear={crearCotizacion}
+            onActualizar={actualizarCotizacion} onAccion={agregarAccion} onBorrarAccion={borrarAccion} />
         : <CotizacionesView data={filtrada}
             onCotizar={(c) => cambiarEstado(c, "cotizada", "Cotización marcada como enviada")}
             onDescartar={(c) => { if (window.confirm(`¿Descartar el pedido de ${c.nombre}?`)) cambiarEstado(c, "descartada", "Pedido descartado"); }}
@@ -319,7 +370,7 @@ function ComercialModule({ active, station, query }) {
             onNotas={guardarNotas} />}
       {toast && (
         <div className="toast">
-          <span className="toast-ico" style={toast.err ? { background: "#DC2626" } : null}><Ico name={toast.err ? "alert" : "check"} size={15} /></span>
+          <span className="toast-ico" style={toast.err ? { background: "var(--peligro-fuerte)" } : null}><Ico name={toast.err ? "alert" : "check"} size={15} /></span>
           <span>{toast.msg}</span>
         </div>
       )}

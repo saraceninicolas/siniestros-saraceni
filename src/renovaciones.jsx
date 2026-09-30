@@ -2,10 +2,10 @@
 
 const ESTADOS_RENOV = ["Pendiente", "En gestión", "Renovada", "No renueva"];
 const ESTADO_RENOV_COLOR = {
-  "Pendiente": { fg: "#B45309", bg: "#FEF3E2" },
-  "En gestión": { fg: "#1D4ED8", bg: "#E8F0FE" },
-  "Renovada": { fg: "#15803D", bg: "#E6F4EA" },
-  "No renueva": { fg: "#475569", bg: "#EEF1F4" },
+  "Pendiente": { fg: "var(--warn)", bg: "var(--warn-soft)" },
+  "En gestión": { fg: "var(--info-2)", bg: "var(--info-soft)" },
+  "Renovada": { fg: "var(--ok)", bg: "var(--ok-soft)" },
+  "No renueva": { fg: "var(--ink-2)", bg: "var(--line-2)" },
 };
 const MESES_R = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 const MESES_R_CORTO = ["", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
@@ -44,7 +44,7 @@ function faltanTexto(finVig) {
   return "faltan " + du + " d";
 }
 function estadoBadgeR(estado) {
-  const c = ESTADO_RENOV_COLOR[estado] || { fg: "#475569", bg: "#EEF1F4" };
+  const c = ESTADO_RENOV_COLOR[estado] || { fg: "var(--ink-2)", bg: "var(--line-2)" };
   return <span className="badge" style={{ background: c.bg, color: c.fg, fontSize: 11.5 }}><span className="badge-dot" style={{ background: c.fg }} />{estado}</span>;
 }
 
@@ -62,10 +62,10 @@ function RenovKpis({ data, foco, onFoco }) {
   const esteMes = pend.filter((r) => urgenciaR(r.finVig) === "pronto").length;
   const renovadas = data.filter((r) => r.estado === "Renovada").length;
   const cards = [
-    { key: "aRenovar", label: "Pólizas a renovar", value: pend.length, hint: "pendientes", tone: { bg: "#FEF3E2", fg: "#B45309" }, icon: "refresh" },
-    { key: "prontas", label: "Vencen ≤ 30 días", value: esteMes, hint: "próximas", tone: { bg: "#FEF3E2", fg: "#D97706" }, icon: "clock" },
-    { key: "vencidas", label: "Vencidas", value: vencidas, hint: "requieren acción", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "alert" },
-    { key: "renovadas", label: "Renovadas", value: renovadas, hint: "cerradas", tone: { bg: "#E6F4EA", fg: "#15803D" }, icon: "check" },
+    { key: "aRenovar", label: "Pólizas a renovar", value: pend.length, hint: "pendientes", tone: { bg: "var(--warn-soft)", fg: "var(--warn)" }, icon: "refresh" },
+    { key: "prontas", label: "Vencen ≤ 30 días", value: esteMes, hint: "próximas", tone: { bg: "var(--warn-soft)", fg: "var(--warn-fuerte)" }, icon: "clock" },
+    { key: "vencidas", label: "Vencidas", value: vencidas, hint: "requieren acción", tone: { bg: "var(--peligro-soft)", fg: "var(--peligro)" }, icon: "alert" },
+    { key: "renovadas", label: "Renovadas", value: renovadas, hint: "cerradas", tone: { bg: "var(--ok-soft)", fg: "var(--ok)" }, icon: "check" },
   ];
   return (
     <div className="kpis">
@@ -119,7 +119,7 @@ function RenovProximas({ data, onOpen, onRenovar, onNew }) {
                   <span className="ag-vence-label">Vence</span>
                   <span className="ag-vence-date mono">{fmtFShort(r.finVig)}</span>
                   <span className="ag-vence-rel">{r.finVig ? new Date(r.finVig + "T00:00:00").getFullYear() : ""}</span>
-                  <span className="btn-gcal xs" style={{ background: "#15803D", borderColor: "#15803D" }} onClick={(e) => { e.stopPropagation(); onRenovar(r); }}><Ico name="refresh" size={13} />Renovar</span>
+                  <span className="btn-gcal xs" style={{ background: "var(--ok)", borderColor: "var(--ok)" }} onClick={(e) => { e.stopPropagation(); onRenovar(r); }}><Ico name="refresh" size={13} />Renovar</span>
                 </div>
               </button>
             ))}

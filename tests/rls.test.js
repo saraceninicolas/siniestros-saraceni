@@ -50,6 +50,19 @@ const TABLAS_PRIVADAS = [
   "notificaciones",
   "asegurados",
   "asegurados_duplicados",
+  // Multiempresa: acá viven los datos del negocio (quién es cliente, qué paga).
+  // `modulos`, `planes` y `plan_modulos` son el catálogo, que sí lee cualquier
+  // usuario logueado para armarse el menú, pero un visitante sin cuenta no.
+  "organizaciones",
+  "oficinas",
+  "membresias",
+  "super_admins",
+  "suscripciones",
+  "org_modulos",
+  "cobros",
+  "modulos",
+  "planes",
+  "plan_modulos",
 ];
 
 describe("RLS · un visitante sin cuenta no lee nada", () => {
@@ -97,6 +110,12 @@ describe("RLS · un visitante sin cuenta no toca la API de asegurados", () => {
     // Los helpers de rol solo los necesitan las policies de usuarios logueados.
     ["es_activo", {}],
     ["es_organizador", {}],
+    // Los del multiempresa, igual: deciden qué empresa sos y qué módulos tenés.
+    ["org_actual", {}],
+    ["es_super_admin", {}],
+    ["tiene_modulo", { p_clave: "siniestros" }],
+    ["mis_modulos", {}],
+    ["archivo_de_mi_org", { p_name: "algo.jpg" }],
   ])("%s no responde", async (fn, args) => {
     const r = await comoAnon(`rpc/${fn}`, { method: "POST", body: JSON.stringify(args) });
     expect(r.status).toBeGreaterThanOrEqual(400);
@@ -126,5 +145,105 @@ describe("RLS · las páginas públicas siguen pudiendo escribir", () => {
     const r = await comoAnon("solicitudes?select=nombre&limit=5");
     const filas = r.ok ? await r.json() : [];
     expect(filas).toHaveLength(0);
+  });
+});
+
+describe("Multiempresa · lo poco que un visitante SÍ puede saber", () => {
+  // La denuncia pública necesita saber a qué broker le está escribiendo: su
+  // nombre y su marca, para mostrar el logo correcto. Eso es público por
+  // definición (está impreso en la puerta de la oficina). Lo que no puede es
+  // listar las empresas del sistema ni saber qué paga cada una.
+  it("org_publica devuelve UNA empresa y solo sus datos de vidriera", async () => {
+    const r = await comoAnon("rpc/org_publica", {
+      method: "POST",
+      body: JSON.stringify({ p_slug: "aicardi" }),
+    });
+    expect(r.status).toBeLessThan(300);
+    const filas = await r.json();
+    expect(Array.isArray(filas)).toBe(true);
+    expect(filas.length).toBe(1);
+    // `modulos` son los de cara al publico (siniestros, comercial): la pagina
+    // los necesita para no ofrecer un formulario que el broker no puede leer.
+    expect(Object.keys(filas[0]).sort()).toEqual(["id", "marca", "modulos", "nombre", "slug"]);
+    expect(filas[0].modulos.every((m) => ["siniestros", "comercial"].includes(m))).toBe(true);
+  });
+
+  // Aicardi contrato solo Siniestros. Si su formulario de cotizacion siguiera
+  // abierto, juntaria consultas que nadie de Aicardi puede leer: la policy de
+  // lectura pide el modulo. Un pozo de consultas es peor que no tener link.
+  it("una empresa sin el modulo Comercial no figura como que lo tiene", async () => {
+    const r = await comoAnon("rpc/org_publica", {
+      method: "POST",
+      body: JSON.stringify({ p_slug: "aicardi" }),
+    });
+    const filas = await r.json();
+    expect(filas[0].modulos).toContain("siniestros");
+    expect(filas[0].modulos).not.toContain("comercial");
+  });
+
+  it("no puede dejarle una cotizacion de hogar a una empresa sin ese modulo", async () => {
+    const r0 = await comoAnon("rpc/org_publica", {
+      method: "POST",
+      body: JSON.stringify({ p_slug: "aicardi" }),
+    });
+    const org = (await r0.json())[0];
+    const r = await comoAnon("cotizaciones", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        ref: "TEST" + Date.now().toString().slice(-6),
+        nombre: "PRUEBA AUTOMATICA - borrable",
+        org_id: org.id,
+      }),
+    });
+    expect(r.status).toBeGreaterThanOrEqual(400);
+  });
+
+  it("un slug que no existe cae en la empresa de casa, no en el vacío", async () => {
+    const r = await comoAnon("rpc/org_publica", {
+      method: "POST",
+      body: JSON.stringify({ p_slug: "no-existe-este-broker" }),
+    });
+    const filas = await r.json();
+    expect(filas.length).toBe(1);
+  });
+
+  it("no puede dejar una denuncia a nombre de una empresa inventada", async () => {
+    const r = await comoAnon("solicitudes", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        ref: "TEST" + Date.now().toString().slice(-6),
+        nombre: "PRUEBA AUTOMATICA - borrable",
+        org_id: "00000000-0000-4000-8000-000000000000",
+      }),
+    });
+    expect(r.status).toBeGreaterThanOrEqual(400);
+  });
+
+  // Con quien trabaja un broker no es asunto de un visitante, y ademas deja
+  // ver el tamano de su cartera.
+  it("no puede leer las companias de ningun broker", async () => {
+    const r = await comoAnon("companias?select=nombre&limit=5");
+    const filas = r.ok ? await r.json() : [];
+    expect(filas).toHaveLength(0);
+  });
+
+  it("no puede agregarle una compania a un broker", async () => {
+    const r = await comoAnon("companias", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ clave: "INTRUSA", nombre: "Intrusa" }),
+    });
+    expect(r.status).toBeGreaterThanOrEqual(400);
+  });
+
+  it("no puede escribirle a la tabla de empresas", async () => {
+    const r = await comoAnon("organizaciones", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ nombre: "Intrusa", slug: "intrusa" }),
+    });
+    expect(r.status).toBeGreaterThanOrEqual(400);
   });
 });

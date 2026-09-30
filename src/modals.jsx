@@ -31,11 +31,11 @@ function Field({ label, children, required, full }) {
 function FormSection({ label }) { return <div className="form-section">{label}</div>; }
 
 // ---- Create / Edit ----
-function ClaimFormModal({ mode, initial, station, onClose, onSubmit, usuarios }) {
+function ClaimFormModal({ mode, initial, station, onClose, onSubmit, usuarios, cias }) {
   const todayISO = () => new Date().toISOString().slice(0, 10);
   const byFecha = (a, b) => (a.fecha || "").localeCompare(b.fecha || "");
   const blank = {
-    estado: "Abierto", cliente: "", dominio: "", referencia: "", cia: CIAS[0], ramo: "AUTO", hecho: HECHOS[0], cobertura: COBERTURAS_AUTO[0],
+    estado: "Abierto", cliente: "", dominio: "", referencia: "", cia: (ciasParaElegir(cias)[0] || {}).clave || "", ramo: "AUTO", hecho: HECHOS[0], cobertura: COBERTURAS_AUTO[0],
     poliza: "", nroSiniestro: "", fechaOcurrido: "", fechaDenuncia: "", fechaLimite: "", fechaInspeccion: "",
     gestionAR: "", gestionReal: "", gestiones: [], gestor: "", gestorEmail: "", gestorTel: "", obs: "", ticket: "",
     franquiciaPct: "", franquiciaMonto: "", adjuntos: [], enCalendario: false, asignadoA: null,
@@ -157,7 +157,12 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit, usuarios })
         </Field>
         <Field label="Compañía">
           <select className="input" value={f.cia} onChange={(e) => set("cia", e.target.value)}>
-            {CIAS.map((c) => <option key={c} value={c}>{ciaLabel(c)}</option>)}
+            {/* La compañía guardada puede no estar en la lista de hoy (un
+                siniestro viejo, o una que el broker saco): va igual, primera,
+                para no cambiarsela sin querer al abrir a editar. */}
+            {f.cia && !ciasParaElegir(cias).some((c) => c.clave === f.cia) &&
+              <option value={f.cia}>{ciaLabel(f.cia)}</option>}
+            {ciasParaElegir(cias).map((c) => <option key={c.clave} value={c.clave}>{c.nombre}</option>)}
           </select>
         </Field>
         <Field label="Ramo">
@@ -327,7 +332,7 @@ function ClaimFormModal({ mode, initial, station, onClose, onSubmit, usuarios })
 }
 
 // ---- Detail ----
-function DetailModal({ item, onClose, onEdit, onDelete, onGcal, onIcs }) {
+function DetailModal({ item, onClose, onEdit, onDelete, onGcal }) {
   const Row = ({ k, v, mono }) => (
     <div className="dt-row"><span className="dt-k">{k}</span><span className={"dt-v" + (mono ? " mono" : "")}>{v || "—"}</span></div>
   );
@@ -358,7 +363,6 @@ function DetailModal({ item, onClose, onEdit, onDelete, onGcal, onIcs }) {
           {item.fechaLimite && (
             <div className="dt-cal-actions">
               <button className="btn-gcal" onClick={() => onGcal(item)}><Ico name="agenda" size={14} />Agendar en Google Calendar</button>
-              <button className="btn-ghost sm" onClick={() => onIcs(item)}><Ico name="download" size={14} />.ics</button>
             </div>
           )}
         </div>
@@ -435,7 +439,7 @@ function Toast({ toast }) {
   if (!toast) return null;
   return (
     <div className="toast">
-      <span className="toast-ico" style={toast.err ? { background: "#DC2626" } : null}>
+      <span className="toast-ico" style={toast.err ? { background: "var(--peligro-fuerte)" } : null}>
         <Ico name={toast.err ? "alert" : "check"} size={15} />
       </span>
       <span>{toast.msg}</span>
@@ -446,7 +450,7 @@ function Toast({ toast }) {
 // `Field` y `FormSection` van a window porque los usa asegurados.jsx.
 // Con Vite cada archivo es un módulo aparte: lo que no se expone acá no existe
 // para los demás, aunque antes —con todo en el scope global— sí se veía.
-Object.assign(window, { ClaimFormModal, DetailModal, ConfirmDelete, Toast, Field, FormSection });
+Object.assign(window, { ModalShell, ClaimFormModal, DetailModal, ConfirmDelete, Toast, Field, FormSection });
 
 // Marca este archivo como modulo ES. Sin esto el compilador lo toma por
 // script (no tiene ningun import/export todavia) y compila el JSX a require(),

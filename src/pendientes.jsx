@@ -2,20 +2,20 @@
 
 const ESTADOS_PEND = ["Pendiente", "En curso", "Hecho"];
 const ESTADO_PEND_COLOR = {
-  "Pendiente": { fg: "#B45309", bg: "#FEF3E2" },
-  "En curso":  { fg: "#1D4ED8", bg: "#E8F0FE" },
-  "Hecho":     { fg: "#15803D", bg: "#E6F4EA" },
+  "Pendiente": { fg: "var(--warn)", bg: "var(--warn-soft)" },
+  "En curso":  { fg: "var(--info-2)", bg: "var(--info-soft)" },
+  "Hecho":     { fg: "var(--ok)", bg: "var(--ok-soft)" },
 };
 const PRIO_PEND = ["Alta", "Media", "Baja"];
 const PRIO_PEND_COLOR = {
-  "Alta":  { fg: "#C0241D", bg: "#FBE3E3" },
-  "Media": { fg: "#B45309", bg: "#FEF3E2" },
-  "Baja":  { fg: "#475569", bg: "#EEF1F4" },
+  "Alta":  { fg: "var(--peligro)", bg: "var(--peligro-soft)" },
+  "Media": { fg: "var(--warn)", bg: "var(--warn-soft)" },
+  "Baja":  { fg: "var(--ink-2)", bg: "var(--line-2)" },
 };
 const CATS_PEND = ["Cotización", "Póliza", "Cobranza", "Administración", "Otro"];
 
 function pendBadge(estado) {
-  const c = ESTADO_PEND_COLOR[estado] || { fg: "#475569", bg: "#EEF1F4" };
+  const c = ESTADO_PEND_COLOR[estado] || { fg: "var(--ink-2)", bg: "var(--line-2)" };
   return <span className="badge" style={{ background: c.bg, color: c.fg, fontSize: 12 }}><span className="badge-dot" style={{ background: c.fg }} />{estado}</span>;
 }
 function prioBadge(p) {
@@ -40,10 +40,10 @@ function PendKpis({ data, foco, onFoco }) {
   const porVencer = activas.filter((p) => ["hoy", "proximo"].includes(urgPend(p))).length;
   const hechas = data.filter((p) => p.estado === "Hecho").length;
   const cards = [
-    { key: "activas", label: "Tareas activas", value: activas.length, hint: "pendientes + en curso", tone: { bg: "#FEF3E2", fg: "#B45309" }, icon: "flag" },
-    { key: "porVencer", label: "Por vencer", value: porVencer, hint: "vencen en ≤ 3 días", tone: { bg: "#E8F0FE", fg: "#1D4ED8" }, icon: "clock" },
-    { key: "vencidas", label: "Vencidas", value: vencidas, hint: "requieren acción", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "alert" },
-    { key: "hechas", label: "Hechas", value: hechas, hint: "completadas", tone: { bg: "#E6F4EA", fg: "#15803D" }, icon: "check" },
+    { key: "activas", label: "Tareas activas", value: activas.length, hint: "pendientes + en curso", tone: { bg: "var(--warn-soft)", fg: "var(--warn)" }, icon: "flag" },
+    { key: "porVencer", label: "Por vencer", value: porVencer, hint: "vencen en ≤ 3 días", tone: { bg: "var(--info-soft)", fg: "var(--info-2)" }, icon: "clock" },
+    { key: "vencidas", label: "Vencidas", value: vencidas, hint: "requieren acción", tone: { bg: "var(--peligro-soft)", fg: "var(--peligro)" }, icon: "alert" },
+    { key: "hechas", label: "Hechas", value: hechas, hint: "completadas", tone: { bg: "var(--ok-soft)", fg: "var(--ok)" }, icon: "check" },
   ];
   return (
     <div className="kpis">
@@ -232,7 +232,7 @@ function PendAgenda({ data, onOpen, onToggle, onNew }) {
                   <span className="ag-vence-label">Vence</span>
                   <span className="ag-vence-date mono">{p.fechaLimite ? fmtDateShort(p.fechaLimite) : "—"}</span>
                   <span className="ag-vence-rel">{p.fechaLimite ? venceTexto(p.fechaLimite) : "sin fecha"}</span>
-                  <span className="btn-gcal xs" style={{ background: "#15803D", borderColor: "#15803D" }}
+                  <span className="btn-gcal xs" style={{ background: "var(--ok)", borderColor: "var(--ok)" }}
                     onClick={(e) => { e.stopPropagation(); onToggle(p); }}><Ico name="check" size={13} />Hecha</span>
                 </div>
               </button>

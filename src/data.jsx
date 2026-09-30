@@ -11,7 +11,26 @@ const CIA_FULL = {
   "ZURICH": "Zurich",
 };
 const CIAS = Object.keys(CIA_FULL);
-const ciaLabel = (k) => CIA_FULL[k] || k;
+
+// El nombre para mostrar sale de la lista del broker que entró; si no la tiene
+// (base sin la 0018, o una clave vieja que ya borró de su lista) cae en la de
+// siempre, y al final en la clave cruda. Nunca queda vacío: un siniestro viejo
+// con una compañía que ya no trabajan se sigue leyendo.
+//
+// ⚠️ Lee de window a propósito: son 36 lugares los que muestran el nombre de
+// una compañía y pasarles la lista por props seria atravesar media pantalla.
+// `window.CIA_NOMBRES` lo llena app.jsx al entrar, igual que window.MARCA.
+function ciaLabel(k) {
+  const propias = window.CIA_NOMBRES;
+  if (propias && propias[k]) return propias[k];
+  return CIA_FULL[k] || k;
+}
+
+// La lista para un desplegable: la del broker, o la de siempre si no hay.
+function ciasParaElegir(cias) {
+  if (cias && cias.length) return cias.map((c) => ({ clave: c.clave, nombre: c.nombre || c.clave }));
+  return CIAS.map((c) => ({ clave: c, nombre: CIA_FULL[c] || c }));
+}
 
 // COMERCIO se quita del selector; INT_CONSORCIO se agrega.
 // (Se mantiene COMERCIO en los labels para que registros viejos se muestren bien.)
@@ -23,14 +42,14 @@ const HECHOS = ["DAÑO PARCIAL", "ROBO TOTAL", "CRISTAL", "INCENDIO", "GRANIZO",
 const HECHO_LABEL = { "DAÑO PARCIAL": "Daño parcial", "ROBO TOTAL": "Robo total", "CRISTAL": "Cristal", "INCENDIO": "Incendio", "GRANIZO": "Granizo", "RC": "Resp. civil" };
 // Color del motivo (para que se note de un vistazo, ej. Robo total en rojo)
 const HECHO_COLOR = {
-  "ROBO TOTAL":   { fg: "#C0241D", bg: "#FBE3E3" },
-  "DAÑO PARCIAL": { fg: "#B45309", bg: "#FEF3E2" },
-  "CRISTAL":      { fg: "#1D4ED8", bg: "#E8F0FE" },
+  "ROBO TOTAL":   { fg: "var(--peligro)", bg: "var(--peligro-soft)" },
+  "DAÑO PARCIAL": { fg: "var(--warn)", bg: "var(--warn-soft)" },
+  "CRISTAL":      { fg: "var(--info-2)", bg: "var(--info-soft)" },
   "INCENDIO":     { fg: "#C2410C", bg: "#FEECDC" },
-  "GRANIZO":      { fg: "#0E7490", bg: "#E0F2FE" },
-  "RC":           { fg: "#475569", bg: "#EEF1F4" },
+  "GRANIZO":      { fg: "#0E7490", bg: "var(--info-soft)" },
+  "RC":           { fg: "var(--ink-2)", bg: "var(--line-2)" },
 };
-const hechoColor = (h) => HECHO_COLOR[h] || { fg: "#475569", bg: "#EEF1F4" };
+const hechoColor = (h) => HECHO_COLOR[h] || { fg: "var(--ink-2)", bg: "var(--line-2)" };
 
 // Coberturas: solo el ramo AUTO usa este desplegable fijo.
 // Para el resto de los ramos la cobertura es texto libre.
@@ -49,18 +68,18 @@ const STATIONS = ["PC_OFICINA_1", "PC_OFICINA_2"];
 
 // Estado: solo dos, como en la planilla real
 const ESTADOS = {
-  "Abierto":   { key: "Abierto",   fg: "#1D4ED8", bg: "#E8F0FE", dot: "#2563EB" },
-  "Terminado": { key: "Terminado", fg: "#15803D", bg: "#E6F4EA", dot: "#16A34A" },
+  "Abierto":   { key: "Abierto",   fg: "var(--info-2)", bg: "var(--info-soft)", dot: "var(--info-3)" },
+  "Terminado": { key: "Terminado", fg: "var(--ok)", bg: "var(--ok-soft)", dot: "var(--ok)" },
 };
 const ESTADO_LIST = Object.keys(ESTADOS);
 
 // Urgencia derivada de la fecha límite de respuesta (para los Abiertos)
 const URGENCIA = {
-  vencido:  { label: "Vencida",     fg: "#B91C1C", bg: "#FBE3E3", dot: "#DC2626" },
-  hoy:      { label: "Vence hoy",   fg: "#B45309", bg: "#FEF3E2", dot: "#D97706" },
-  proximo:  { label: "Próxima",     fg: "#1D4ED8", bg: "#E8F0FE", dot: "#2563EB" },
-  normal:   { label: "En plazo",    fg: "#475569", bg: "#EEF1F4", dot: "#64748B" },
-  ninguna:  { label: "—",           fg: "#94A3B8", bg: "#F1F3F5", dot: "#CBD5E1" },
+  vencido:  { label: "Vencida",     fg: "var(--peligro-hondo)", bg: "var(--peligro-soft)", dot: "var(--peligro-fuerte)" },
+  hoy:      { label: "Vence hoy",   fg: "var(--warn)", bg: "var(--warn-soft)", dot: "var(--warn-fuerte)" },
+  proximo:  { label: "Próxima",     fg: "var(--info-2)", bg: "var(--info-soft)", dot: "var(--info-3)" },
+  normal:   { label: "En plazo",    fg: "var(--ink-2)", bg: "var(--line-2)", dot: "var(--muted)" },
+  ninguna:  { label: "—",           fg: "var(--muted)", bg: "var(--line-2)", dot: "var(--neutro)" },
 };
 
 // ---- helpers de fecha ----
@@ -180,11 +199,11 @@ function buildSeed() {
 }
 
 Object.assign(window, {
-  CIA_FULL, CIAS, ciaLabel, RAMOS, RAMO_LABEL, RAMO_ICON, HECHOS, HECHO_LABEL, HECHO_COLOR, hechoColor,
+  CIA_FULL, CIAS, ciaLabel, ciasParaElegir, RAMOS, RAMO_LABEL, RAMO_ICON, HECHOS, HECHO_LABEL, HECHO_COLOR, hechoColor,
   COBERTURAS, COBERTURAS_AUTO, esRamoAuto, coberturasDe, aplicaFranquicia,
   STATIONS, ESTADOS, ESTADO_LIST, URGENCIA,
   fmtDate, fmtDateShort, fmtTimeAgo, daysUntil, urgenciaDe, venceTexto, diasActivo, nowIso,
-  parseDate, today0, diasHabilesEntre, MESES,
+  parseDate, today0, diasHabilesEntre, MESES, pad,
   nextNum, sinId, buildSeed,
 });
 

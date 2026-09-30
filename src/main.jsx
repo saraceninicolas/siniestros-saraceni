@@ -30,6 +30,7 @@ import "./estilos/tokens.css";
 import "./estilos/portal.css";
 
 import "./config.js";
+import "./marca.js";
 import "./imagenes.js";
 import "./db.js";
 import "./data.jsx";
@@ -45,12 +46,16 @@ import "./solicitudes.jsx";
 import "./usuarios.jsx";
 import "./duplicados.jsx";
 import "./siniestralidad.jsx";
+import "./configuracion.jsx";
 import "./facturas.jsx";
 import "./renovaciones.jsx";
+import "./acciones.jsx";
+import "./comercial-seguimiento.jsx";
 import "./comercial.jsx";
 import "./pendientes.jsx";
 import "./objetivos-datos.jsx";
 import "./objetivos-form.jsx";
 import "./objetivos.jsx";
 import "./calendar.jsx";
+import "./inicio.jsx";   // usa el calculo de meses de calendar.jsx y los graficos de charts.jsx
 import "./app.jsx";

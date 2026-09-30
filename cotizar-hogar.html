@@ -18,7 +18,9 @@ body{ margin:0; font-family:"Public Sans",system-ui,sans-serif; font-size:17px; 
 .card::before{ content:""; display:block; height:5px; background:var(--brand); }
 .head{ padding:20px 26px 4px; text-align:center; }
 .logo{ display:inline-block; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 16px; }
-.logo img{ display:block; max-width:200px; height:auto; }
+.logo img{ display:block; max-width:200px; max-height:100px; height:auto; }
+.logo-esperando{ min-height:44px; min-width:150px; background:none; border-color:transparent; }
+.logo-texto{ font-size:19px; font-weight:800; color:var(--brand-txt,var(--brand)); letter-spacing:-.01em; }
 h1{ font-size:22px; margin:14px 0 5px; letter-spacing:-.01em; }
 .sub{ color:var(--ink-2); font-size:14px; margin:0 auto 4px; max-width:460px; line-height:1.45; }
 form{ padding:12px 26px 24px; }
@@ -74,6 +76,9 @@ textarea{ resize:vertical; min-height:62px; }
 .ok{ display:none; padding:44px 30px 50px; text-align:center; }
 .ok .tick{ width:64px; height:64px; border-radius:99px; background:#E6F4EA; color:#15803D; display:grid;
   place-items:center; margin:0 auto 18px; font-size:30px; }
+/* El aviso de "por aca no es" usa la misma caja, pero el circulo no puede ir
+   verde: no paso nada bueno. */
+.ok .tick-off{ background:var(--warn-soft,#FEF3E2); color:var(--warn,#B45309); }
 .ok h2{ font-size:22px; margin:0 0 10px; }
 .ok p{ color:var(--ink-2); font-size:15px; line-height:1.6; margin:0 auto 8px; max-width:420px; }
 .ok .ref{ display:inline-block; margin-top:14px; background:var(--surface-2); border:1px solid var(--line);
@@ -86,7 +91,7 @@ textarea{ resize:vertical; min-height:62px; }
 <div class="wrap">
   <div class="card">
     <div class="head">
-      <span class="logo"><img src="/assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></span>
+      <span class="logo logo-esperando" id="cajaLogo"><img id="logoEmpresa" alt="" /></span>
       <h1>Cotizá tu seguro de hogar</h1>
       <p class="sub">Completá estos datos y te preparamos una cotización a medida. Te contactamos con la propuesta a la brevedad.</p>
     </div>
@@ -191,14 +196,68 @@ textarea{ resize:vertical; min-height:62px; }
       <p>Guardá tu código de referencia:</p>
       <span class="ref" id="refcode"></span>
     </div>
+
+    <div class="ok" id="cerrado">
+      <div class="tick tick-off">!</div>
+      <h2>Por acá no es</h2>
+      <p id="cerradoTexto">Este broker no recibe pedidos de cotización de hogar por este formulario. Comunicate con tu asesor de siempre y te lo resuelve.</p>
+    </div>
   </div>
-  <div class="foot">SARACENI · BROKER DE SEGUROS</div>
+  <div class="foot" id="pieEmpresa">SARACENI · BROKER DE SEGUROS</div>
 </div>
 
 <script type="module" src="/src/publico.js"></script>
 <script type="module">
 (function () {
   var sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+  // A qué broker le llega esta cotización. Mismo mecanismo que la denuncia: el
+  // tramo de la ruta (/aicardi/cotizar-hogar) que config.js dejó en ORG_SLUG.
+  var EMPRESA = null;
+
+  // Llena la caja del logo: la imagen del broker, o su nombre escrito si
+  // todavía no subió ninguno.
+  function mostrarLogo(logo, nombre) {
+    var caja = document.getElementById("cajaLogo");
+    var img = document.getElementById("logoEmpresa");
+    if (!caja) return;
+    caja.className = "logo";
+    if (logo && img) { img.alt = nombre || ""; img.src = logo; return; }
+    caja.textContent = nombre || "";
+    caja.className = "logo logo-texto";
+  }
+  // Un broker que no contrato el modulo NO puede leer lo que entra por este
+  // formulario: la policy de lectura se lo niega. Dejarlo abierto seria juntar
+  // consultas en un pozo. Mejor decirlo, y que la persona llame.
+  function cerrarFormulario(nombre) {
+    var f = document.getElementById("form"); if (f) f.style.display = "none";
+    // La bajada promete algo que no va a pasar: se va con el formulario.
+    var sub = document.querySelector(".sub"); if (sub) sub.style.display = "none";
+    var t = document.getElementById("cerradoTexto");
+    if (t && nombre) t.textContent = t.textContent.replace("Este broker", nombre);
+    var c = document.getElementById("cerrado"); if (c) c.style.display = "block";
+  }
+  var listaEmpresa = (async function () {
+    try {
+      var r = await sb.rpc("org_publica", { p_slug: window.ORG_SLUG || null });
+      if (r.error || !r.data || !r.data.length) { mostrarLogo("/assets/saraceni-logo.jpg", ""); return; }
+      EMPRESA = r.data[0];
+      var marca = EMPRESA.marca || {};
+      document.title = "Cotizar seguro de hogar · " + EMPRESA.nombre;
+      mostrarLogo(marca.logo, EMPRESA.nombre);
+      var pie = document.getElementById("pieEmpresa");
+      if (pie) pie.textContent = EMPRESA.nombre.toUpperCase();
+      if (window.aplicarMarca) window.aplicarMarca(marca);
+      // Solo se cierra si la base DIJO que no tiene el modulo. Si no contesta
+      // —una base sin la 0017, o el segundo que hay entre desplegar el codigo y
+      // aplicar la migracion— el formulario se muestra: dejar sin denunciar a
+      // los asegurados de un broker por un dato que no vino es peor que de mas.
+      // Es el mismo criterio del menu (navDeLaEmpresa): no saber no es que no.
+      if (Array.isArray(EMPRESA.modulos) && !EMPRESA.modulos.includes("comercial")) {
+        cerrarFormulario(EMPRESA.nombre);
+      }
+    } catch (e) { mostrarLogo("/assets/saraceni-logo.jpg", ""); }
+  })();
   var $ = function (id) { return document.getElementById(id); };
 
   // ---- casillas: destacan el recuadro y despliegan su bloque de datos ----
@@ -313,8 +372,11 @@ textarea{ resize:vertical; min-height:62px; }
     }
 
     var btn = $("send"); btn.disabled = true; btn.textContent = "Enviando…";
+    // Igual que en la denuncia: antes de escribir hay que saber a quién.
+    await listaEmpresa;
     try {
       var ins = await sb.from("cotizaciones").insert({
+        org_id: EMPRESA ? EMPRESA.id : undefined,
         ref: ref,
         ramo: "HOGAR",
         nombre: nombre,

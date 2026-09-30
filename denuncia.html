@@ -18,7 +18,9 @@ body{ margin:0; font-family:"Public Sans",system-ui,sans-serif; font-size:17px; 
 .card::before{ content:""; display:block; height:5px; background:var(--brand); }
 .head{ padding:26px 28px 6px; text-align:center; }
 .logo{ display:inline-block; background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 18px; }
-.logo img{ display:block; max-width:220px; height:auto; }
+.logo img{ display:block; max-width:220px; max-height:100px; height:auto; }
+.logo-esperando{ min-height:44px; min-width:150px; background:none; border-color:transparent; }
+.logo-texto{ font-size:19px; font-weight:800; color:var(--brand-txt,var(--brand)); letter-spacing:-.01em; }
 h1{ font-size:23px; margin:18px 0 6px; letter-spacing:-.01em; }
 .sub{ color:var(--ink-2); font-size:14.5px; margin:0 auto 8px; max-width:460px; line-height:1.5; }
 form{ padding:16px 28px 28px; }
@@ -65,6 +67,9 @@ textarea{ resize:vertical; min-height:110px; }
 .ok{ display:none; padding:44px 30px 50px; text-align:center; }
 .ok .tick{ width:64px; height:64px; border-radius:99px; background:#E6F4EA; color:#15803D; display:grid;
   place-items:center; margin:0 auto 18px; font-size:30px; }
+/* El aviso de "por aca no es" usa la misma caja, pero el circulo no puede ir
+   verde: no paso nada bueno. */
+.ok .tick-off{ background:var(--warn-soft,#FEF3E2); color:var(--warn,#B45309); }
 .ok h2{ font-size:22px; margin:0 0 10px; }
 .ok p{ color:var(--ink-2); font-size:15px; line-height:1.6; margin:0 auto 8px; max-width:420px; }
 .ok .ref{ display:inline-block; margin-top:14px; background:var(--surface-2); border:1px solid var(--line);
@@ -124,7 +129,7 @@ textarea{ resize:vertical; min-height:110px; }
 <div class="wrap">
   <div class="card">
     <div class="head">
-      <span class="logo"><img src="/assets/saraceni-logo.jpg" alt="Saraceni Seguros" /></span>
+      <span class="logo logo-esperando" id="cajaLogo"><img id="logoEmpresa" alt="" /></span>
       <h1>Denunciar un siniestro</h1>
       <p class="sub">Completá tus datos y adjuntá la documentación. Nuestro equipo recibe la solicitud al instante y gestiona la denuncia ante la compañía.</p>
     </div>
@@ -247,8 +252,14 @@ textarea{ resize:vertical; min-height:110px; }
       <p>Guardá tu código de referencia:</p>
       <span class="ref" id="refcode"></span>
     </div>
+
+    <div class="ok" id="cerrado">
+      <div class="tick tick-off">!</div>
+      <h2>Por acá no es</h2>
+      <p id="cerradoTexto">Este broker no recibe denuncias de siniestro por este formulario. Comunicate con tu asesor de siempre y te lo resuelve.</p>
+    </div>
   </div>
-  <div class="foot">SARACENI · BROKER DE SEGUROS</div>
+  <div class="foot" id="pieEmpresa">SARACENI · BROKER DE SEGUROS</div>
 </div>
 
 <script type="module" src="/src/publico.js"></script>
@@ -256,6 +267,58 @@ textarea{ resize:vertical; min-height:110px; }
 (function () {
   var sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
   var files = [];
+
+  // A qué broker le llega esta denuncia. Sale del tramo de la ruta
+  // (/aicardi/denuncia) que config.js dejó en ORG_SLUG; sin slug, la empresa
+  // original. Se resuelve contra la base y no en el HTML para que el mismo
+  // archivo sirva a todos los brokers: uno solo que mantener.
+  var EMPRESA = null;
+
+  // Llena la caja del logo: la imagen del broker, o su nombre escrito si
+  // todavía no subió ninguno. Nunca el de otro broker. Ademas saca la clase de
+  // espera, que deja la caja transparente: sin eso el logo quedaba sin su
+  // pastilla blanca.
+  function mostrarLogo(logo, nombre) {
+    var caja = document.getElementById("cajaLogo");
+    var img = document.getElementById("logoEmpresa");
+    if (!caja) return;
+    caja.className = "logo";
+    if (logo && img) { img.alt = nombre || ""; img.src = logo; return; }
+    caja.textContent = nombre || "";
+    caja.className = "logo logo-texto";
+  }
+  // Un broker que no contrato el modulo NO puede leer lo que entra por este
+  // formulario: la policy de lectura se lo niega. Dejarlo abierto seria juntar
+  // consultas en un pozo. Mejor decirlo, y que la persona llame.
+  function cerrarFormulario(nombre) {
+    var f = document.getElementById("form"); if (f) f.style.display = "none";
+    // La bajada promete algo que no va a pasar: se va con el formulario.
+    var sub = document.querySelector(".sub"); if (sub) sub.style.display = "none";
+    var t = document.getElementById("cerradoTexto");
+    if (t && nombre) t.textContent = t.textContent.replace("Este broker", nombre);
+    var c = document.getElementById("cerrado"); if (c) c.style.display = "block";
+  }
+  var listaEmpresa = (async function () {
+    try {
+      var r = await sb.rpc("org_publica", { p_slug: window.ORG_SLUG || null });
+      if (r.error || !r.data || !r.data.length) { mostrarLogo("/assets/saraceni-logo.jpg", ""); return; }
+      EMPRESA = r.data[0];
+      var marca = EMPRESA.marca || {};
+      document.title = "Denunciar un siniestro · " + EMPRESA.nombre;
+      mostrarLogo(marca.logo, EMPRESA.nombre);
+      var pie = document.getElementById("pieEmpresa");
+      if (pie) pie.textContent = EMPRESA.nombre.toUpperCase();
+      if (window.aplicarMarca) window.aplicarMarca(marca);
+      // Solo se cierra si la base DIJO que no tiene el modulo. Si no contesta
+      // —una base sin la 0017, o el segundo que hay entre desplegar el codigo y
+      // aplicar la migracion— el formulario se muestra: dejar sin denunciar a
+      // los asegurados de un broker por un dato que no vino es peor que de mas.
+      // Es el mismo criterio del menu (navDeLaEmpresa): no saber no es que no.
+      if (Array.isArray(EMPRESA.modulos) && !EMPRESA.modulos.includes("siniestros")) {
+        cerrarFormulario(EMPRESA.nombre);
+      }
+    } catch (e) { mostrarLogo("/assets/saraceni-logo.jpg", ""); }
+  })();
   var $ = function (id) { return document.getElementById(id); };
   function todayISO() {
     var t = new Date();
@@ -670,6 +733,9 @@ textarea{ resize:vertical; min-height:110px; }
     var terceroIncompleto = terceros.some(function (p) { return !String(p.nombre || "").trim(); });
     if (terceroIncompleto) { showErr("Completá el nombre de las personas que agregaste, o quitalas con la ×."); return; }
     var btn = $("send"); btn.disabled = true; btn.textContent = "Enviando…";
+    // Si todavía no sabemos a qué broker le estamos escribiendo, se espera: una
+    // denuncia que cae en la empresa equivocada es mucho peor que un segundo más.
+    await listaEmpresa;
     try {
       // Primero las fotos de los marcos (cada una viaja con su etiqueta) y
       // después los archivos sueltos de "Otros archivos".
@@ -697,7 +763,7 @@ textarea{ resize:vertical; min-height:110px; }
       for (var i = 0; i < aSubir.length; i++) {
         var f = aSubir[i].file;
         var safe = (f.name || "archivo").replace(/[^a-zA-Z0-9._-]/g, "_");
-        var path = Date.now() + "_" + Math.random().toString(36).slice(2, 8) + "_" + safe;
+        var path = (EMPRESA ? EMPRESA.id + "/" : "") + Date.now() + "_" + Math.random().toString(36).slice(2, 8) + "_" + safe;
         btn.textContent = "Subiendo archivo " + (i + 1) + " de " + aSubir.length + "…";
         var up = await sb.storage.from("solicitudes").upload(path, f, { contentType: f.type || undefined });
         if (up.error) throw up.error;
@@ -705,6 +771,7 @@ textarea{ resize:vertical; min-height:110px; }
       }
       btn.textContent = "Enviando…";
       var ins = await sb.from("solicitudes").insert({
+        org_id: EMPRESA ? EMPRESA.id : undefined,
         ref: ref,
         nombre: nombre,
         dni_cuit: $("dni").value.trim() || null,

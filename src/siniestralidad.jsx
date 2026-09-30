@@ -97,10 +97,10 @@ function SaFicha({ grupo, onVolver, onOpen, onDocGuardado, onAviso }) {
   };
 
   const kpis = [
-    { label: "Siniestros", value: grupo.total, hint: grupo.primero ? "desde " + fmtDate(grupo.primero) : "—", tone: { bg: "#E8F0FE", fg: "#1D4ED8" }, icon: "shield" },
-    { label: "Últimos 12 meses", value: grupo.ult12, hint: grupo.reincidente ? "reincidente" : "por fecha de denuncia", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "alert" },
-    { label: "Abiertos", value: grupo.abiertos, hint: saPlural(grupo.total - grupo.abiertos, "terminado", "terminados"), tone: { bg: "#FEF3E2", fg: "#B45309" }, icon: "folder" },
-    { label: "Demora promedio", value: estDias(demora), hint: saPlural(cerrados.length, "caso cerrado", "casos cerrados"), tone: { bg: "#E6F4EA", fg: "#15803D" }, icon: "clock" },
+    { label: "Siniestros", value: grupo.total, hint: grupo.primero ? "desde " + fmtDate(grupo.primero) : "—", tone: { bg: "var(--info-soft)", fg: "var(--info-2)" }, icon: "shield" },
+    { label: "Últimos 12 meses", value: grupo.ult12, hint: grupo.reincidente ? "reincidente" : "por fecha de denuncia", tone: { bg: "var(--peligro-soft)", fg: "var(--peligro)" }, icon: "alert" },
+    { label: "Abiertos", value: grupo.abiertos, hint: saPlural(grupo.total - grupo.abiertos, "terminado", "terminados"), tone: { bg: "var(--warn-soft)", fg: "var(--warn)" }, icon: "folder" },
+    { label: "Demora promedio", value: estDias(demora), hint: saPlural(cerrados.length, "caso cerrado", "casos cerrados"), tone: { bg: "var(--ok-soft)", fg: "var(--ok)" }, icon: "clock" },
   ];
 
   const docMal = doc.trim() && !asegDocValido(doc);
@@ -189,9 +189,10 @@ function SaFicha({ grupo, onVolver, onOpen, onDocGuardado, onAviso }) {
 }
 
 // ---------- pantalla ----------
-function SiniestralidadView({ data, query, fichaSel, onFicha, onOpen, onAviso }) {
+function SiniestralidadView({ data, query, fichaSel, onFicha, onOpen, onAviso, onNav, rol }) {
   const [fichas, setFichas] = React.useState({});
   const [foco, setFoco] = React.useState(null);
+  const [duplicados, setDuplicados] = React.useState(0);
   const hayDb = !!(window.DB && window.DB.configured() && window.DB.aseg);
 
   const cargarFichas = React.useCallback(async () => {
@@ -203,6 +204,22 @@ function SiniestralidadView({ data, query, fichaSel, onFicha, onOpen, onAviso })
     } catch (e) { console.error(e); }
   }, [hayDb]);
   React.useEffect(() => { cargarFichas(); }, [cargarFichas]);
+
+  // Los pares de fichas parecidas se revisan desde acá: es el lugar donde se
+  // está mirando la siniestralidad de cada cliente, así que es donde importa
+  // que dos fichas sean en realidad la misma persona. Solo un organizador
+  // puede unificarlas, así que a un empleado ni se le menciona.
+  React.useEffect(() => {
+    if (!hayDb || rol !== "organizador") return;
+    let vivo = true;
+    (async () => {
+      try {
+        const pares = await window.DB.aseg.dup.list();
+        if (vivo) setDuplicados(pares.length);
+      } catch (e) { /* informativo: no vale romper la pantalla por esto */ }
+    })();
+    return () => { vivo = false; };
+  }, [hayDb, rol]);
 
   const grupos = React.useMemo(() => saArmarGrupos(data, fichas), [data, fichas]);
 
@@ -226,14 +243,25 @@ function SiniestralidadView({ data, query, fichaSel, onFicha, onOpen, onAviso })
   const totalSin = grupos.reduce((n, g) => n + g.total, 0);
   const alternar = (k) => setFoco((f) => (f === k ? null : k));
   const kpis = [
-    { key: "todos", label: "Asegurados con siniestros", value: grupos.length, hint: saPlural(totalSin, "siniestro activo", "siniestros activos"), tone: { bg: "#E8F0FE", fg: "#1D4ED8" }, icon: "user" },
-    { key: "reincidentes", label: "Reincidentes", value: grupos.filter(FILTROS.reincidentes).length, hint: SA_REINCIDENTE + " o más en los últimos 12 meses", tone: { bg: "#FBE3E3", fg: "#C0241D" }, icon: "alert" },
-    { key: "abiertos", label: "Con casos abiertos", value: grupos.filter(FILTROS.abiertos).length, hint: "al menos un siniestro abierto", tone: { bg: "#FEF3E2", fg: "#B45309" }, icon: "folder" },
+    { key: "todos", label: "Asegurados con siniestros", value: grupos.length, hint: saPlural(totalSin, "siniestro activo", "siniestros activos"), tone: { bg: "var(--info-soft)", fg: "var(--info-2)" }, icon: "user" },
+    { key: "reincidentes", label: "Reincidentes", value: grupos.filter(FILTROS.reincidentes).length, hint: SA_REINCIDENTE + " o más en los últimos 12 meses", tone: { bg: "var(--peligro-soft)", fg: "var(--peligro)" }, icon: "alert" },
+    { key: "abiertos", label: "Con casos abiertos", value: grupos.filter(FILTROS.abiertos).length, hint: "al menos un siniestro abierto", tone: { bg: "var(--warn-soft)", fg: "var(--warn)" }, icon: "folder" },
     { key: "sindoc", label: "Sin DNI / CUIT", value: grupos.filter(FILTROS.sindoc).length, hint: "se carga desde la ficha", tone: { bg: "var(--surface-2)", fg: "var(--muted)" }, icon: "search" },
   ];
 
   return (
     <div className="est-wrap">
+      {duplicados > 0 && onNav && (
+        <div className="sa-dup-aviso">
+          <span className="sa-dup-ico"><Ico name="search" size={17} /></span>
+          <div className="sa-dup-txt">
+            <b>{duplicados === 1 ? "Hay 1 par de fichas parecidas" : "Hay " + duplicados + " pares de fichas parecidas"}</b>
+            <span>Pueden ser el mismo cliente cargado dos veces. Mientras estén separadas, su siniestralidad se cuenta partida.</span>
+          </div>
+          <button className="btn-ghost sm" onClick={() => onNav("asegurados-dup")}>Revisar</button>
+        </div>
+      )}
+
       <div className="kpis">
         {kpis.map((c) => (
           <KpiCard key={c.key} {...sinKey(c)}

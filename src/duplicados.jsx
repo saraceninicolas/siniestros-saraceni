@@ -34,7 +34,7 @@ function DupFicha({ a, elegida, onElegir }) {
   );
 }
 
-function DuplicadosView({ quien, onAviso }) {
+function DuplicadosView({ quien, onAviso, onVolver }) {
   const [lista, setLista] = React.useState([]);
   const [cargando, setCargando] = React.useState(true);
   const [elegidas, setElegidas] = React.useState({});   // idPar -> id de la ficha que queda
@@ -101,8 +101,15 @@ function DuplicadosView({ quien, onAviso }) {
 
   return (
     <div className="dup-wrap">
+      {/* Esta pantalla ya no está en el menú: se llega desde Siniestralidad por
+          asegurado, así que tiene que ofrecer la vuelta. */}
+      {onVolver && (
+        <button className="btn-ghost sm sa-volver" onClick={onVolver}>
+          <Ico name="chevL" size={15} />Siniestralidad por asegurado
+        </button>
+      )}
       <div className="ag-banner">
-        <span className="ag-banner-ico" style={{ background: "#FEF3E2", color: "#B45309" }}>
+        <span className="ag-banner-ico" style={{ background: "var(--warn-soft)", color: "var(--warn)" }}>
           <Ico name="user" size={22} />
         </span>
         <div className="ag-banner-txt">
