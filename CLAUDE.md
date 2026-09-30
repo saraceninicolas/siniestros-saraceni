@@ -152,10 +152,10 @@ nueva nace `estado='pendiente'` y no ve nada hasta que un organizador la aprueba
 - Las páginas públicas insertan como `anon` y **nunca** pueden leer:
   `for insert to anon with check (true)` y ninguna policy de select.
 
-⚠️ **Multiempresa: terminado en test, pendiente en producción.** Las
-migraciones 0009 a 0016 arman las tablas de empresas y le ponen `org_id` a las
-diez tablas del portal, con sus policies, sus funciones y los archivos por
-carpeta. `perfiles` sigue mandando para los roles (organizador/empleado); la
+⚠️ **Multiempresa: en producción desde el 2026-09-30.** Las migraciones 0009 a
+0019 arman las tablas de empresas y le ponen `org_id` a las diez tablas del
+portal, con sus policies, sus funciones y los archivos por carpeta. Hoy hay una
+sola empresa en producción (Saraceni, plan Full) y dos en test. `perfiles` sigue mandando para los roles (organizador/empleado); la
 **membresía** es la que dice de qué empresa es cada uno.
 
 Cosas que costaron y no hay que volver a aprender:

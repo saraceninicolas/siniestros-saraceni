@@ -34,17 +34,17 @@ Siempre **test primero**, se verifica, y recién después producción.
 | `20260918_0006_endurecer_asegurados.sql` | aplicada | aplicada (2026-09-18) |
 | `20260918_0007_enganchar_por_documento.sql` | aplicada | aplicada (2026-09-18) |
 | `20260921_0008_ficha_aprende_documento.sql` | aplicada | aplicada (2026-09-21) |
-| `20260922_0009_multiempresa_base.sql` | aplicada | pendiente |
-| `20260923_0010_marca_y_logos.sql` | aplicada | pendiente |
-| `20260925_0011_org_id_en_el_portal.sql` | aplicada | pendiente |
-| `20260925_0012_archivos_y_modulos_por_empresa.sql` | aplicada | pendiente |
-| `20260925_0013_empresa_por_defecto.sql` | aplicada | pendiente |
-| `20260925_0014_logo_de_la_empresa_de_casa.sql` | aplicada | pendiente |
-| `20260925_0015_org_publica_sin_slug.sql` | aplicada | pendiente |
-| `20260925_0016_default_de_carga_publica.sql` | aplicada | pendiente |
-| `20260928_0017_formularios_publicos_por_modulo.sql` | aplicada | pendiente |
-| `20260929_0018_companias_por_empresa.sql` | aplicada | pendiente |
-| `20260930_0019_pipeline_comercial_y_acciones.sql` | aplicada | pendiente |
+| `20260922_0009_multiempresa_base.sql` | aplicada | aplicada (2026-09-30) |
+| `20260923_0010_marca_y_logos.sql` | aplicada | aplicada (2026-09-30) |
+| `20260925_0011_org_id_en_el_portal.sql` | aplicada | aplicada (2026-09-30) |
+| `20260925_0012_archivos_y_modulos_por_empresa.sql` | aplicada | aplicada (2026-09-30) |
+| `20260925_0013_empresa_por_defecto.sql` | aplicada | aplicada (2026-09-30) |
+| `20260925_0014_logo_de_la_empresa_de_casa.sql` | aplicada | aplicada (2026-09-30) |
+| `20260925_0015_org_publica_sin_slug.sql` | aplicada | aplicada (2026-09-30) |
+| `20260925_0016_default_de_carga_publica.sql` | aplicada | aplicada (2026-09-30) |
+| `20260928_0017_formularios_publicos_por_modulo.sql` | aplicada | aplicada (2026-09-30) |
+| `20260929_0018_companias_por_empresa.sql` | aplicada | aplicada (2026-09-30) |
+| `20260930_0019_pipeline_comercial_y_acciones.sql` | aplicada | aplicada (2026-09-30) |
 
 ## El pase a producción de la 0009 a la 0018 (multiempresa)
 
@@ -110,3 +110,38 @@ simulación. Resultado: los 28 siniestros activos quedaron con ficha (20 fichas,
 todas sin documento: los siniestros viejos nunca lo pidieron) y un solo par
 para revisar en Administración → Asegurados duplicados. Los eliminados no
 llevan ficha, a propósito.
+
+## El pase a producción del 2026-09-30
+
+Se aplicaron las once (0009 → 0019) en el orden documentado, con el sitio
+andando. Antes: se comparó columna por columna el esquema de las dos bases (no
+había ninguna diferencia fuera de `org_id`) y se anotaron los totales de cada
+tabla para contrastarlos después.
+
+Cómo se verificó, además de que ninguna migración diera error:
+
+- **Las 69 policies de producción tienen la misma huella md5 que las de test**,
+  y las funciones del multiempresa también, una por una. Las únicas diferencias
+  que quedan son de antes y no las tocó ninguna migración: `doc_normalizado`
+  difiere en un comentario, los dos triggers de asignación (`trg_notif_siniestro`
+  y `trg_notif_pendiente`) avisan solo al asignado en las dos bases, y
+  producción tiene `despachar_emails` y `generar_avisos_vencimientos`, que test
+  no tiene a propósito.
+- Simulando el token de un organizador: ve sus 37 siniestros, 19 fichas, 203
+  movimientos de facturación, 49 renovaciones, 17 denuncias, 8 objetivos, 12
+  pendientes, su equipo de 6 y los seis módulos del plan Full. Sin sesión, nada.
+- Por el camino real del formulario público (cliente anónimo con la clave
+  `anon`): la denuncia y la cotización entran y quedan a nombre de Saraceni,
+  leer devuelve vacío y no se puede cargar a una empresa inventada. Las 25 filas
+  de prueba se borraron con sus notificaciones y los totales volvieron exactos.
+
+⚠️ **El primer insert anónimo después de aplicar una migración puede fallar con
+42501 aunque la policy esté bien.** Pasó en test y en producción: PostgREST
+recarga su caché de esquema y el primer pedido cae. El mismo cuerpo, repetido,
+entró 3 de 3. Antes de salir a buscar un bug en las policies, reintentar.
+
+⚠️ La 0017 se aplicó **antes** de desplegar el código, no después como decía el
+paso 6: así `org_publica` ya devuelve `modulos` cuando cargan las páginas
+nuevas. El riesgo que describía ese paso —ver el error crudo de la policy en vez
+del aviso— no existe con una sola empresa, que tiene todos los módulos. Igual se
+corrigió el código para que un `modulos` que no viene no cierre el formulario.
