@@ -152,14 +152,14 @@ function SolicitudesView({ solicitudes, onConvertir, onDescartar, onReabrir }) {
   const [verHist, setVerHist] = React.useState(false);
   const nuevas = solicitudes.filter((s) => s.estado === "nueva");
   const resto = solicitudes.filter((s) => s.estado !== "nueva");
-  const linkPublico = window.location.origin + "/denuncia";
+  const linkPublico = useLinkPublico("denuncia");
   const copiarLink = () => {
     try { navigator.clipboard.writeText(linkPublico); } catch (e) { /* noop */ }
   };
   return (
     <div className="sol-wrap">
       <div className="ag-banner">
-        <span className="ag-banner-ico" style={{ background: "var(--peligro-soft)", color: "var(--brand)" }}><Ico name="mail" size={22} /></span>
+        <span className="ag-banner-ico" style={{ background: "var(--brand-soft)", color: "var(--brand-txt)" }}><Ico name="mail" size={22} /></span>
         <div className="ag-banner-txt">
           <span className="ag-banner-title">Denuncias online de asegurados</span>
           <span className="ag-banner-sub">Compartí este link con tus clientes: <b className="mono">{linkPublico}</b></span>

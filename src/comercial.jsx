@@ -217,13 +217,13 @@ function CotizacionesView({ data, onCotizar, onDescartar, onReabrir, onNotas }) 
   const [verHist, setVerHist] = React.useState(false);
   const nuevas = data.filter((c) => c.estado === "nueva");
   const resto = data.filter((c) => c.estado !== "nueva");
-  const linkPublico = window.location.origin + "/cotizar-hogar";
+  const linkPublico = useLinkPublico("cotizar-hogar");
   const copiar = () => { try { navigator.clipboard.writeText(linkPublico); } catch (e) { /* noop */ } };
 
   return (
     <div className="sol-wrap">
       <div className="ag-banner">
-        <span className="ag-banner-ico" style={{ background: "var(--peligro-soft)", color: "var(--brand)" }}><Ico name="home" size={22} /></span>
+        <span className="ag-banner-ico" style={{ background: "var(--brand-soft)", color: "var(--brand-txt)" }}><Ico name="home" size={22} /></span>
         <div className="ag-banner-txt">
           <span className="ag-banner-title">Cotizaciones de seguro de hogar</span>
           <span className="ag-banner-sub">Compartí este link con tus clientes: <b className="mono">{linkPublico}</b></span>

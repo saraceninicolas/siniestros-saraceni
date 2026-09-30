@@ -146,6 +146,33 @@ function navDeLaEmpresa(rol, modulos) {
     (!g.modulo || !modulos || modulos.includes(g.modulo)));
 }
 
+// El link público de la empresa que entró: /aicardi/denuncia, no /denuncia.
+//
+// ⚠️ El slug sale de la empresa DEL USUARIO, no de la ruta (`ORG_SLUG`). Si
+// saliera de la ruta, alguien de Aicardi que entrara por la dirección de
+// siempre copiaría el link de la empresa de casa y sus asegurados le dejarían
+// las denuncias a otro broker.
+//
+// Sin empresa (base de una sola, que es producción hoy) queda el de siempre.
+function useLinkPublico(pagina) {
+  const [link, setLink] = React.useState("");
+  React.useEffect(() => {
+    let vivo = true;
+    (async () => {
+      let slug = "";
+      try {
+        const o = window.DB && window.DB.org ? await window.DB.org.mia() : null;
+        if (o) slug = o.slug || "";
+      } catch (e) { console.error("Link publico:", e); }
+      if (!vivo) return;
+      const origen = (window.location && window.location.origin) || "";
+      setLink(origen + (slug ? "/" + slug : "") + "/" + pagina);
+    })();
+    return () => { vivo = false; };
+  }, [pagina]);
+  return link;
+}
+
 // El logo de la empresa que entró. Si todavía no subió ninguno va su nombre
 // escrito, NUNCA el archivo del repositorio: ese es el logo del broker de casa,
 // y mostrárselo a otro es peor que no mostrar nada. El archivo solo vuelve a
@@ -583,7 +610,7 @@ function ModuleScreen({ info }) {
 
 Object.assign(window, {
   Ico, Icons, Badge, UrgBadge, RamoTag, MarcaLogo, Sidebar, Topbar, KpiCard, Kpis, sinKey, Toolbar, ClaimsTable, Agenda,
-  ModuleScreen, PORTAL_NAV, NAV_LOOKUP, navDeLaEmpresa, SINIESTROS_KEYS, FACTURACION_KEYS, RENOVACION_KEYS, COMERCIAL_KEYS,
+  ModuleScreen, PORTAL_NAV, NAV_LOOKUP, navDeLaEmpresa, useLinkPublico, SINIESTROS_KEYS, FACTURACION_KEYS, RENOVACION_KEYS, COMERCIAL_KEYS,
   PENDIENTES_KEYS, OBJETIVOS_KEYS, ADMIN_KEYS, ORG_ONLY_KEYS,
 });
 
