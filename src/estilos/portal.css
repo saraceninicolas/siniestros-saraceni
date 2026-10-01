@@ -1601,3 +1601,8 @@ button.adj-card:focus-visible{ outline:2px solid var(--brand); outline-offset:3p
   .ini-cal{ grid-template-columns:1fr; }
   .ini-cal-panel{ grid-column:1/2; grid-row:auto; border-left:none; border-top:1px solid var(--line-2); max-height:none; }
 }
+
+/* El aviso cuando una foto no se pudo bajar. Va sobre el visor, que es oscuro. */
+.visor-fallo{ position:absolute; top:62px; left:50%; transform:translateX(-50%); z-index:3;
+  background:var(--peligro-fuerte); color:#fff; font-size:13px; font-weight:600;
+  padding:8px 14px; border-radius:9px; box-shadow:var(--shadow-md); }

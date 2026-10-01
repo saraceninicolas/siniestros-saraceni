@@ -89,8 +89,9 @@ function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onTerminar, onQu
   const inspeccion = item.fechaInspeccion ? fmtDate(item.fechaInspeccion) : "Pendiente";
   const abierto = item.estado === "Abierto";
   const adjuntos = item.adjuntos || [];
-  // gestión rápida (sin abrir el editor)
-  const hoyISO = () => new Date().toISOString().slice(0, 10);
+  // gestión rápida (sin abrir el editor). La fecha sale de hoyISO() de
+  // data.jsx, que usa la hora de acá: con toISOString() una gestión anotada a
+  // la noche quedaba con la fecha de mañana.
   const [qg, setQg] = React.useState({ fecha: hoyISO(), texto: "" });
   const [histDesc, setHistDesc] = React.useState(true); // por defecto, la última gestión arriba
   const addQuick = () => {

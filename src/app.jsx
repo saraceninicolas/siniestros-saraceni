@@ -406,7 +406,12 @@ function App() {
       // El documento que escribió el cliente: con él el buscador encuentra su
       // ficha solo, y ahora es obligatorio para registrar el siniestro.
       clienteDoc: s.dniCuit || "",
-      fechaOcurrido: s.fechaHecho || "", fechaDenuncia: new Date().toISOString().slice(0, 10),
+      fechaOcurrido: s.fechaHecho || "", fechaDenuncia: hoyISO(),
+      // Una denuncia que entra por la web hay que darla de alta en la compañía
+      // el mismo dia: queda agendada para hoy, con la gestion escrita. Si no,
+      // el siniestro se cargaba sin fecha y no aparecia en ningun lado hasta
+      // que alguien se acordaba de abrirlo.
+      fechaLimite: hoyISO(), gestionAR: "Dar el alta en la compañía",
       obs: lineas.join("\n"),
       adjuntos: (s.adjuntos || []).map((a) => ({ ...a, bucket: "solicitudes" })),
       referencia: "Denuncia web",

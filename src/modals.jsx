@@ -32,11 +32,15 @@ function FormSection({ label }) { return <div className="form-section">{label}</
 
 // ---- Create / Edit ----
 function ClaimFormModal({ mode, initial, station, onClose, onSubmit, usuarios, cias }) {
-  const todayISO = () => new Date().toISOString().slice(0, 10);
+  const todayISO = hoyISO;   // en hora de acá, no UTC (ver data.jsx)
   const byFecha = (a, b) => (a.fecha || "").localeCompare(b.fecha || "");
   const blank = {
     estado: "Abierto", cliente: "", dominio: "", referencia: "", cia: (ciasParaElegir(cias)[0] || {}).clave || "", ramo: "AUTO", hecho: HECHOS[0], cobertura: COBERTURAS_AUTO[0],
-    poliza: "", nroSiniestro: "", fechaOcurrido: "", fechaDenuncia: "", fechaLimite: "", fechaInspeccion: "",
+    // La fecha limite arranca HOY: un siniestro que entra es prioridad, y con
+    // la fecha vacia no aparecia ni en la agenda, ni en el calendario, ni en
+    // "para atender" de Inicio. Se puede cambiar, pero el que no la toca
+    // termina con el siniestro agendado igual.
+    poliza: "", nroSiniestro: "", fechaOcurrido: "", fechaDenuncia: "", fechaLimite: hoyISO(), fechaInspeccion: "",
     gestionAR: "", gestionReal: "", gestiones: [], gestor: "", gestorEmail: "", gestorTel: "", obs: "", ticket: "",
     franquiciaPct: "", franquiciaMonto: "", adjuntos: [], enCalendario: false, asignadoA: null,
     clienteDoc: "", aseguradoId: null,

@@ -573,7 +573,11 @@ textarea{ resize:vertical; min-height:110px; }
         lbl.appendChild(oblig);
       }
       var input = document.createElement("input");
-      input.type = "file"; input.accept = "image/*"; input.setAttribute("capture", "environment");
+      // SIN `capture`: con ese atributo el celular abre la camara y listo, sin
+      // ofrecer la galeria. Un asegurado que ya saco las fotos en el momento del
+      // choque no podia subirlas, tenia que volver a sacarlas. Sin el atributo,
+      // el telefono pregunta: camara, fototeca o archivos.
+      input.type = "file"; input.accept = "image/*";
       input.addEventListener("change", function (e) {
         var f = (e.target.files || [])[0];
         e.target.value = "";

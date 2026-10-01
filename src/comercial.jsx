@@ -151,7 +151,7 @@ function ComercialPanel({ data }) {
   const descartadas = data.filter((c) => c.estado === "descartada");
   const cerradas = cotizadas.length + descartadas.length;
   const conversion = cerradas ? Math.round((cotizadas.length / cerradas) * 100) : 0;
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = hoyISO();
   const delMes = data.filter((c) => (c.creado || "").slice(0, 7) === hoy.slice(0, 7)).length;
 
   const cards = [
@@ -334,8 +334,8 @@ function ComercialModule({ active, station, query, usuarios, cias, rol }) {
   const actualizarCotizacion = async (cot, campos, estadoNuevo) => {
     try {
       const cambios = { _dbId: cot._dbId, estado: estadoNuevo || cot.estado, gestionadaPor: station, ...campos };
-      if (estadoNuevo === "cerrada" && !campos.fechaCierre) cambios.fechaCierre = new Date().toISOString().slice(0, 10);
-      if (estadoNuevo === "cotizada" && !campos.fechaCotizacion) cambios.fechaCotizacion = new Date().toISOString().slice(0, 10);
+      if (estadoNuevo === "cerrada" && !campos.fechaCierre) cambios.fechaCierre = hoyISO();
+      if (estadoNuevo === "cotizada" && !campos.fechaCotizacion) cambios.fechaCotizacion = hoyISO();
       const up = await window.DB.cot.update(cambios);
       setData((p) => p.map((x) => (x._dbId === cot._dbId ? up : x)));
       if (estadoNuevo) {

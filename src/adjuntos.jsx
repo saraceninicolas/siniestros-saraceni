@@ -24,6 +24,13 @@ function adjEsImagen(a) {
 // que conserven el orden en que se sacaron, y si la foto vino de un marco del
 // formulario se usa esa etiqueta ("Cédula verde") en vez del nombre original,
 // que suele ser IMG_4821.jpg y no dice nada.
+// ".jpg" del nombre original. Una foto bajada como "Cedula verde" sin
+// extension la abre cualquier cosa, o nada.
+function nombreExt(a) {
+  const ext = (a.name || "").match(/.[^.]+$/);
+  return ext ? ext[0] : "";
+}
+
 function adjNombreEnZip(a, i) {
   const ext = (a.name || "").match(/\.[^.]+$/);
   const base = (a.etiqueta || (a.name || "archivo").replace(/\.[^.]+$/, ""))
@@ -32,9 +39,38 @@ function adjNombreEnZip(a, i) {
   return String(i + 1).padStart(2, "0") + " - " + base + (ext ? ext[0] : "");
 }
 
+// Baja un archivo de verdad, a la carpeta de descargas.
+//
+// ⚠️ No alcanza con <a href={url} download>: el atributo `download` lo IGNORA
+// el navegador cuando el archivo es de otro dominio, y las fotos viven en
+// supabase.co. Con el atributo ignorado, el enlace se comporta como un enlace
+// comun: abre la foto en pantalla completa y hay que volver con la flecha del
+// navegador. Pasa en el celular igual que en la computadora.
+//
+// Por eso se baja el contenido primero y se arma un blob del MISMO origen, que
+// si respeta el nombre y va a Descargas. Es lo que ya hacia "Descargar todas"
+// con el zip; esto es lo mismo para una sola.
+async function adjBajar(url, nombre) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("no se pudo bajar (" + r.status + ")");
+  const href = URL.createObjectURL(await r.blob());
+  const link = document.createElement("a");
+  link.href = href;
+  link.download = (nombre || "archivo").replace(/[\/:*?"<>|]/g, "-");
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  // Sin esto el blob queda en memoria hasta recargar la pagina.
+  setTimeout(() => URL.revokeObjectURL(href), 10000);
+}
+
 function AdjuntoVisor({ adjuntos, urls, indice, onCerrar, onIr }) {
   const a = adjuntos[indice];
   const url = a ? urls[a.path] : null;
+  const [bajando, setBajando] = React.useState(false);
+  const [fallo, setFallo] = React.useState("");
+  // Al pasar de foto se limpia el aviso: era de la anterior.
+  React.useEffect(() => { setFallo(""); }, [indice]);
 
   React.useEffect(() => {
     const h = (e) => {
@@ -53,12 +89,20 @@ function AdjuntoVisor({ adjuntos, urls, indice, onCerrar, onIr }) {
       <div className="visor-barra" onMouseDown={(e) => e.stopPropagation()}>
         <span className="visor-tit">{a.etiqueta || a.name}</span>
         <span className="visor-pos">{indice + 1} de {adjuntos.length}</span>
-        <a className="btn-ghost sm visor-bajar" href={url || "#"} download={a.name || "foto"}
-          onClick={(e) => { if (!url) e.preventDefault(); }}>
-          <Ico name="download" size={14} />Descargar
-        </a>
+        <button className="btn-ghost sm visor-bajar" type="button" disabled={!url || bajando}
+          onClick={async () => {
+            if (!url) return;
+            setBajando(true);
+            try { await adjBajar(url, a.etiqueta ? a.etiqueta + nombreExt(a) : a.name); }
+            catch (e) { console.error(e); setFallo("No se pudo descargar. Probá de nuevo."); }
+            setBajando(false);
+          }}>
+          <Ico name="download" size={14} />{bajando ? "Bajando…" : "Descargar"}
+        </button>
         <button className="btn-ghost sm" type="button" onClick={onCerrar}><Ico name="close" size={16} />Cerrar</button>
       </div>
+
+      {fallo && <div className="visor-fallo" onMouseDown={(e) => e.stopPropagation()}>{fallo}</div>}
 
       {!solo && (
         <button className="visor-flecha izq" type="button" title="Anterior (←)"

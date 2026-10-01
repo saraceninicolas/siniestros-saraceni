@@ -110,7 +110,7 @@ function SegFicha({ cot, acciones, station, cias, usuarios, onCerrar, onActualiz
 function SegNueva({ cias, usuarios, station, onCerrar, onCrear }) {
   const [f, setF] = React.useState({
     nombre: "", telefono: "", email: "", ramo: "AUTO", detalle: "",
-    compania: "", prima: "", fechaCotizacion: new Date().toISOString().slice(0, 10),
+    compania: "", prima: "", fechaCotizacion: hoyISO(),
     responsable: station || "", localidad: "",
   });
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));

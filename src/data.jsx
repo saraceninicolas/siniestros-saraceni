@@ -87,6 +87,10 @@ const pad = (n) => String(n).padStart(2, "0");
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
 function today0() { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }
+// Hoy en formato YYYY-MM-DD, con la hora de acá y NO en UTC.
+// `new Date().toISOString()` devuelve el dia siguiente desde las 21 en
+// Argentina: un siniestro cargado a la noche quedaba agendado para mañana.
+function hoyISO() { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
 function parseDate(iso) { if (!iso) return null; const d = new Date(iso + "T00:00:00"); return isNaN(d) ? null : d; }
 function fmtDate(iso) { const d = parseDate(iso); if (!d) return "—"; return `${pad(d.getDate())} ${MESES[d.getMonth()]} ${d.getFullYear()}`; }
 function fmtDateShort(iso) { const d = parseDate(iso); if (!d) return "—"; return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`; }
@@ -203,7 +207,7 @@ Object.assign(window, {
   COBERTURAS, COBERTURAS_AUTO, esRamoAuto, coberturasDe, aplicaFranquicia,
   STATIONS, ESTADOS, ESTADO_LIST, URGENCIA,
   fmtDate, fmtDateShort, fmtTimeAgo, daysUntil, urgenciaDe, venceTexto, diasActivo, nowIso,
-  parseDate, today0, diasHabilesEntre, MESES, pad,
+  parseDate, today0, hoyISO, diasHabilesEntre, MESES, pad,
   nextNum, sinId, buildSeed,
 });
 
