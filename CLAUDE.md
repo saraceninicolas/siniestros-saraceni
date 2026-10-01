@@ -293,6 +293,23 @@ analizar, se analiza en test.
 - El panel de vista previa del navegador no ejecuta JS sobre `file://` (lo carga
   como `data:`): probar contra `localhost`, no abriendo el archivo.
 
+## Trampas del navegador que ya nos mordieron
+
+- **`download` en un enlace a otro dominio no hace nada.** El visor de fotos
+  tenia `<a href={urlFirmada} download>`, y como los archivos viven en
+  supabase.co el navegador ignora el atributo y abre la foto en pantalla
+  completa. Para bajar de verdad hay que traer el contenido y armar un blob del
+  **mismo origen** (`adjBajar()` en `adjuntos.jsx`). Lo mismo vale para el zip.
+- **`capture` en un input de archivo le saca la galeria al celular.** Con
+  `capture="environment"` el telefono abre la camara y listo: el asegurado que
+  ya tenia las fotos sacadas no podia subirlas. Con `accept="image/*"` solo, el
+  telefono ofrece camara, fototeca y archivos.
+- **`toISOString()` no es la fecha de hoy.** Es UTC: desde las 21 en Argentina
+  devuelve el dia siguiente, asi que lo cargado a la noche quedaba agendado
+  para mañana. Para una fecha que representa "hoy" va `hoyISO()` de
+  `data.jsx`, que usa la hora local. `toISOString()` sigue bien para marcas de
+  tiempo (`nowIso()`), que son instantes y no dias.
+
 ## Datos que vienen de Excel
 
 Nico trabaja con planillas propias y las pasa para importar. No hay Python ni
