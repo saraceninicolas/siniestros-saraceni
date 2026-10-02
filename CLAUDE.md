@@ -87,6 +87,7 @@ Mientras dure el paso 1 siguen valiendo las reglas viejas:
 | `denuncia.html` / `cotizar-hogar.html` | Páginas **públicas** standalone (no cargan el portal). La denuncia se pinta con la marca de la empresa de la ruta: `/aicardi/denuncia` |
 | `supabase/*.sql` | Esquema de referencia de cada tabla (documentación, no se ejecuta solo) |
 | `supabase/migrations/` | **Historial** de cambios de esquema. Archivos numerados que no se editan una vez aplicados. El README dice qué migración está en cada ambiente |
+| `supabase/functions/` | Las Edge Functions. Están acá como copia de referencia: **corren en Supabase y se despliegan aparte**, ni `git push` ni Vercel las tocan |
 
 ## Patrón para agregar un módulo
 
@@ -112,6 +113,11 @@ tampoco los `style` inline de los `.jsx` (201 hexadecimales pasaron a
 
 - `src/detail.jsx`: el PDF se imprime en **otro documento**, donde las
   variables del portal no existen.
+- `supabase/functions/enviar-notificaciones`: un email viaja al correo de cada
+  uno, sin hoja de estilos ni variables. Los colores van escritos, y el de la
+  marca sale de `organizaciones.marca`. Por eso esa función repite la cuenta de
+  contraste de `marca.js` (`tintaSobre`): el botón salía siempre con letra
+  blanca y con el amarillo de Aicardi no se leía.
 - `src/charts.jsx` (`CH_COLOR`) y los colores de `HECHO_COLOR` que no coinciden
   con ningún token: son paletas **categóricas**, no roles.
 - El visor de fotos, la pastilla del logo y los blancos sobre fondos oscuros.
@@ -230,6 +236,27 @@ suscripción y el módulo crashea:
 ```js
 c.channel("cotizaciones-realtime-" + Math.random().toString(36).slice(2, 8))
 ```
+
+## Avisos: la campanita y el mail
+
+Son dos caminos **independientes a propósito**. Un trigger escribe la fila en
+`notificaciones` y eso enciende la campanita del topbar; después la Edge
+Function `enviar-notificaciones` levanta las que tienen el email `pendiente` y
+las manda por Resend. `pg_cron` la llama cada minuto —no cada diez— porque una
+denuncia web tiene al asegurado esperando del otro lado.
+
+Si el email falla, la campanita ya está hecha: nunca se pierde el aviso, se
+pierde el recordatorio.
+
+- ⚠️ **Hoy no sale ningún mail.** Falta cargar `RESEND_API_KEY` en los secrets
+  de la función. Sin esa clave marca todo `omitido` y queda solo la campanita.
+- Lo que quedó en `omitido` **no se reenvía**: el día que se cargue la clave
+  nadie va a recibir de golpe los tres meses anteriores.
+- `pg_cron` existe solo en producción. En test la función se llama a mano.
+- Un mail no tiene las variables CSS del portal: el nombre y el color salen de
+  `organizaciones.marca`, y el título del aviso —que puede traer el nombre que
+  escribió un desconocido en el formulario público— **se escapa** antes de
+  entrar al HTML.
 
 ## Despliegue
 

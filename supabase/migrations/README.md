@@ -45,6 +45,7 @@ Siempre **test primero**, se verifica, y recién después producción.
 | `20260928_0017_formularios_publicos_por_modulo.sql` | aplicada | aplicada (2026-09-30) |
 | `20260929_0018_companias_por_empresa.sql` | aplicada | aplicada (2026-09-30) |
 | `20260930_0019_pipeline_comercial_y_acciones.sql` | aplicada | aplicada (2026-09-30) |
+| `20261002_0020_aviso_por_mail_al_toque.sql` | aplicada (2026-10-02) | **pendiente** |
 
 ## El pase a producción de la 0009 a la 0018 (multiempresa)
 
@@ -145,3 +146,36 @@ paso 6: así `org_publica` ya devuelve `modulos` cuando cargan las páginas
 nuevas. El riesgo que describía ese paso —ver el error crudo de la policy en vez
 del aviso— no existe con una sola empresa, que tiene todos los módulos. Igual se
 corrigió el código para que un `modulos` que no viene no cierre el formulario.
+
+## El email de los avisos (0020)
+
+La campanita del portal funciona desde julio. El **email nunca salió**: las 294
+notificaciones de producción están en `email_estado = 'omitido'`, que es lo que
+marca la Edge Function cuando no encuentra `RESEND_API_KEY`.
+
+Lo que hay montado, y dónde vive cada pieza:
+
+| Pieza | Dónde | Estado |
+|---|---|---|
+| Trigger `notif_solicitud_nueva` | base | anda: 36 avisos de denuncia web |
+| Tabla `notificaciones` | base | anda |
+| Cron `despacho-emails` | pg_cron, **solo producción** | anda, cada minuto desde la 0020 |
+| Edge Function `enviar-notificaciones` | Supabase + `supabase/functions/` | desplegada en las dos |
+| `RESEND_API_KEY` | secret de la función | **falta: es lo único que falta** |
+
+⚠️ **La Edge Function se despliega aparte.** No la toca ni `git push` ni Vercel:
+el archivo del repo es la copia de referencia, y para que cambie lo que corre
+hay que subirla a Supabase. Antes de la 0020 el único ejemplar del código estaba
+adentro de Supabase y no había copia en ningún lado.
+
+### La diferencia de esquema que apareció probando
+
+`notificaciones.usuario_id` apuntaba a `perfiles` en producción y a `auth.users`
+en test. PostgREST arma sus `select` anidados leyendo las claves foráneas, así
+que el mismo código contestaba bien en producción y en test tiraba
+*"Could not find a relationship between 'notificaciones' and 'perfiles'"*.
+
+Es la peor clase de diferencia: lo que se prueba no es lo que corre. La 0020 deja
+las dos iguales (apuntando a `perfiles`, que es lo que dice
+`roles_notificaciones.sql`). **Al comparar las bases, mirar también las claves
+foráneas**, no solo columnas y policies.
