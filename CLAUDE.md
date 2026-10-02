@@ -160,8 +160,9 @@ nueva nace `estado='pendiente'` y no ve nada hasta que un organizador la aprueba
 
 ⚠️ **Multiempresa: en producción desde el 2026-09-30.** Las migraciones 0009 a
 0019 arman las tablas de empresas y le ponen `org_id` a las diez tablas del
-portal, con sus policies, sus funciones y los archivos por carpeta. Hoy hay una
-sola empresa en producción (Saraceni, plan Full) y dos en test. `perfiles` sigue mandando para los roles (organizador/empleado); la
+portal, con sus policies, sus funciones y los archivos por carpeta. Desde el
+2026-10-02 hay **dos empresas en producción**: Saraceni (plan Full) y Aicardi
+(sin plan, con una sola excepción en `org_modulos`: solo Siniestros). `perfiles` sigue mandando para los roles (organizador/empleado); la
 **membresía** es la que dice de qué empresa es cada uno.
 
 Cosas que costaron y no hay que volver a aprender:

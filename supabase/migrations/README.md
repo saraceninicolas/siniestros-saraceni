@@ -191,3 +191,28 @@ conecta un proveedor de email.
 
 Se aplica igual cuando toque, para que las dos bases queden con el mismo
 historial. No es un pendiente que trabe una entrega.
+
+## Aicardi en producción (2026-10-02)
+
+Segunda empresa de la base real. No hizo falta ninguna migración: el
+multiempresa ya estaba aplicado, así que fue cargar datos.
+
+- `organizaciones`: slug `aicardi`, estado `activa`, su amarillo y su logo.
+- `org_modulos`: **una sola fila**, `siniestros = true`. Sin suscripción. Como
+  `org_tiene_modulo` cae a los planes solo cuando no hay fila propia, todo lo
+  demás queda en false sin tener que enumerarlo.
+- `companias`: las mismas siete de Saraceni, copiadas (lo pidió Nico).
+
+Verificado ejecutando, no leyendo:
+
+- Los seis módulos, empresa por empresa: Saraceni los seis en true, Aicardi
+  solo `siniestros`.
+- `org_defecto()` sigue devolviendo Saraceni. Importa: es a quién le quedan las
+  denuncias que entran por `/denuncia` sin slug, y Aicardi activa podría haber
+  cambiado el desempate si el orden fuera otro.
+- Los totales de Saraceni, intactos, y Aicardi con cero siniestros.
+- `anon` lee `[]` en siniestros, solicitudes, asegurados, organizaciones,
+  companias, perfiles y fact_mensual.
+- En el sitio real: `/aicardi` entra con su marca contra la base de
+  producción, `/aicardi/denuncia` abre el formulario y
+  `/aicardi/cotizar-hogar` contesta "Por acá no es".
