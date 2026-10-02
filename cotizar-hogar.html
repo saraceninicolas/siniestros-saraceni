@@ -9,6 +9,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
 :root{ --brand:#DD0909; --brand-d:#bb0707; --bg:#F5F6F8; --surface:#fff; --surface-2:#FBFBFC;
+  /* Respaldo mientras marca.js averigua de que empresa es la pagina. Son los
+     mismos valores de fabrica de tokens.css: sin esto, un var() sin definir
+     deja la letra del boton Enviar heredada y queda oscura sobre el rojo. */
+  --brand-ink:#fff; --brand-txt:#DD0909; --brand-soft:#fdf3f3;
+  --brand-line:#f3c9c9; --brand-ring:rgba(221,9,9,.09);
   --ink:#191C22; --ink-2:#5A6271; --muted:#8B93A1; --line:#E7E9ED; --line-2:#EFF1F4; }
 *{ box-sizing:border-box; }
 body{ margin:0; font-family:"Public Sans",system-ui,sans-serif; font-size:17px; background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; }
@@ -24,17 +29,17 @@ body{ margin:0; font-family:"Public Sans",system-ui,sans-serif; font-size:17px; 
 h1{ font-size:22px; margin:14px 0 5px; letter-spacing:-.01em; }
 .sub{ color:var(--ink-2); font-size:14px; margin:0 auto 4px; max-width:460px; line-height:1.45; }
 form{ padding:12px 26px 24px; }
-.sect{ font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--brand);
+.sect{ font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--brand-txt);
   margin:16px 0 9px; padding-bottom:5px; border-bottom:1px solid var(--line-2); }
 .sect .opt{ color:var(--muted); font-weight:600; text-transform:none; letter-spacing:0; font-size:12.5px; }
 .grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; }
 .full{ grid-column:1/-1; }
 label{ display:flex; flex-direction:column; gap:4px; }
 label span{ font-size:13px; font-weight:600; color:var(--ink-2); }
-label span i{ color:var(--brand); font-style:normal; }
+label span i{ color:var(--brand-txt); font-style:normal; }
 input,select,textarea{ border:1px solid var(--line); border-radius:9px; padding:9px 12px; font-size:16px;
   font-family:inherit; color:var(--ink); background:#fff; outline:none; width:100%; transition:.15s; }
-input:focus,select:focus,textarea:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(221,9,9,.09); }
+input:focus,select:focus,textarea:focus{ border-color:var(--brand); box-shadow:0 0 0 3px var(--brand-ring); }
 textarea{ resize:vertical; min-height:62px; }
 .hp{ position:absolute; left:-9999px; top:-9999px; height:1px; width:1px; overflow:hidden; }
 .hint{ font-size:12px; color:var(--muted); margin-top:-1px; line-height:1.35; }
@@ -45,7 +50,7 @@ textarea{ resize:vertical; min-height:62px; }
   border:1.5px solid var(--line); border-radius:8px; padding:7px 11px; background:#fff;
   font-size:14px; font-weight:600; color:var(--ink-2); cursor:pointer; transition:.14s; user-select:none; }
 .chk:hover{ border-color:#d3d7dd; }
-.chk.on{ border-color:var(--brand); color:var(--brand); background:#fdf3f3; }
+.chk.on{ border-color:var(--brand); color:var(--brand-txt); background:var(--brand-soft); }
 .chk input{ width:16px; height:16px; margin:0; accent-color:var(--brand); cursor:pointer; flex:none; }
 .chk span{ font-size:14px; font-weight:600; color:inherit; }
 /* ---- elección casa / departamento ---- */
@@ -54,7 +59,7 @@ textarea{ resize:vertical; min-height:62px; }
   border:1.5px solid var(--line); border-radius:8px; padding:7px 13px; background:#fff;
   font-size:14px; font-weight:600; color:var(--ink-2); cursor:pointer; transition:.14s; user-select:none; }
 .radio-opt:hover{ border-color:#d3d7dd; }
-.radio-opt.on{ border-color:var(--brand); color:var(--brand); background:#fdf3f3; }
+.radio-opt.on{ border-color:var(--brand); color:var(--brand-txt); background:var(--brand-soft); }
 .radio-opt input{ width:16px; height:16px; margin:0; accent-color:var(--brand); cursor:pointer; flex:none; }
 .radio-opt span{ font-size:14px; font-weight:600; color:inherit; }
 /* ---- bloque que se despliega al tildar una cobertura ---- */
@@ -67,7 +72,7 @@ textarea{ resize:vertical; min-height:62px; }
 .money input{ padding-left:28px; }
 .money::before{ content:"$"; position:absolute; left:12px; top:31px; color:var(--muted); font-weight:700; z-index:1; }
 .send{ display:flex; align-items:center; justify-content:center; gap:9px; width:100%; margin-top:18px;
-  background:var(--brand); color:#fff; border:none; border-radius:11px; padding:14px; font-size:16.5px;
+  background:var(--brand); color:var(--brand-ink); border:none; border-radius:11px; padding:14px; font-size:16.5px;
   font-weight:700; font-family:inherit; cursor:pointer; transition:.15s; }
 .send:hover{ background:var(--brand-d); }
 .send:disabled{ opacity:.55; cursor:not-allowed; }

@@ -105,12 +105,12 @@ function DetailScreen({ item, onBack, onEdit, onDelete, onGcal, onTerminar, onQu
     let alive = true;
     (async () => {
       if (!window.DB || !window.DB.files || !adjuntos.length) return;
-      // En paralelo: pedirlas de a una hacía esperar un viaje al servidor por
-      // adjunto antes de que apareciera la primera miniatura.
-      const map = {};
-      await Promise.all(adjuntos.map(async (a) => {
-        try { map[a.path] = await window.DB.files.signedUrl(a.path, 3600, a.bucket); } catch (e) { /* noop */ }
-      }));
+      // Un solo pedido para todas. Antes salían en paralelo pero seguían siendo
+      // un viaje al servidor por adjunto, y con seis fotos eso se notaba antes
+      // de que apareciera la primera miniatura.
+      let map = {};
+      try { map = await window.DB.files.signedUrls(adjuntos.map((a) => ({ path: a.path, bucket: a.bucket })), 3600); }
+      catch (e) { console.error(e); }
       if (alive) setAdjUrls(map);
     })();
     return () => { alive = false; };

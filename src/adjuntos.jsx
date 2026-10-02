@@ -72,6 +72,18 @@ function AdjuntoVisor({ adjuntos, urls, indice, onCerrar, onIr }) {
   // Al pasar de foto se limpia el aviso: era de la anterior.
   React.useEffect(() => { setFallo(""); }, [indice]);
 
+  // Mientras mira una foto, el navegador va trayendo la de al lado. Revisar una
+  // denuncia es apretar la flecha seis veces seguidas, y esperar en cada una
+  // rompe el hilo de lo que se está mirando. Son dos imágenes de ~130 kB: no
+  // se precargan todas porque una denuncia vieja puede traer varios megas.
+  React.useEffect(() => {
+    [indice + 1, indice - 1].forEach((i) => {
+      const vecina = adjuntos[i];
+      const u = vecina && urls[vecina.path];
+      if (u) { const img = new Image(); img.src = u; }
+    });
+  }, [indice, adjuntos, urls]);
+
   React.useEffect(() => {
     const h = (e) => {
       if (e.key === "Escape") onCerrar();

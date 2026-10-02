@@ -1077,6 +1077,55 @@ async function dbMaxN() {
     if (error) { console.error(error); return null; }
     return data ? data.signedUrl : null;
   }
+
+  // Firmas ya pedidas, para no volver a pedirlas al reabrir el mismo siniestro.
+  // Se guarda cuándo vence cada una y se descarta un minuto antes: una URL que
+  // vence mientras el usuario mira la foto deja la pantalla con la imagen rota.
+  const FIRMAS = new Map();
+
+  // Las URLs de VARIOS archivos, en un pedido por bucket.
+  //
+  // ⚠️ El peso de las fotos ya no es el problema (una foto nueva pesa ~130 kB);
+  // el problema es cuántas veces se va hasta el servidor. Cada viaje a Supabase
+  // cuesta ~250 ms desde acá, y el primero con la conexión fría más de un
+  // segundo. Firmando de a una, un siniestro con seis fotos se comía seis
+  // viajes ANTES de que empezara a bajar la primera imagen, aunque salieran en
+  // paralelo. `createSignedUrls` las firma todas juntas: un viaje.
+  //
+  // Recibe [{ path, bucket }] y devuelve { path: url }. Los adjuntos de un
+  // siniestro convertido pueden venir de dos buckets distintos (lo que subió el
+  // asegurado y lo que sumó el broker), así que se agrupan por bucket.
+  async function fileSignedUrls(items, secs) {
+    const c = client(); if (!c) return {};
+    const vida = secs || 3600;
+    const salida = {};
+    const porBucket = new Map();
+    const ahora = Date.now();
+
+    for (const it of items || []) {
+      if (!it || !it.path) continue;
+      const bucket = it.bucket || BUCKET;
+      const guardada = FIRMAS.get(bucket + "|" + it.path);
+      if (guardada && guardada.vence > ahora + 60000) { salida[it.path] = guardada.url; continue; }
+      if (!porBucket.has(bucket)) porBucket.set(bucket, []);
+      porBucket.get(bucket).push(it.path);
+    }
+
+    await Promise.all([...porBucket.entries()].map(async ([bucket, paths]) => {
+      const { data, error } = await c.storage.from(bucket).createSignedUrls(paths, vida);
+      if (error) { console.error(error); return; }
+      (data || []).forEach((f, i) => {
+        // Cada archivo trae su propio error: que uno falle no deja sin URL a
+        // los demás. El que falla queda sin entrada y la grilla lo muestra
+        // como archivo sin vista previa, que es lo que ya hacía.
+        if (!f || !f.signedUrl) return;
+        const path = f.path || paths[i];   // el orden sí está garantizado
+        salida[path] = f.signedUrl;
+        FIRMAS.set(bucket + "|" + path, { url: f.signedUrl, vence: ahora + vida * 1000 });
+      });
+    }));
+    return salida;
+  }
   async function fileRemove(path, bucket) {
     const c = client(); if (!c) return;
     const { error } = await c.storage.from(bucket || BUCKET).remove([path]);
@@ -1131,6 +1180,6 @@ async function dbMaxN() {
     sol: { list: solList, update: solUpdate, subscribe: solSubscribe },
     cot: { list: cotList, create: cotCreate, update: cotUpdate, subscribe: cotSubscribe },
     acc: { list: accList, create: accCreate, remove: accRemove },
-    files: { upload: fileUpload, signedUrl: fileSignedUrl, remove: fileRemove },
+    files: { upload: fileUpload, signedUrl: fileSignedUrl, signedUrls: fileSignedUrls, remove: fileRemove },
   };
 })();

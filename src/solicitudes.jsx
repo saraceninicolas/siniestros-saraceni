@@ -33,12 +33,11 @@ function SolCard({ s, onConvertir, onDescartar, onReabrir }) {
     let alive = true;
     (async () => {
       if (!window.DB || !window.DB.files || !(s.adjuntos || []).length) return;
-      // En paralelo: una solicitud con 5 fotos encadenaba 5 viajes al servidor
-      // antes de mostrar nada.
-      const m = {};
-      await Promise.all(s.adjuntos.map(async (a) => {
-        try { m[a.path] = await window.DB.files.signedUrl(a.path, 3600, "solicitudes"); } catch (e) { /* noop */ }
-      }));
+      // Un solo pedido para todas: una solicitud con 5 fotos gastaba 5 viajes
+      // al servidor antes de mostrar nada.
+      let m = {};
+      try { m = await window.DB.files.signedUrls(s.adjuntos.map((a) => ({ path: a.path, bucket: "solicitudes" })), 3600); }
+      catch (e) { console.error(e); }
       if (alive) setUrls(m);
     })();
     return () => { alive = false; };
