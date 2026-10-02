@@ -45,7 +45,7 @@ Siempre **test primero**, se verifica, y recién después producción.
 | `20260928_0017_formularios_publicos_por_modulo.sql` | aplicada | aplicada (2026-09-30) |
 | `20260929_0018_companias_por_empresa.sql` | aplicada | aplicada (2026-09-30) |
 | `20260930_0019_pipeline_comercial_y_acciones.sql` | aplicada | aplicada (2026-09-30) |
-| `20261002_0020_aviso_por_mail_al_toque.sql` | aplicada (2026-10-02) | **pendiente** |
+| `20261002_0020_aviso_por_mail_al_toque.sql` | aplicada (2026-10-02) | **pendiente, y sin apuro** |
 
 ## El pase a producción de la 0009 a la 0018 (multiempresa)
 
@@ -179,3 +179,15 @@ Es la peor clase de diferencia: lo que se prueba no es lo que corre. La 0020 dej
 las dos iguales (apuntando a `perfiles`, que es lo que dice
 `roles_notificaciones.sql`). **Al comparar las bases, mirar también las claves
 foráneas**, no solo columnas y policies.
+
+### Por qué la 0020 no corre con apuro a producción
+
+El 2026-10-02 se descartó el aviso por mail: el asegurado recibe el link cuando
+avisa el siniestro, así que el broker ya sabe que va a entrar. De las dos cosas
+que hace la 0020, en producción una **no cambia nada** (la clave foránea de
+`notificaciones` ya apunta a `perfiles`; la que estaba mal era test) y la otra
+—despachar cada minuto en vez de cada diez— solo importa si algún día se
+conecta un proveedor de email.
+
+Se aplica igual cuando toque, para que las dos bases queden con el mismo
+historial. No es un pendiente que trabe una entrega.
