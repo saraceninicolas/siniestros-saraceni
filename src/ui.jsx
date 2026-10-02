@@ -604,7 +604,7 @@ function ModuleScreen({ info }) {
       <div className="ph-ico"><Ico name="folder" size={26} /></div>
       <span className="module-ph-tag"><span className="module-ph-dot" />En preparación</span>
       <h2>{i.title}</h2>
-      <p>Parte del portal de gestiones de Saraceni. Desde acá vas a administrar {i.title.toLowerCase()} dentro de {i.section}, con el mismo seguimiento diario que usás para los siniestros.</p>
+      <p>Parte del portal de gestiones. Desde acá vas a administrar {i.title.toLowerCase()} dentro de {i.section}, con el mismo seguimiento diario que usás para los siniestros.</p>
     </div>
   );
 }

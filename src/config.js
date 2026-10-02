@@ -33,8 +33,20 @@
     },
   };
 
-  // Únicos dominios que hablan con la base real
-  var DOMINIOS_PRODUCCION = ["siniestros-saraceni.vercel.app"];
+  // Únicos dominios que hablan con la base real.
+  //
+  // ⚠️ Un dominio nuevo que NO esté en esta lista escribe en test, aunque sea
+  // el que le pasaste a un cliente y aunque el portal se vea perfecto. Es a
+  // propósito (lo imprevisto cae en test, nunca al revés), pero quiere decir
+  // que agregar un dominio en Vercel son DOS pasos: el panel y esta línea.
+  //
+  // `gestionsiniestros` es el nombre con el que se presenta el producto a los
+  // brokers que no son Saraceni. El viejo sigue andando: hay gente con el link
+  // guardado y las dos direcciones llevan al mismo lugar.
+  var DOMINIOS_PRODUCCION = [
+    "siniestros-saraceni.vercel.app",
+    "gestionsiniestros.vercel.app",
+  ];
 
   var host = (window.location && window.location.hostname || "").toLowerCase();
   var esProduccion = DOMINIOS_PRODUCCION.indexOf(host) >= 0;
