@@ -18,13 +18,68 @@ const moneyK = (v) => {
   return "$" + Math.round(n);
 };
 // "1.234.567,89" o "1234567.89" → 1234567.89
+//
+// El punto es ambiguo y acá se juega plata: a la argentina separa miles
+// ("1.500" son mil quinientos) y en lo que guarda la base separa decimales
+// ("1234567.89"). Las dos formas entran por el mismo campo, así que hay que
+// decidir cuál es cuál.
+//
+// Con coma no hay duda: los puntos son de miles. Sin coma, se miran los grupos:
+// solo es separador de miles si están TODOS de a tres ("1.500", "2.673.574").
+// "2673574.83" o "1.5" terminan en un grupo que no es de tres, y ahí el punto
+// es decimal.
+//
+// ⚠️ Esto antes devolvía 1,5 para "1.500". Casi no se llegaba, porque el campo
+// mostraba el número pelado y nadie escribía puntos; desde que se muestra
+// formateado, el formato con puntos es justo el que alguien va a copiar, y
+// equivocarse acá no avisa: carga mil veces menos y la fila queda igual de
+// prolija.
 const parseMonto = (v) => {
   if (v === "" || v == null) return null;
   let s = String(v).trim().replace(/[$\s]/g, "");
   if (s.indexOf(",") >= 0) s = s.replace(/\./g, "").replace(",", ".");
+  else if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, "");
   const n = Number(s);
   return isNaN(n) ? null : n;
 };
+
+// Para MOSTRAR un importe cargado. "2673574.83" obliga a contar los dígitos con
+// el dedo; "2.673.574,83" se lee de un vistazo, que es lo que uno hace cuando
+// controla doce filas seguidas contra la factura de la compañía.
+//
+// Si lo que hay escrito todavía no es un número —alguien a mitad de tipear, un
+// "-" suelto, una coma sin decimales— se devuelve tal cual. Corregirle a
+// alguien lo que está escribiendo es peor que mostrarlo feo un segundo.
+const fmtMonto = (v) => {
+  if (v === "" || v == null) return "";
+  const n = parseMonto(v);
+  if (n == null) return String(v);
+  return n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+// Un importe se escribe en crudo y se lee con puntos.
+//
+// Mientras alguien tipea se muestra EXACTAMENTE lo que tipeó: reformatear a
+// cada tecla pelea con el cursor (escribís "1234", aparece un punto solo y el
+// cursor se te va al final). Recién al salir del campo vuelve a mostrarse con
+// separadores. Antes de la primera tecla también se ve formateado, así que
+// entrar a corregir un número no lo hace saltar a su forma cruda.
+function MontoInput({ valor, onChange, placeholder, strong }) {
+  const [tipeando, setTipeando] = React.useState(null);
+  return (
+    <span className="monto">
+      <input
+        className={"input sm mono num" + (strong ? " strong" : "")}
+        value={tipeando != null ? tipeando : fmtMonto(valor)}
+        onChange={(e) => { setTipeando(e.target.value); onChange(e.target.value); }}
+        onBlur={() => setTipeando(null)}
+        placeholder={placeholder}
+        inputMode="decimal"
+      />
+    </span>
+  );
+}
+
 const IVA_PCT = 0.21;
 
 // ============================ CARGA MENSUAL ============================
@@ -153,15 +208,22 @@ function CargaMensual({ companias, movs, anio, mes, onAnio, onMes, onGuardar, on
           <table className="table fact-carga">
             <thead>
               <tr>
+                {/* minWidth y no width: en una tabla de ancho automático el
+                    `width` es apenas una sugerencia, y cuando el espacio no
+                    alcanzaba el navegador apretaba las columnas de importes en
+                    vez de hacer scroll. A 980px de ancho el campo del total
+                    quedaba en 96px y seis de ocho números salían cortados. Con
+                    un mínimo de verdad la tabla se niega a achicarse y el que
+                    corre es el scroll horizontal, que es lo que se puede leer. */}
                 <th style={{ minWidth: 200 }}>Compañía</th>
-                <th style={{ width: 108 }}>Fecha</th>
-                <th style={{ width: 78 }}>N° fac</th>
-                <th style={{ width: 124 }}>Neto</th>
-                <th style={{ width: 116 }}>IVA</th>
-                <th style={{ width: 124 }}>Total</th>
-                <th style={{ width: 62 }}>Envío</th>
-                <th style={{ width: 124 }}>Cobrado</th>
-                <th style={{ width: 44 }}></th>
+                <th style={{ minWidth: 108 }}>Fecha</th>
+                <th style={{ minWidth: 78 }}>N° fac</th>
+                <th style={{ minWidth: 146 }}>Neto</th>
+                <th style={{ minWidth: 146 }}>IVA</th>
+                <th style={{ minWidth: 146 }}>Total</th>
+                <th style={{ minWidth: 62 }}>Envío</th>
+                <th style={{ minWidth: 146 }}>Cobrado</th>
+                <th style={{ minWidth: 44 }}></th>
               </tr>
             </thead>
             <tbody>
@@ -181,13 +243,13 @@ function CargaMensual({ companias, movs, anio, mes, onAnio, onMes, onGuardar, on
                     </td>
                     <td><input className="input sm" type="date" value={valorDe(c, "fecha") || ""} onChange={(e) => setCampo(c, "fecha", e.target.value)} /></td>
                     <td><input className="input sm mono" value={valorDe(c, "nroFactura")} onChange={(e) => setCampo(c, "nroFactura", e.target.value)} placeholder="—" /></td>
-                    <td><input className="input sm mono num" value={valorDe(c, "neto")} onChange={(e) => setCampo(c, "neto", e.target.value)} placeholder="0" inputMode="decimal" /></td>
-                    <td><input className="input sm mono num" value={valorDe(c, "iva")} onChange={(e) => setCampo(c, "iva", e.target.value)} placeholder={c.tipo === "A" ? "auto" : "—"} inputMode="decimal" /></td>
-                    <td><input className="input sm mono num strong" value={valorDe(c, "total")} onChange={(e) => setCampo(c, "total", e.target.value)} placeholder="0" inputMode="decimal" /></td>
+                    <td><MontoInput valor={valorDe(c, "neto")} onChange={(v) => setCampo(c, "neto", v)} placeholder="0" /></td>
+                    <td><MontoInput valor={valorDe(c, "iva")} onChange={(v) => setCampo(c, "iva", v)} placeholder={c.tipo === "A" ? "auto" : "—"} /></td>
+                    <td><MontoInput valor={valorDe(c, "total")} onChange={(v) => setCampo(c, "total", v)} placeholder="0" strong /></td>
                     <td style={{ textAlign: "center" }}>
                       <input type="checkbox" className="fact-chk" checked={!!valorDe(c, "enviado")} onChange={(e) => setCampo(c, "enviado", e.target.checked)} title="Factura enviada" />
                     </td>
-                    <td><input className="input sm mono num" value={valorDe(c, "pago")} onChange={(e) => setCampo(c, "pago", e.target.value)} placeholder="—" inputMode="decimal" /></td>
+                    <td><MontoInput valor={valorDe(c, "pago")} onChange={(v) => setCampo(c, "pago", v)} placeholder="—" /></td>
                     <td>
                       {sucia ? (
                         <button className="row-open ok" title="Guardar esta fila" disabled={guardando === c.id} onClick={() => guardarFila(c)}>
@@ -893,7 +955,10 @@ function FacturacionModule({ active, station, query, onNav }) {
   );
 }
 
-Object.assign(window, { FacturacionModule, CargaMensual, CrecimientoAnual, CompaniasView, FactEstadisticas });
+Object.assign(window, { FacturacionModule, CargaMensual, CrecimientoAnual, CompaniasView, FactEstadisticas,
+  // Las dos de importes van expuestas para poder probarlas sin pantalla: son
+  // plata, y el redondeo equivocado no avisa.
+  parseMonto, fmtMonto });
 
 // Marca este archivo como modulo ES. Sin esto el compilador lo toma por
 // script (no tiene ningun import/export todavia) y compila el JSX a require(),
