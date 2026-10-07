@@ -275,7 +275,11 @@ async function dbMaxN() {
       compania_id: it.companiaId, anio: Number(it.anio), mes: Number(it.mes),
       fecha: orNull(it.fecha), nro_factura: orNull(it.nroFactura),
       neto: numOrNull(it.neto), iva: numOrNull(it.iva), total: numOrNull(it.total),
-      enviado: !!it.enviado, pago: numOrNull(it.pago),
+      enviado: !!it.enviado,
+      // `pago` NO va acá a propósito: desde la 0021 lo mantiene un trigger con
+      // la suma de `fact_pagos`, porque una factura se puede cobrar en partes.
+      // Mandarlo desde la pantalla volvería a pisar el total con un solo número
+      // y el detalle quedaría diciendo otra cosa.
       observaciones: orNull(it.observaciones),
       ultima_mod_por: orNull(it.ultimaModPor),
       ultima_mod_fecha: new Date().toISOString(),
@@ -324,11 +328,39 @@ async function dbMaxN() {
     const { error } = await c.from("fact_mensual").delete().eq("id", it._dbId);
     if (error) throw error;
   }
+  // --- cobros: cada transferencia de una factura (0021) ---
+  // Varias compañías pagan en partes, así que el detalle vive acá y el total
+  // del mes lo recalcula un trigger. La pantalla nunca escribe ese total.
+  function fromRowFP(r) {
+    return { id: r.id, factId: r.fact_id, fecha: r.fecha || "", importe: r.importe, nota: r.nota || "" };
+  }
+  async function fpList() {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    // Se traen todos de una, igual que los movimientos del mes: son pocos (uno
+    // o dos por factura) y partirlos por período obligaría a ir al servidor
+    // cada vez que se cambia de mes.
+    const { data, error } = await c.from("fact_pagos").select("*").order("fecha").order("id");
+    if (error) throw error; return (data || []).map(fromRowFP);
+  }
+  async function fpCreate(it) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("fact_pagos").insert({
+      fact_id: it.factId, fecha: orNull(it.fecha), importe: numOrNull(it.importe), nota: orNull(it.nota),
+    }).select().single();
+    if (error) throw error; return fromRowFP(data);
+  }
+  async function fpRemove(id) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { error } = await c.from("fact_pagos").delete().eq("id", id);
+    if (error) throw error;
+  }
+
   function fmSubscribe(onChange) {
     const c = client(); if (!c) return null;
     const ch = c.channel("fact-realtime-" + Math.random().toString(36).slice(2, 8))
       .on("postgres_changes", { event: "*", schema: "public", table: "fact_mensual" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
       .on("postgres_changes", { event: "*", schema: "public", table: "fact_companias" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
+      .on("postgres_changes", { event: "*", schema: "public", table: "fact_pagos" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
       .subscribe();
     return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
   }
@@ -1154,6 +1186,8 @@ async function dbMaxN() {
       companias: { list: fcList, create: fcCreate, update: fcUpdate, remove: fcRemove },
       // importes de cada mes
       mensual: { list: fmList, save: fmSave, remove: fmRemove },
+      // cada transferencia por separado; el total del mes lo suma la base
+      pagos: { list: fpList, create: fpCreate, remove: fpRemove },
       subscribe: fmSubscribe,
     },
     renov: {

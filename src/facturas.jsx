@@ -17,6 +17,7 @@ const moneyK = (v) => {
   if (Math.abs(n) >= 1000) return "$" + Math.round(n / 1000) + "k";
   return "$" + Math.round(n);
 };
+const money2 = (v) => (v == null || v === "" ? "—" : "$" + Number(v).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 // "1.234.567,89" o "1234567.89" → 1234567.89
 //
 // El punto es ambiguo y acá se juega plata: a la argentina separa miles
@@ -66,6 +67,11 @@ const fmtMonto = (v) => {
 // entrar a corregir un número no lo hace saltar a su forma cruda.
 function MontoInput({ valor, onChange, placeholder, strong }) {
   const [tipeando, setTipeando] = React.useState(null);
+  // Si el campo se vacía desde afuera —el formulario de cobros lo limpia
+  // después de agregar uno— hay que soltar lo que se estaba tipeando. Sin
+  // esto el importe quedaba escrito aunque el cobro ya se hubiera cargado, y
+  // lo más fácil del mundo era volver a apretar Agregar y cargarlo dos veces.
+  React.useEffect(() => { if (valor === "" || valor == null) setTipeando(null); }, [valor]);
   return (
     <span className="monto">
       <input
@@ -82,9 +88,34 @@ function MontoInput({ valor, onChange, placeholder, strong }) {
 
 const IVA_PCT = 0.21;
 
+// A dónde se le manda la factura a esta compañía. El campo guarda un mail, una
+// dirección web o la palabra "WEB" de las que todavía no tienen link cargado.
+//
+// Antes decía siempre "mail" y el mail de verdad estaba escondido en el title,
+// que en el celular no existe y en la computadora hay que adivinar que está.
+// Era un dato que ya teníamos y obligaba a ir a buscarlo a otra pantalla.
+function EnvioTag({ envio }) {
+  const v = String(envio || "").trim();
+  if (!v) return null;
+  if (v.includes("@")) {
+    return <a className="fact-envio" href={"mailto:" + v} title={"Escribirle a " + v}
+      onClick={(e) => e.stopPropagation()}>{v}</a>;
+  }
+  if (/^https?:\/\//i.test(v)) {
+    // Se muestra el dominio y no la URL entera: "mercantilandina.com.ar" dice
+    // lo mismo que doscientos caracteres de parámetros y entra en la celda.
+    let dominio = v;
+    try { dominio = new URL(v).hostname.replace(/^www\./, ""); } catch (e) { /* queda la cruda */ }
+    return <a className="fact-envio es-link" href={v} target="_blank" rel="noreferrer noopener"
+      title={"Abrir " + v} onClick={(e) => e.stopPropagation()}>{dominio}</a>;
+  }
+  // "WEB" sin dirección: se puede pegar el link en Compañías y se vuelve clickeable.
+  return <span className="fact-envio" title="Pegá el link del portal en Compañías y queda clickeable">{v}</span>;
+}
+
 // ============================ CARGA MENSUAL ============================
 // Una fila por compañía: se ven los datos fijos y se completan los del mes.
-function CargaMensual({ companias, movs, anio, mes, onAnio, onMes, onGuardar, onGuardarTodo, station }) {
+function CargaMensual({ companias, movs, pagos, anio, mes, onAnio, onMes, onGuardar, onGuardarTodo, onVerCobros, station }) {
   const hoy = new Date();
   const [edit, setEdit] = React.useState({});     // { companiaId: {campo: valor} }
   const [guardando, setGuardando] = React.useState(null);
@@ -97,6 +128,11 @@ function CargaMensual({ companias, movs, anio, mes, onAnio, onMes, onGuardar, on
   }, [movs, anio, mes]);
 
   React.useEffect(() => { setEdit({}); }, [anio, mes]);
+
+  // Cuántas transferencias tiene la factura de esa fila. Solo se muestra el
+  // cartelito cuando son más de una: avisar "1 pago" en las doce filas sería
+  // ruido en la única columna donde hace falta mirar rápido.
+  const cuantosPagos = (g) => (g && g._dbId ? (pagos || []).filter((p) => p.factId === g._dbId).length : 0);
 
   const valorDe = (c, campo) => {
     const e = edit[c.id];
@@ -238,7 +274,7 @@ function CargaMensual({ companias, movs, anio, mes, onAnio, onMes, onGuardar, on
                       <div className="cell-sub">
                         <span className="mono">{c.cuit}</span>
                         {c.tipo && <span className="fact-tag">Fac. {c.tipo}</span>}
-                        {c.envio && <span className="fact-envio" title={c.envio}>{c.envio === "WEB" ? "WEB" : "mail"}</span>}
+                        <EnvioTag envio={c.envio} />
                       </div>
                     </td>
                     <td><input className="input sm" type="date" value={valorDe(c, "fecha") || ""} onChange={(e) => setCampo(c, "fecha", e.target.value)} /></td>
@@ -249,7 +285,19 @@ function CargaMensual({ companias, movs, anio, mes, onAnio, onMes, onGuardar, on
                     <td style={{ textAlign: "center" }}>
                       <input type="checkbox" className="fact-chk" checked={!!valorDe(c, "enviado")} onChange={(e) => setCampo(c, "enviado", e.target.checked)} title="Factura enviada" />
                     </td>
-                    <td><MontoInput valor={valorDe(c, "pago")} onChange={(v) => setCampo(c, "pago", v)} placeholder="—" /></td>
+                    <td>
+                      {/* Ya no es un campo: una factura se cobra en partes, así
+                          que acá se muestra la suma y se entra al detalle. */}
+                      <button type="button" className="cob-btn"
+                        disabled={!g || !g._dbId}
+                        title={!g || !g._dbId
+                          ? "Guardá la factura del mes antes de cargar cobros"
+                          : "Ver y agregar los cobros de este mes"}
+                        onClick={() => onVerCobros(c, g)}>
+                        <span className="mono">{g && g.pago != null ? money2(g.pago) : "—"}</span>
+                        {cuantosPagos(g) > 1 && <span className="cob-n">{cuantosPagos(g)} pagos</span>}
+                      </button>
+                    </td>
                     <td>
                       {sucia ? (
                         <button className="row-open ok" title="Guardar esta fila" disabled={guardando === c.id} onClick={() => guardarFila(c)}>
@@ -270,6 +318,89 @@ function CargaMensual({ companias, movs, anio, mes, onAnio, onMes, onGuardar, on
         )}
       </div>
     </div>
+  );
+}
+
+// ============================ COBROS DE UNA FACTURA ============================
+// Varias compañías pagan la misma factura en partes: transfieren 100 y a la
+// semana siguiente 150. Antes había UN campo, así que para registrar la
+// segunda había que pisar el primer número con la suma hecha a mano, y se
+// perdía cuándo entró cada parte. Eso es lo que se mira cuando una compañía se
+// atrasa: no cuánto falta, sino desde cuándo falta.
+//
+// El total no se calcula acá: lo mantiene la base (0021). Esta pantalla agrega
+// y borra filas, y el número del mes aparece solo.
+function CobrosModal({ compania, fila, pagos, anio, mes, onAgregar, onBorrar, onClose }) {
+  const [fecha, setFecha] = React.useState(hoyISO());
+  const [importe, setImporte] = React.useState("");
+  const [nota, setNota] = React.useState("");
+  const [ocupado, setOcupado] = React.useState(false);
+
+  const cobrado = pagos.reduce((s, p) => s + Number(p.importe || 0), 0);
+  const facturado = fila && fila.total != null ? Number(fila.total) : 0;
+  const pendiente = facturado - cobrado;
+
+  const agregar = async () => {
+    const n = parseMonto(importe);
+    if (n == null) return;
+    setOcupado(true);
+    await onAgregar({ factId: fila._dbId, fecha: fecha || null, importe: n, nota: nota.trim() });
+    setImporte(""); setNota(""); setFecha(hoyISO());
+    setOcupado(false);
+  };
+
+  return (
+    <ModalShell
+      title={"Cobros de " + compania.razonSocial}
+      sub={MESES_F[mes - 1] + " " + anio + " · facturado " + money0(facturado)}
+      onClose={onClose}
+      footer={
+        <div className="cob-pie">
+          <div><span className="fact-res-k">Cobrado</span><span className="fact-res-v">{money0(cobrado)}</span></div>
+          <div>
+            <span className="fact-res-k">Pendiente</span>
+            <span className={"fact-res-v" + (pendiente > 0 ? " cob-debe" : "")}>
+              {money0(pendiente)}
+            </span>
+          </div>
+          <button className="btn-primary" onClick={onClose}>Listo</button>
+        </div>
+      }
+    >
+      <div className="cob-alta">
+        <label className="field"><span className="field-label">Fecha</span>
+          <input className="input" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} /></label>
+        <label className="field"><span className="field-label">Importe</span>
+          <MontoInput valor={importe} onChange={setImporte} placeholder="0" /></label>
+        <label className="field cob-nota"><span className="field-label">Nota</span>
+          <input className="input" value={nota} placeholder="N° de operación, “a cuenta”…"
+            onChange={(e) => setNota(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") agregar(); }} /></label>
+        <button className="btn-primary" onClick={agregar} disabled={ocupado || parseMonto(importe) == null}>
+          <Ico name="plus" size={15} />Agregar
+        </button>
+      </div>
+
+      {pagos.length === 0
+        ? <div className="acc-vacio">Todavía no se registró ningún cobro de este mes.</div>
+        : <table className="table">
+            <thead><tr><th>Fecha</th><th style={{ textAlign: "right" }}>Importe</th><th>Nota</th><th /></tr></thead>
+            <tbody>
+              {pagos.map((p) => (
+                <tr key={p.id}>
+                  <td className="mono">{p.fecha ? fmtDate(p.fecha) : "—"}</td>
+                  <td className="mono" style={{ textAlign: "right" }}>{money2(p.importe)}</td>
+                  <td className="cell-sub">{p.nota || "—"}</td>
+                  <td>
+                    <button className="row-open danger" title="Borrar este cobro" onClick={() => onBorrar(p)}>
+                      <Ico name="close" size={15} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>}
+    </ModalShell>
   );
 }
 
@@ -409,7 +540,9 @@ function CompaniaForm({ initial, onClose, onSubmit }) {
                 <option value="A">A</option><option value="B">B</option><option value="C">C</option>
               </select></label>
             <label className="field field-full"><span className="field-label">Envío</span>
-              <input className="input" value={f.envio} onChange={(e) => set("envio", e.target.value)} placeholder="Mail de facturación o WEB" /></label>
+              <input className="input" value={f.envio} onChange={(e) => set("envio", e.target.value)}
+                placeholder="mail@compania.com o https://portal.compania.com" />
+              <span className="field-hint">Si pegás un mail o un link, en la carga mensual queda clickeable.</span></label>
             <label className="field"><span className="field-label">Banco</span>
               <input className="input" value={f.banco} onChange={(e) => set("banco", e.target.value.toUpperCase())} placeholder="RIO / BBVA" /></label>
             <label className="field"><span className="field-label">Orden en el listado</span>
@@ -474,7 +607,6 @@ function CompaniasView({ companias, movs, onNueva, onEditar, onEliminar }) {
 // ============================ ESTADÍSTICAS (panel) ============================
 // Tablero del mes: KPIs contra el mes anterior, resumen por compañía, evolución,
 // estado de cobro y alertas. Todo sale de `fact_mensual`, no se carga nada acá.
-const money2 = (v) => (v == null || v === "" ? "—" : "$" + Number(v).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const pct1 = (v) => (v == null ? "—" : (v > 0 ? "+" : "") + (Math.round(v * 100) / 100).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%");
 // Mes anterior, cruzando el cambio de año
 const mesAnterior = (anio, mes) => (mes === 1 ? { anio: anio - 1, mes: 12 } : { anio, mes: mes - 1 });
@@ -848,6 +980,7 @@ function FacturacionModule({ active, station, query, onNav }) {
   const hoy = new Date();
   const [companias, setCompanias] = React.useState([]);
   const [movs, setMovs] = React.useState([]);
+  const [pagos, setPagos] = React.useState([]);
   const [anio, setAnio] = React.useState(hoy.getFullYear());
   const [mes, setMes] = React.useState(hoy.getMonth() + 1);
   const [loading, setLoading] = React.useState(true);
@@ -862,8 +995,12 @@ function FacturacionModule({ active, station, query, onNav }) {
   const load = React.useCallback(async () => {
     if (!window.DB || !window.DB.configured() || !window.DB.fact) { setLoading(false); return; }
     try {
-      const [cs, ms] = await Promise.all([window.DB.fact.companias.list(), window.DB.fact.mensual.list()]);
-      setCompanias(cs); setMovs(ms);
+      const [cs, ms, ps] = await Promise.all([
+        window.DB.fact.companias.list(),
+        window.DB.fact.mensual.list(),
+        window.DB.fact.pagos.list(),
+      ]);
+      setCompanias(cs); setMovs(ms); setPagos(ps);
     } catch (e) { console.error("Facturación:", e); flash("No se pudo cargar la facturación", true); }
     setLoading(false);
   }, []);
@@ -886,6 +1023,25 @@ function FacturacionModule({ active, station, query, onNav }) {
       flash("Guardado");
     } catch (e) { console.error(e); flash("No se pudo guardar", true); }
   };
+  // Un cobro cambia el total del mes, pero ese total lo recalcula la base: por
+  // eso se recarga en vez de tocar `movs` a mano. Si lo calculara acá, la
+  // pantalla y la base podrían decir cosas distintas.
+  const agregarPago = async (p) => {
+    try {
+      await window.DB.fact.pagos.create(p);
+      await load();
+      flash("Cobro agregado");
+    } catch (e) { console.error(e); flash("No se pudo agregar el cobro", true); }
+  };
+  const borrarPago = async (p) => {
+    if (!window.confirm("¿Borrar el cobro de " + money2(p.importe) + "?")) return;
+    try {
+      await window.DB.fact.pagos.remove(p.id);
+      await load();
+      flash("Cobro borrado");
+    } catch (e) { console.error(e); flash("No se pudo borrar el cobro", true); }
+  };
+
   const guardarCompania = async (f) => {
     try {
       if (f.id) {
@@ -939,11 +1095,21 @@ function FacturacionModule({ active, station, query, onNav }) {
             onNueva={() => setModal({ tipo: "cia" })}
             onEditar={(c) => setModal({ tipo: "cia", item: c })}
             onEliminar={eliminarCompania} />
-        : <CargaMensual companias={activas} movs={movs} anio={anio} mes={mes}
-            onAnio={setAnio} onMes={setMes} onGuardar={guardarMes} station={station} />}
+        : <CargaMensual companias={activas} movs={movs} pagos={pagos} anio={anio} mes={mes}
+            onAnio={setAnio} onMes={setMes} onGuardar={guardarMes} station={station}
+            onVerCobros={(c, g) => setModal({ tipo: "cobros", cia: c, fila: g })} />}
 
       {modal?.tipo === "cia" && (
         <CompaniaForm initial={modal.item} onClose={() => setModal(null)} onSubmit={guardarCompania} />
+      )}
+      {modal?.tipo === "cobros" && (
+        <CobrosModal
+          compania={modal.cia}
+          fila={movs.find((m) => m._dbId === modal.fila._dbId) || modal.fila}
+          pagos={pagos.filter((p) => p.factId === modal.fila._dbId)}
+          anio={anio} mes={mes}
+          onAgregar={agregarPago} onBorrar={borrarPago}
+          onClose={() => setModal(null)} />
       )}
       {toast && (
         <div className="toast">
@@ -955,7 +1121,7 @@ function FacturacionModule({ active, station, query, onNav }) {
   );
 }
 
-Object.assign(window, { FacturacionModule, CargaMensual, CrecimientoAnual, CompaniasView, FactEstadisticas,
+Object.assign(window, { FacturacionModule, CargaMensual, CrecimientoAnual, CompaniasView, FactEstadisticas, CobrosModal,
   // Las dos de importes van expuestas para poder probarlas sin pantalla: son
   // plata, y el redondeo equivocado no avisa.
   parseMonto, fmtMonto });

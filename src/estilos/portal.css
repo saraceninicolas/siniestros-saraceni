@@ -365,6 +365,7 @@ html[data-sidebar="claro"] .sb-subitem.is-active{ color:var(--ink); }
 .field{ display:flex; flex-direction:column; gap:6px; }
 .field-full{ grid-column:1/-1; }
 .field-label{ font-size:12px; font-weight:600; color:var(--ink-2); }
+.field-hint{ font-size:11.5px; color:var(--muted); }
 .field-label i{ color:var(--brand-txt); font-style:normal; }
 .input{ border:1px solid var(--line); border-radius:9px; padding:9px 11px; font-size:13.5px; font-family:inherit;
   color:var(--ink); background:var(--surface); outline:none; transition:.15s; width:100%; resize:vertical; }
@@ -890,7 +891,39 @@ button.adj-card:focus-visible{ outline:2px solid var(--brand); outline-offset:3p
 .fact-tag{ display:inline-block; background:var(--surface-2); border:1px solid var(--line); border-radius:5px;
   padding:0 5px; font-size:10.5px; font-weight:700; color:var(--ink-2); margin-left:6px; }
 .fact-envio{ display:inline-block; background:var(--info-soft); color:var(--info-2); border-radius:5px;
-  padding:0 5px; font-size:10.5px; font-weight:700; margin-left:5px; }
+  padding:0 5px; font-size:10.5px; font-weight:700; margin-left:5px; max-width:230px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; vertical-align:bottom; }
+a.fact-envio{ text-decoration:none; }
+a.fact-envio:hover{ text-decoration:underline; }
+/* El link al portal de la compañía se distingue del mail: el mail se lee
+   entero y el portal es un lugar al que se va. */
+.fact-envio.es-link{ background:var(--brand-soft); color:var(--brand-txt); }
+
+/* ---------- facturación: los cobros de una factura ---------- */
+/* La celda de Cobrado dejó de ser un campo: una factura se paga en partes, así
+   que muestra la suma y abre el detalle. Se dibuja como el campo que era para
+   que la fila siga leyéndose igual de corrido. */
+.cob-btn{ display:flex; align-items:center; justify-content:flex-end; gap:7px; width:100%;
+  border:1px solid var(--line); background:var(--surface); border-radius:7px; padding:6px 8px;
+  font-family:inherit; font-size:13.5px; color:var(--ink); cursor:pointer; transition:.15s; }
+.cob-btn:hover:not(:disabled){ border-color:var(--brand); background:var(--brand-soft); }
+.cob-btn:disabled{ cursor:not-allowed; color:var(--muted); background:var(--surface-2); }
+.cob-n{ flex:none; background:var(--info-soft); color:var(--info-2); border-radius:99px;
+  padding:0 6px; font-size:10px; font-weight:700; }
+/* Dos filas a propósito y no cuatro columnas: fecha, importe, nota y el botón
+   en una sola línea entran en el papel pero no en un modal, y lo que se salía
+   era justo el botón de Agregar. */
+.cob-alta{ display:grid; grid-template-columns:150px 1fr; gap:10px 12px; align-items:end;
+  padding-bottom:14px; margin-bottom:14px; border-bottom:1px solid var(--line); }
+.cob-alta .cob-nota, .cob-alta .btn-primary{ grid-column:1/-1; }
+.cob-alta .btn-primary{ justify-content:center; }
+.cob-pie{ display:flex; align-items:center; gap:22px; width:100%; flex-wrap:wrap; }
+.cob-pie > div{ display:flex; flex-direction:column; gap:2px; }
+.cob-pie .btn-primary{ margin-left:auto; }
+.cob-debe{ color:var(--peligro); }
+@media (max-width: 480px){
+  .cob-alta{ grid-template-columns:1fr; }
+}
 .fact-chk{ width:17px; height:17px; accent-color:var(--brand); cursor:pointer; }
 .fact-ok{ color:var(--ok); font-weight:800; font-size:15px; }
 .row-open.ok{ color:var(--ok); }
