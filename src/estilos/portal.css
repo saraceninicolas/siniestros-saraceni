@@ -920,7 +920,6 @@ a.fact-envio:hover{ text-decoration:underline; }
 .cob-pie{ display:flex; align-items:center; gap:22px; width:100%; flex-wrap:wrap; }
 .cob-pie > div{ display:flex; flex-direction:column; gap:2px; }
 .cob-pie .btn-primary{ margin-left:auto; }
-.cob-debe{ color:var(--peligro); }
 @media (max-width: 480px){
   .cob-alta{ grid-template-columns:1fr; }
 }
@@ -951,6 +950,10 @@ a.fact-envio:hover{ text-decoration:underline; }
 .rep-nota{ display:block; font-style:normal; font-size:11.5px; color:var(--muted); margin-top:2px; }
 .fact-aviso-viejo{ margin:10px 0 0; font-size:12.5px; font-weight:600; color:var(--peligro);
   background:var(--peligro-soft); border-radius:8px; padding:7px 10px; }
+/* Aclara qué mide la tarjeta. Va adentro y no en un tooltip: el número grande
+   invita a leerlo como deuda, y no lo es. */
+.fact-nota-card{ margin:9px 0 0; font-size:11.5px; line-height:1.45; color:var(--muted); }
+.cob-dif{ color:var(--ink-2); }
 @media (max-width: 900px){
   .rep-grid{ grid-template-columns:1fr; }
 }

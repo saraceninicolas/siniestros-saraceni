@@ -359,7 +359,12 @@ function CobrosModal({ compania, fila, pagos, anio, mes, onAgregar, onBorrar, on
 
   const cobrado = pagos.reduce((s, p) => s + Number(p.importe || 0), 0);
   const facturado = fila && fila.total != null ? Number(fila.total) : 0;
-  const pendiente = facturado - cobrado;
+  // Lo que falta para llegar a la factura NO es una deuda y no se llama
+  // "pendiente". De una factura se cobra casi siempre menos de lo que dice:
+  // la compañía descuenta retenciones. Con lo que hay cargado, el sistema no
+  // puede saber si esa diferencia es una retención, un cobro que todavía no se
+  // anotó o plata que de verdad falta, así que la muestra y no la interpreta.
+  const diferencia = facturado - cobrado;
 
   const agregar = async () => {
     const n = parseMonto(importe);
@@ -379,9 +384,9 @@ function CobrosModal({ compania, fila, pagos, anio, mes, onAgregar, onBorrar, on
         <div className="cob-pie">
           <div><span className="fact-res-k">Cobrado</span><span className="fact-res-v">{money0(cobrado)}</span></div>
           <div>
-            <span className="fact-res-k">Pendiente</span>
-            <span className={"fact-res-v" + (pendiente > 0 ? " cob-debe" : "")}>
-              {money0(pendiente)}
+            <span className="fact-res-k">Diferencia con la factura</span>
+            <span className="fact-res-v cob-dif" title="Puede ser retenciones o un cobro todavía no cargado">
+              {money0(diferencia)}
             </span>
           </div>
           <button className="btn-primary" onClick={onClose}>Listo</button>
@@ -1007,11 +1012,16 @@ function FactEstadisticas({ companias, movs, anio, mes, onAnio, onMes, onNav }) 
   const top3 = conMovimiento.slice(0, 3).reduce((s, f) => s + f.facturado, 0);
   const concentracion = facturado > 0 ? (top3 / facturado) * 100 : null;
 
-  // ── Antigüedad de lo que falta cobrar ────────────────────────────────────
-  // Mira TODO lo pendiente, no solo el mes elegido: una factura de hace cuatro
-  // meses sin cobrar no aparece en el resumen de este mes y es justo la que hay
-  // que reclamar. Los tramos son los de la cobranza: lo de este mes todavía no
-  // es deuda, lo de más de 60 días ya hay que ir a buscarlo.
+  // ── Facturas sin ningún cobro cargado, por antigüedad ────────────────────
+  // ⚠️ Esta tarjeta NO mide deuda, y la primera versión sí lo intentaba.
+  // Restar cobrado de facturado no da lo que una compañía debe: de una factura
+  // se cobra casi siempre menos, porque descuentan retenciones. Con eso, el
+  // panel marcaba como vencidos millones que nadie debía.
+  //
+  // Lo que el sistema sí sabe sin interpretar nada es cuáles facturas no
+  // tienen un solo cobro anotado. Eso es una lista de trabajo —o está sin
+  // conciliar, o está realmente sin pagar— y envejece: la de hace cuatro meses
+  // es la que hay que mirar primero.
   const antiguedad = React.useMemo(() => {
     const finDeMes = (a, m) => new Date(a, m, 0);        // día 0 del siguiente = último del mes
     const hoy = new Date();
@@ -1022,19 +1032,17 @@ function FactEstadisticas({ companias, movs, anio, mes, onAnio, onMes, onNav }) 
     ];
     movs.forEach((r) => {
       if (r.total == null) return;
-      // No se cuenta lo que todavía no venció el período elegido
       if (r.anio > anio || (r.anio === anio && r.mes > mes)) return;
-      const debe = Number(r.total) - Number(r.pago || 0);
-      if (debe <= 0.009) return;                          // redondeos de centavos
+      if (r.pago != null) return;                         // ya tiene algo cargado
       const desde = parseDate(r.fecha) || finDeMes(r.anio, r.mes);
       const dias = Math.floor((hoy - desde) / 86400000);
       const t = dias <= 30 ? tramos[0] : dias <= 60 ? tramos[1] : tramos[2];
-      t.valor += debe; t.cuantas++;
+      t.valor += Number(r.total); t.cuantas++;
     });
     return tramos;
   }, [movs, anio, mes]);
-  const deudaTotal = antiguedad.reduce((s, t) => s + t.valor, 0);
-  const vencidoViejo = antiguedad[2].valor;
+  const sinConciliarTotal = antiguedad.reduce((s, t) => s + t.valor, 0);
+  const sinConciliarViejo = antiguedad[2];
 
   const kpis = [
     { label: "Facturado total", value: money2(facturado), delta: varTotal, tone: { bg: "var(--info-soft)", fg: "var(--info-2)" }, icon: "doc" },
@@ -1187,21 +1195,27 @@ function FactEstadisticas({ companias, movs, anio, mes, onAnio, onMes, onNav }) 
               resumen mensual y es exactamente la que hay que ir a reclamar. */}
           <section className="est-card">
             <div className="est-card-head">
-              <div><h3>Lo que falta cobrar</h3><p>por antigüedad, de todo lo facturado hasta {MESES_F[mes - 1].toLowerCase()}</p></div>
-              <span className="fact-res-v" style={{ fontSize: 15 }}>{money0(deudaTotal)}</span>
+              <div><h3>Facturas sin cobros cargados</h3>
+                <p>por antigüedad, hasta {MESES_F[mes - 1].toLowerCase()}</p></div>
+              <span className="fact-res-v" style={{ fontSize: 15 }}>{money0(sinConciliarTotal)}</span>
             </div>
             <ChBarrasH
               rows={antiguedad.map((t) => ({
                 label: t.label, valor: t.valor, color: t.color,
                 texto: money0(t.valor),
-                sub: t.cuantas ? t.cuantas + (t.cuantas === 1 ? " factura" : " facturas") : "nada",
+                sub: t.cuantas ? t.cuantas + (t.cuantas === 1 ? " factura" : " facturas") : "ninguna",
               }))}
-              vacio="No hay nada pendiente de cobro." />
-            {vencidoViejo > 0 && (
+              vacio="Todas las facturas tienen al menos un cobro cargado." />
+            {sinConciliarViejo.cuantas > 0 && (
               <p className="fact-aviso-viejo">
-                {money0(vencidoViejo)} lleva más de 60 días sin cobrarse.
+                {sinConciliarViejo.cuantas} {sinConciliarViejo.cuantas === 1 ? "factura lleva" : "facturas llevan"} más
+                de 60 días sin un solo cobro anotado.
               </p>
             )}
+            <p className="fact-nota-card">
+              Es lo que falta conciliar, no lo que te deben: de una factura se cobra
+              menos de lo que dice, porque descuentan retenciones.
+            </p>
           </section>
 
           <section className="est-card">
