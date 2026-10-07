@@ -134,6 +134,22 @@ function CargaMensual({ companias, movs, pagos, anio, mes, onAnio, onMes, onGuar
   // ruido en la única columna donde hace falta mirar rápido.
   const cuantosPagos = (g) => (g && g._dbId ? (pagos || []).filter((p) => p.factId === g._dbId).length : 0);
 
+  // Orden de las filas. "Propio" es el que eligió el broker en Compañías;
+  // "facturado" pone arriba a la que más facturó este mes.
+  //
+  // ⚠️ Ordena por lo GUARDADO (`delMes`) y no por lo que hay escrito en los
+  // campos. Si mirara lo que se está tipeando, la fila saltaría de lugar
+  // mientras cargás el neto y terminarías escribiendo en la de otra compañía.
+  const [orden, setOrden] = React.useState("facturado");
+  const ordenadas = React.useMemo(() => {
+    if (orden !== "facturado") return companias;
+    const totalDe = (c) => {
+      const g = delMes[c.id];
+      return g && g.total != null ? Number(g.total) : -1;   // las sin cargar, al final
+    };
+    return [...companias].sort((a, b) => totalDe(b) - totalDe(a) || (a.orden || 0) - (b.orden || 0));
+  }, [companias, delMes, orden]);
+
   const valorDe = (c, campo) => {
     const e = edit[c.id];
     if (e && e[campo] !== undefined) return e[campo];
@@ -231,6 +247,12 @@ function CargaMensual({ companias, movs, pagos, anio, mes, onAnio, onMes, onGuar
           <div className="toolbar-left">
             <span className="toolbar-title">{MESES_F[mes - 1]} {anio}</span>
             <span className="toolbar-count">{companias.length}</span>
+            <div className="seg">
+              <button type="button" className={"seg-btn" + (orden === "facturado" ? " is-on" : "")}
+                onClick={() => setOrden("facturado")} title="La que más facturó este mes, arriba">Más facturado</button>
+              <button type="button" className={"seg-btn" + (orden === "propio" ? " is-on" : "")}
+                onClick={() => setOrden("propio")} title="El orden que elegiste en Compañías">Orden propio</button>
+            </div>
           </div>
           <div className="toolbar-right">
             {sucias > 0 && <span className="fact-sucias">{sucias} sin guardar</span>}
@@ -263,7 +285,7 @@ function CargaMensual({ companias, movs, pagos, anio, mes, onAnio, onMes, onGuar
               </tr>
             </thead>
             <tbody>
-              {companias.map((c) => {
+              {ordenadas.map((c) => {
                 const sucia = filaSucia(c);
                 const g = delMes[c.id];
                 const yaCargada = g && g.total != null;
@@ -333,7 +355,6 @@ function CargaMensual({ companias, movs, pagos, anio, mes, onAnio, onMes, onGuar
 function CobrosModal({ compania, fila, pagos, anio, mes, onAgregar, onBorrar, onClose }) {
   const [fecha, setFecha] = React.useState(hoyISO());
   const [importe, setImporte] = React.useState("");
-  const [nota, setNota] = React.useState("");
   const [ocupado, setOcupado] = React.useState(false);
 
   const cobrado = pagos.reduce((s, p) => s + Number(p.importe || 0), 0);
@@ -344,8 +365,8 @@ function CobrosModal({ compania, fila, pagos, anio, mes, onAgregar, onBorrar, on
     const n = parseMonto(importe);
     if (n == null) return;
     setOcupado(true);
-    await onAgregar({ factId: fila._dbId, fecha: fecha || null, importe: n, nota: nota.trim() });
-    setImporte(""); setNota(""); setFecha(hoyISO());
+    await onAgregar({ factId: fila._dbId, fecha: fecha || null, importe: n });
+    setImporte(""); setFecha(hoyISO());
     setOcupado(false);
   };
 
@@ -372,10 +393,6 @@ function CobrosModal({ compania, fila, pagos, anio, mes, onAgregar, onBorrar, on
           <input className="input" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} /></label>
         <label className="field"><span className="field-label">Importe</span>
           <MontoInput valor={importe} onChange={setImporte} placeholder="0" /></label>
-        <label className="field cob-nota"><span className="field-label">Nota</span>
-          <input className="input" value={nota} placeholder="N° de operación, “a cuenta”…"
-            onChange={(e) => setNota(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") agregar(); }} /></label>
         <button className="btn-primary" onClick={agregar} disabled={ocupado || parseMonto(importe) == null}>
           <Ico name="plus" size={15} />Agregar
         </button>
@@ -384,13 +401,12 @@ function CobrosModal({ compania, fila, pagos, anio, mes, onAgregar, onBorrar, on
       {pagos.length === 0
         ? <div className="acc-vacio">Todavía no se registró ningún cobro de este mes.</div>
         : <table className="table">
-            <thead><tr><th>Fecha</th><th style={{ textAlign: "right" }}>Importe</th><th>Nota</th><th /></tr></thead>
+            <thead><tr><th>Fecha</th><th style={{ textAlign: "right" }}>Importe</th><th /></tr></thead>
             <tbody>
               {pagos.map((p) => (
                 <tr key={p.id}>
                   <td className="mono">{p.fecha ? fmtDate(p.fecha) : "—"}</td>
                   <td className="mono" style={{ textAlign: "right" }}>{money2(p.importe)}</td>
-                  <td className="cell-sub">{p.nota || "—"}</td>
                   <td>
                     <button className="row-open danger" title="Borrar este cobro" onClick={() => onBorrar(p)}>
                       <Ico name="close" size={15} />
@@ -430,6 +446,14 @@ function CrecimientoAnual({ companias, movs, anio, onAnio }) {
     companias.reduce((s, c) => s + (totalDe(c.id, anio, i + 1) || 0), 0));
   const totalAnual = totalesMes.reduce((a, b) => a + b, 0);
   const mesesConDatos = totalesMes.filter((t) => t > 0).length;
+
+  // De la que más facturó en el año a la que menos. Esta pantalla es para
+  // mirar, no para cargar, así que el orden que sirve es el del ranking y no
+  // el que eligió el broker en Compañías.
+  const ordenadas = React.useMemo(() => {
+    const anualDe = (c) => MESES_CORTO.reduce((s, _, i) => s + (totalDe(c.id, anio, i + 1) || 0), 0);
+    return [...companias].sort((a, b) => anualDe(b) - anualDe(a) || (a.orden || 0) - (b.orden || 0));
+  }, [companias, idx, anio]);
 
   const PctTag = ({ v }) => {
     if (v == null) return <span className="fact-pct nulo">—</span>;
@@ -477,7 +501,7 @@ function CrecimientoAnual({ companias, movs, anio, onAnio }) {
               </tr>
             </thead>
             <tbody>
-              {companias.map((c) => {
+              {ordenadas.map((c) => {
                 const fila = MESES_CORTO.map((_, i) => totalDe(c.id, anio, i + 1));
                 const anual = fila.reduce((s, v) => s + (v || 0), 0);
                 return (
@@ -599,6 +623,187 @@ function CompaniasView({ companias, movs, onNueva, onEditar, onEliminar }) {
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+// ============================ CIERRE DEL MES ============================
+// De dónde salen los números para repartir sueldos. Es la única pantalla que
+// mira el mes como un todo y no compañía por compañía: junta lo facturado, lo
+// que efectivamente entró y lo que se fue en IVA, y deja ver qué queda.
+//
+// Lo que se reparte sale de lo COBRADO y no de lo facturado: una factura
+// emitida que todavía nadie pagó no es plata que exista. El cobrado de acá es
+// la suma de todos los cobros cargados en la carga mensual, incluidos los que
+// entraron en partes.
+function RepartoView({ companias, movs, periodo, anio, mes, onAnio, onMes, onGuardarPeriodo }) {
+  const [pagoIva, setPagoIva] = React.useState("");
+  const [guardando, setGuardando] = React.useState(false);
+  const [copiado, setCopiado] = React.useState(false);
+
+  // Al cambiar de mes se trae lo guardado de ese mes, no lo que quedó escrito.
+  React.useEffect(() => {
+    setPagoIva(periodo && periodo.pagoIva != null ? String(periodo.pagoIva) : "");
+  }, [anio, mes, periodo]);
+
+  const delMes = React.useMemo(() => {
+    const m = {};
+    movs.filter((x) => x.anio === anio && x.mes === mes).forEach((x) => { m[x.companiaId] = x; });
+    return m;
+  }, [movs, anio, mes]);
+
+  const filas = companias.map((c) => {
+    const g = delMes[c.id] || {};
+    return {
+      cia: c,
+      neto: g.neto != null ? Number(g.neto) : 0,
+      iva: g.iva != null ? Number(g.iva) : 0,
+      bruto: g.total != null ? Number(g.total) : 0,
+      cobrado: g.pago != null ? Number(g.pago) : 0,
+      cargada: g.total != null,
+    };
+  }).filter((f) => f.cargada).sort((a, b) => b.bruto - a.bruto);
+
+  const tot = filas.reduce((s, f) => ({
+    neto: s.neto + f.neto, iva: s.iva + f.iva, bruto: s.bruto + f.bruto, cobrado: s.cobrado + f.cobrado,
+  }), { neto: 0, iva: 0, bruto: 0, cobrado: 0 });
+
+  const pagado = parseMonto(pagoIva) || 0;
+  const ivaQueQueda = tot.iva - pagado;
+  const paraRepartir = tot.cobrado - pagado;
+  const sinCobrar = tot.bruto - tot.cobrado;
+
+  const guardar = async () => {
+    setGuardando(true);
+    await onGuardarPeriodo({ anio, mes, pagoIva: parseMonto(pagoIva) });
+    setGuardando(false);
+  };
+
+  // Para pasarlo a una planilla. Nico trabaja con Excel y copiar a mano doce
+  // filas de números es justo donde se cuela un error que después nadie
+  // encuentra.
+  const copiar = async () => {
+    const lineas = [["Compañía", "Neto", "IVA", "Bruto", "Cobrado"].join("\t")];
+    filas.forEach((f) => lineas.push([f.cia.razonSocial, f.neto, f.iva, f.bruto, f.cobrado].join("\t")));
+    lineas.push(["TOTAL", tot.neto, tot.iva, tot.bruto, tot.cobrado].join("\t"));
+    lineas.push([]);
+    lineas.push(["Pago de IVA", pagado].join("\t"));
+    lineas.push(["IVA que queda", ivaQueQueda].join("\t"));
+    lineas.push(["Para repartir", paraRepartir].join("\t"));
+    try {
+      await navigator.clipboard.writeText(lineas.join("\n"));
+      setCopiado(true); setTimeout(() => setCopiado(false), 2000);
+    } catch (e) { console.error(e); }
+  };
+
+  const anios = [];
+  for (let a = new Date().getFullYear() + 1; a >= 2024; a--) anios.push(a);
+
+  return (
+    <div className="fact-dash">
+      <div className="fact-periodo">
+        <div className="fact-periodo-sel">
+          <span className="fact-periodo-label">Período</span>
+          <div className="fact-mes-pills">
+            {MESES_CORTO.map((m, i) => (
+              <button key={m} className={"fact-mes-pill" + (mes === i + 1 ? " on" : "")} onClick={() => onMes(i + 1)}>{m}</button>
+            ))}
+          </div>
+          <select className="select" value={anio} onChange={(e) => onAnio(Number(e.target.value))}>
+            {anios.map((a) => <option key={a} value={a}>{a}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="rep-grid">
+        <section className="est-card rep-cuentas">
+          <div className="est-card-head">
+            <div><h3>El mes en números</h3><p>{MESES_F[mes - 1]} {anio} · {filas.length} compañías cargadas</p></div>
+          </div>
+
+          <div className="rep-lineas">
+            <div className="rep-l"><span>Neto facturado</span><b className="mono">{money2(tot.neto)}</b></div>
+            <div className="rep-l"><span>IVA facturado</span><b className="mono">{money2(tot.iva)}</b></div>
+            <div className="rep-l rep-l-suma"><span>Bruto</span><b className="mono">{money2(tot.bruto)}</b></div>
+
+            <div className="rep-l rep-l-sep">
+              <span>Cobrado <i className="rep-nota">lo que entró de verdad</i></span>
+              <b className="mono ok">{money2(tot.cobrado)}</b>
+            </div>
+            {sinCobrar > 0.009 && (
+              <div className="rep-l rep-l-flojo"><span>Todavía sin cobrar</span><b className="mono">{money2(sinCobrar)}</b></div>
+            )}
+
+            <div className="rep-l rep-l-sep rep-l-input">
+              <span>Pago de IVA <i className="rep-nota">lo que se transfirió a la AFIP</i></span>
+              <div className="rep-campo">
+                <MontoInput valor={pagoIva} onChange={setPagoIva} placeholder="0" />
+                <button className="btn-primary sm" onClick={guardar} disabled={guardando}>
+                  {guardando ? "Guardando…" : "Guardar"}
+                </button>
+              </div>
+            </div>
+            <div className="rep-l"><span>IVA que queda</span>
+              <b className={"mono" + (ivaQueQueda < 0 ? " peligro" : "")}>{money2(ivaQueQueda)}</b></div>
+
+            <div className="rep-l rep-total">
+              <span>Para repartir <i className="rep-nota">cobrado menos el IVA pagado</i></span>
+              <b className="mono">{money2(paraRepartir)}</b>
+            </div>
+          </div>
+        </section>
+
+        <section className="est-card">
+          <div className="est-card-head">
+            <div><h3>Compañía por compañía</h3><p>de la que más facturó a la que menos</p></div>
+            <button className="btn-ghost sm" onClick={copiar} disabled={!filas.length}>
+              <Ico name={copiado ? "check" : "doc"} size={14} />{copiado ? "Copiado" : "Copiar para Excel"}
+            </button>
+          </div>
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th style={{ minWidth: 180 }}>Compañía</th>
+                  <th style={{ textAlign: "right", minWidth: 118 }}>Neto</th>
+                  <th style={{ textAlign: "right", minWidth: 110 }}>IVA</th>
+                  <th style={{ textAlign: "right", minWidth: 118 }}>Bruto</th>
+                  <th style={{ textAlign: "right", minWidth: 118 }}>Cobrado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filas.map((f) => (
+                  <tr key={f.cia.id}>
+                    <td><div className="cell-strong sm">{f.cia.razonSocial}</div></td>
+                    <td className="mono" style={{ textAlign: "right" }}>{money2(f.neto)}</td>
+                    <td className="mono" style={{ textAlign: "right" }}>{money2(f.iva)}</td>
+                    <td className="mono" style={{ textAlign: "right" }}><b>{money2(f.bruto)}</b></td>
+                    <td className="mono" style={{ textAlign: "right", color: f.cobrado > 0 ? "var(--ok)" : "var(--muted)" }}>
+                      {f.cobrado ? money2(f.cobrado) : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              {filas.length > 0 && (
+                <tfoot>
+                  <tr className="fact-total-row">
+                    <td><b>Total</b></td>
+                    <td className="mono" style={{ textAlign: "right" }}><b>{money2(tot.neto)}</b></td>
+                    <td className="mono" style={{ textAlign: "right" }}><b>{money2(tot.iva)}</b></td>
+                    <td className="mono" style={{ textAlign: "right" }}><b>{money2(tot.bruto)}</b></td>
+                    <td className="mono" style={{ textAlign: "right" }}><b>{money2(tot.cobrado)}</b></td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
+          {filas.length === 0 && (
+            <div className="empty"><div className="empty-ico"><Ico name="doc" size={26} /></div>
+              <div className="empty-title">No hay nada cargado en {MESES_F[mes - 1]}</div>
+              <div className="empty-sub">Cargá las facturas del mes y acá aparecen los totales.</div></div>
+          )}
+        </section>
       </div>
     </div>
   );
@@ -776,11 +981,72 @@ function FactEstadisticas({ companias, movs, anio, mes, onAnio, onMes, onNav }) 
   const ranking = filas.filter((f) => f.crecimiento != null || f.facturado > 0)
     .sort((a, b) => (b.crecimiento == null ? -Infinity : b.crecimiento) - (a.crecimiento == null ? -Infinity : a.crecimiento));
 
+  // ── Acumulado del año, contra el mismo tramo del año pasado ──────────────
+  // El mes suelto engaña: una compañía que factura trimestral hunde un mes y
+  // levanta el siguiente. Enero-a-este-mes contra enero-a-este-mes del año
+  // anterior compara tramos iguales, que es la única comparación honesta.
+  const acumulado = React.useMemo(() => {
+    const sumaHasta = (a) => {
+      let f = 0, c = 0;
+      for (let m = 1; m <= mes; m++) {
+        companias.forEach((x) => { f += facDe(x.id, a, m); c += cobDe(x.id, a, m); });
+      }
+      return { facturado: f, cobrado: c };
+    };
+    const hoy = sumaHasta(anio), antes = sumaHasta(anio - 1);
+    return {
+      ...hoy, antes: antes.facturado,
+      variacion: antes.facturado > 0 ? ((hoy.facturado - antes.facturado) / antes.facturado) * 100 : null,
+    };
+  }, [companias, idx, anio, mes]);
+
+  // ── De cuántas compañías depende el mes ──────────────────────────────────
+  // Facturar mucho de pocas no es lo mismo que facturar mucho de muchas: si el
+  // 70% sale de tres, perder una es perder el año. El dato no se ve en ningún
+  // total.
+  const top3 = conMovimiento.slice(0, 3).reduce((s, f) => s + f.facturado, 0);
+  const concentracion = facturado > 0 ? (top3 / facturado) * 100 : null;
+
+  // ── Antigüedad de lo que falta cobrar ────────────────────────────────────
+  // Mira TODO lo pendiente, no solo el mes elegido: una factura de hace cuatro
+  // meses sin cobrar no aparece en el resumen de este mes y es justo la que hay
+  // que reclamar. Los tramos son los de la cobranza: lo de este mes todavía no
+  // es deuda, lo de más de 60 días ya hay que ir a buscarlo.
+  const antiguedad = React.useMemo(() => {
+    const finDeMes = (a, m) => new Date(a, m, 0);        // día 0 del siguiente = último del mes
+    const hoy = new Date();
+    const tramos = [
+      { label: "Hasta 30 días", color: CH_COLOR.verde, valor: 0, cuantas: 0 },
+      { label: "31 a 60 días", color: CH_COLOR.ambar, valor: 0, cuantas: 0 },
+      { label: "Más de 60 días", color: CH_COLOR.rojo, valor: 0, cuantas: 0 },
+    ];
+    movs.forEach((r) => {
+      if (r.total == null) return;
+      // No se cuenta lo que todavía no venció el período elegido
+      if (r.anio > anio || (r.anio === anio && r.mes > mes)) return;
+      const debe = Number(r.total) - Number(r.pago || 0);
+      if (debe <= 0.009) return;                          // redondeos de centavos
+      const desde = parseDate(r.fecha) || finDeMes(r.anio, r.mes);
+      const dias = Math.floor((hoy - desde) / 86400000);
+      const t = dias <= 30 ? tramos[0] : dias <= 60 ? tramos[1] : tramos[2];
+      t.valor += debe; t.cuantas++;
+    });
+    return tramos;
+  }, [movs, anio, mes]);
+  const deudaTotal = antiguedad.reduce((s, t) => s + t.valor, 0);
+  const vencidoViejo = antiguedad[2].valor;
+
   const kpis = [
     { label: "Facturado total", value: money2(facturado), delta: varTotal, tone: { bg: "var(--info-soft)", fg: "var(--info-2)" }, icon: "doc" },
     { label: "Cobrado total", value: money2(cobrado), delta: varCobrado, tone: { bg: "var(--ok-soft)", fg: "var(--ok)" }, icon: "card" },
     { label: "Pendiente de cobro", value: money2(pendiente), delta: varPendiente, invertir: true, tone: { bg: "var(--warn-soft)", fg: "var(--warn)" }, icon: "clock" },
     { label: "Compañías con saldo", value: conSaldo.length + " de " + conMovimiento.length, hint: "facturaron y deben algo", tone: { bg: "var(--peligro-soft)", fg: "var(--peligro)" }, icon: "folder" },
+    { label: "Acumulado " + anio, value: money2(acumulado.facturado), delta: acumulado.variacion,
+      hintAcum: "enero a " + MESES_F[mes - 1].toLowerCase() + ", contra " + (anio - 1),
+      tone: { bg: "var(--brand-soft)", fg: "var(--brand-txt)" }, icon: "trend" },
+    { label: "Las tres más grandes", value: concentracion == null ? "—" : Math.round(concentracion) + "%",
+      hint: conMovimiento.length ? "del mes sale de " + Math.min(3, conMovimiento.length) + " de " + conMovimiento.length + " compañías" : "sin facturación cargada",
+      tone: { bg: "var(--info-soft)", fg: "var(--info-2)" }, icon: "grid" },
   ];
   const visiblesTabla = verTodas ? filas : filas.slice(0, 6);
 
@@ -811,7 +1077,7 @@ function FactEstadisticas({ companias, movs, anio, mes, onAnio, onMes, onNav }) 
             <div className="kpi-mid"><span className="kpi-value fact-kpi-v">{c.value}</span></div>
             <div className="kpi-foot">
               {c.hint ? <span className="kpi-hint">{c.hint}</span>
-                : <><span className="kpi-hint">vs {mesPrevLabel}</span>
+                : <><span className="kpi-hint">{c.hintAcum || ("vs " + mesPrevLabel)}</span>
                   <FactDelta v={c.invertir && c.delta != null ? -c.delta : c.delta} /></>}
             </div>
           </div>
@@ -916,6 +1182,28 @@ function FactEstadisticas({ companias, movs, anio, mes, onAnio, onMes, onNav }) 
         </div>
 
         <div className="fact-dash-side">
+          {/* Lo que falta cobrar, por antigüedad. No mira solo el mes elegido:
+              una factura de hace cuatro meses sin cobrar no aparece en ningún
+              resumen mensual y es exactamente la que hay que ir a reclamar. */}
+          <section className="est-card">
+            <div className="est-card-head">
+              <div><h3>Lo que falta cobrar</h3><p>por antigüedad, de todo lo facturado hasta {MESES_F[mes - 1].toLowerCase()}</p></div>
+              <span className="fact-res-v" style={{ fontSize: 15 }}>{money0(deudaTotal)}</span>
+            </div>
+            <ChBarrasH
+              rows={antiguedad.map((t) => ({
+                label: t.label, valor: t.valor, color: t.color,
+                texto: money0(t.valor),
+                sub: t.cuantas ? t.cuantas + (t.cuantas === 1 ? " factura" : " facturas") : "nada",
+              }))}
+              vacio="No hay nada pendiente de cobro." />
+            {vencidoViejo > 0 && (
+              <p className="fact-aviso-viejo">
+                {money0(vencidoViejo)} lleva más de 60 días sin cobrarse.
+              </p>
+            )}
+          </section>
+
           <section className="est-card">
             <div className="est-card-head">
               <div><h3>Evolución de facturación</h3><ChLeyenda series={[{ nombre: "Facturado", color: CH_COLOR.azul }, { nombre: "Cobrado", color: CH_COLOR.verde }]} /></div>
@@ -981,6 +1269,7 @@ function FacturacionModule({ active, station, query, onNav }) {
   const [companias, setCompanias] = React.useState([]);
   const [movs, setMovs] = React.useState([]);
   const [pagos, setPagos] = React.useState([]);
+  const [periodos, setPeriodos] = React.useState([]);
   const [anio, setAnio] = React.useState(hoy.getFullYear());
   const [mes, setMes] = React.useState(hoy.getMonth() + 1);
   const [loading, setLoading] = React.useState(true);
@@ -995,12 +1284,13 @@ function FacturacionModule({ active, station, query, onNav }) {
   const load = React.useCallback(async () => {
     if (!window.DB || !window.DB.configured() || !window.DB.fact) { setLoading(false); return; }
     try {
-      const [cs, ms, ps] = await Promise.all([
+      const [cs, ms, ps, pers] = await Promise.all([
         window.DB.fact.companias.list(),
         window.DB.fact.mensual.list(),
         window.DB.fact.pagos.list(),
+        window.DB.fact.periodo.list(),
       ]);
-      setCompanias(cs); setMovs(ms); setPagos(ps);
+      setCompanias(cs); setMovs(ms); setPagos(ps); setPeriodos(pers);
     } catch (e) { console.error("Facturación:", e); flash("No se pudo cargar la facturación", true); }
     setLoading(false);
   }, []);
@@ -1040,6 +1330,18 @@ function FacturacionModule({ active, station, query, onNav }) {
       await load();
       flash("Cobro borrado");
     } catch (e) { console.error(e); flash("No se pudo borrar el cobro", true); }
+  };
+
+  const guardarPeriodo = async (p) => {
+    try {
+      const saved = await window.DB.fact.periodo.save(p);
+      setPeriodos((prev) => {
+        const i = prev.findIndex((x) => x.anio === saved.anio && x.mes === saved.mes);
+        if (i >= 0) { const q = [...prev]; q[i] = saved; return q; }
+        return [...prev, saved];
+      });
+      flash("Guardado");
+    } catch (e) { console.error(e); flash("No se pudo guardar", true); }
   };
 
   const guardarCompania = async (f) => {
@@ -1090,6 +1392,10 @@ function FacturacionModule({ active, station, query, onNav }) {
             onAnio={setAnio} onMes={setMes} onNav={onNav} />
         : active === "fact-crecimiento"
         ? <CrecimientoAnual companias={visibles} movs={movs} anio={anio} onAnio={setAnio} />
+        : active === "fact-reparto"
+        ? <RepartoView companias={visibles} movs={movs} anio={anio} mes={mes}
+            periodo={periodos.find((p) => p.anio === anio && p.mes === mes) || null}
+            onAnio={setAnio} onMes={setMes} onGuardarPeriodo={guardarPeriodo} />
         : active === "fact-companias"
         ? <CompaniasView companias={visibles} movs={movs}
             onNueva={() => setModal({ tipo: "cia" })}
@@ -1121,7 +1427,7 @@ function FacturacionModule({ active, station, query, onNav }) {
   );
 }
 
-Object.assign(window, { FacturacionModule, CargaMensual, CrecimientoAnual, CompaniasView, FactEstadisticas, CobrosModal,
+Object.assign(window, { FacturacionModule, CargaMensual, CrecimientoAnual, CompaniasView, FactEstadisticas, CobrosModal, RepartoView,
   // Las dos de importes van expuestas para poder probarlas sin pantalla: son
   // plata, y el redondeo equivocado no avisa.
   parseMonto, fmtMonto });

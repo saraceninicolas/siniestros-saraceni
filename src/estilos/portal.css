@@ -930,6 +930,31 @@ a.fact-envio:hover{ text-decoration:underline; }
 .row-open.ok:hover{ background:var(--ok-soft); }
 .row-open.danger:hover{ background:var(--peligro-soft); color:var(--brand-txt); }
 
+/* ---------- facturación: cierre del mes ---------- */
+.rep-grid{ display:grid; grid-template-columns:minmax(320px, 420px) 1fr; gap:16px; align-items:start; }
+.rep-lineas{ display:flex; flex-direction:column; }
+.rep-l{ display:flex; align-items:center; justify-content:space-between; gap:14px; padding:10px 0;
+  border-bottom:1px solid var(--line-2); font-size:13.5px; color:var(--ink-2); }
+.rep-l b{ font-size:15px; color:var(--ink); }
+.rep-l b.ok{ color:var(--ok); }
+.rep-l b.peligro{ color:var(--peligro); }
+.rep-l-suma{ border-bottom:2px solid var(--line); }
+.rep-l-sep{ margin-top:10px; }
+.rep-l-flojo b{ color:var(--muted); font-weight:600; }
+.rep-l-input{ align-items:flex-end; flex-wrap:wrap; }
+.rep-campo{ display:flex; align-items:center; gap:8px; }
+.rep-campo .monto{ width:150px; }
+/* La línea de abajo es la que se mira: la que decide cuánto hay para repartir. */
+.rep-total{ margin-top:14px; border:1px solid var(--brand-line); background:var(--brand-soft);
+  border-radius:11px; padding:13px 14px; border-bottom:1px solid var(--brand-line); }
+.rep-total b{ font-size:20px; color:var(--brand-txt); }
+.rep-nota{ display:block; font-style:normal; font-size:11.5px; color:var(--muted); margin-top:2px; }
+.fact-aviso-viejo{ margin:10px 0 0; font-size:12.5px; font-weight:600; color:var(--peligro);
+  background:var(--peligro-soft); border-radius:8px; padding:7px 10px; }
+@media (max-width: 900px){
+  .rep-grid{ grid-template-columns:1fr; }
+}
+
 /* ---------- facturación: matriz de crecimiento ---------- */
 .table.fact-matriz td,.table.fact-matriz th{ padding:8px 7px; }
 .table.fact-matriz th{ font-size:11px; }
@@ -1002,7 +1027,9 @@ a.fact-envio:hover{ text-decoration:underline; }
 
 /* ---------- facturación: tablero de estadísticas ---------- */
 .fact-dash{ display:flex; flex-direction:column; gap:16px; }
-.fact-kpis{ grid-template-columns:repeat(4,minmax(0,1fr)); margin-bottom:0; }
+/* Tres y tres. Con seis tarjetas, cuatro columnas dejan una segunda fila de
+   dos sueltas y la pantalla queda coja. */
+.fact-kpis{ grid-template-columns:repeat(3,minmax(0,1fr)); margin-bottom:0; }
 .fact-kpi-v{ font-size:22px; }
 .fact-dash-grid{ display:grid; grid-template-columns:minmax(0,1fr) 372px; gap:16px; align-items:start; }
 .fact-dash-main,.fact-dash-side{ display:flex; flex-direction:column; gap:16px; min-width:0; }

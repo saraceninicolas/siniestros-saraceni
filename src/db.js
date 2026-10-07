@@ -355,12 +355,34 @@ async function dbMaxN() {
     if (error) throw error;
   }
 
+  // --- el mes como un todo: lo que se descuenta antes de repartir (0022) ---
+  function fromRowPer(r) {
+    return { anio: r.anio, mes: r.mes, pagoIva: r.pago_iva, notas: r.notas || "" };
+  }
+  async function perList() {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("fact_periodo").select("*").order("anio").order("mes");
+    if (error) throw error; return (data || []).map(fromRowPer);
+  }
+  async function perSave(it) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("fact_periodo")
+      .upsert({
+        anio: Number(it.anio), mes: Number(it.mes),
+        pago_iva: numOrNull(it.pagoIva), notas: orNull(it.notas),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "org_id,anio,mes" })
+      .select().single();
+    if (error) throw error; return fromRowPer(data);
+  }
+
   function fmSubscribe(onChange) {
     const c = client(); if (!c) return null;
     const ch = c.channel("fact-realtime-" + Math.random().toString(36).slice(2, 8))
       .on("postgres_changes", { event: "*", schema: "public", table: "fact_mensual" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
       .on("postgres_changes", { event: "*", schema: "public", table: "fact_companias" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
       .on("postgres_changes", { event: "*", schema: "public", table: "fact_pagos" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
+      .on("postgres_changes", { event: "*", schema: "public", table: "fact_periodo" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
       .subscribe();
     return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
   }
@@ -1188,6 +1210,8 @@ async function dbMaxN() {
       mensual: { list: fmList, save: fmSave, remove: fmRemove },
       // cada transferencia por separado; el total del mes lo suma la base
       pagos: { list: fpList, create: fpCreate, remove: fpRemove },
+      // lo que se descuenta del mes entero antes de repartir
+      periodo: { list: perList, save: perSave },
       subscribe: fmSubscribe,
     },
     renov: {

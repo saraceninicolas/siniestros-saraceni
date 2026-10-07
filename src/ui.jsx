@@ -100,6 +100,7 @@ const PORTAL_NAV = [
     { key: "fact-estadisticas", label: "Estadísticas", icon: "chart" },
     { key: "fact-carga", label: "Carga mensual", icon: "edit" },
     { key: "fact-crecimiento", label: "Crecimiento anual", icon: "target" },
+    { key: "fact-reparto", label: "Cierre del mes", icon: "card" },
     { key: "fact-companias", label: "Compañías", icon: "folder" } ] },
   { key: "comercial", label: "Comercial", icon: "store", modulo: "comercial", children: [
     { key: "com-panel", label: "Panel de control", icon: "grid" },
@@ -125,7 +126,7 @@ NAV_LOOKUP["inicio"] = { section: "Inicio", sectionKey: "inicio", title: "Para h
 NAV_LOOKUP["ajustes"] = { section: "Ajustes", sectionKey: "ajustes", title: "Marca del portal" };
 NAV_LOOKUP["asegurados-dup"] = { section: "Siniestros", sectionKey: "siniestros", title: "Asegurados duplicados" };
 const SINIESTROS_KEYS = ["dashboard", "agenda", "solicitudes", "sin-estadisticas", "sin-asegurados"];
-const FACTURACION_KEYS = ["fact-estadisticas", "fact-carga", "fact-crecimiento", "fact-companias"];
+const FACTURACION_KEYS = ["fact-estadisticas", "fact-carga", "fact-crecimiento", "fact-reparto", "fact-companias"];
 const COMERCIAL_KEYS = ["com-panel", "com-cotizaciones", "com-seguimiento"];
 const RENOVACION_KEYS = ["renov-proximas", "renov-historial"];
 const PENDIENTES_KEYS = ["pend-panel", "pend-agenda"];
