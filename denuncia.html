@@ -116,11 +116,19 @@ textarea{ resize:vertical; min-height:110px; }
 .tilde input{ width:19px; height:19px; accent-color:var(--brand); flex:none; margin:0; cursor:pointer; }
 .tilde span{ font-size:14.5px; font-weight:600; color:var(--ink-2); }
 /* ---- personas agregadas (terceros extra) ---- */
-.persona{ display:grid; grid-template-columns:1fr 150px 40px; gap:10px; align-items:end; margin-bottom:10px; }
+.persona{ display:grid; grid-template-columns:1fr 140px 150px 40px; gap:10px; align-items:end; margin-bottom:10px; }
 .persona .quitar{ height:44px; border:1px solid var(--line); border-radius:10px; background:#fff;
   color:var(--muted); font-size:19px; cursor:pointer; line-height:1; }
 .persona .quitar:hover{ border-color:var(--brand); color:var(--brand-txt); }
-@media (max-width:560px){ .persona{ grid-template-columns:1fr 1fr; } .persona .quitar{ grid-column:2; justify-self:end; width:44px; } }
+/* En el celular el nombre se lleva el ancho entero: es el campo mas largo y el
+   que mas importa, y partido en media pantalla no se ve lo que uno escribio.
+   La cruz de quitar queda sola abajo a la derecha, lejos de los campos: en una
+   pantalla chica, pegada al ultimo input se toca sin querer. */
+@media (max-width:560px){
+  .persona{ grid-template-columns:1fr 1fr; }
+  .persona > label:first-child{ grid-column:1/-1; }
+  .persona .quitar{ grid-column:2; justify-self:end; width:44px; }
+}
 /* ---- marco de foto obligatorio ---- */
 .marco.req{ border-color:var(--brand); }
 .marco.req.cargado{ border-color:#15803D; }
@@ -191,19 +199,21 @@ textarea{ resize:vertical; min-height:110px; }
       </div>
 
       <div id="seccionTercero" style="display:none">
-        <div class="sect">Datos del tercero</div>
+        <div class="sect" id="tituloTercero">Datos del tercero</div>
         <div class="grid">
           <label class="full"><span>Nombre y apellido / Razón social</span>
             <input id="t_nombre" placeholder="Del otro involucrado" /></label>
           <label><span>DNI / CUIT</span><input id="t_dni" inputmode="numeric" placeholder="Sin puntos" /></label>
           <label><span>Número de celular</span><input id="t_cel" type="tel" placeholder="11 5555-5555" /></label>
           <label id="campoTDominio"><span>Patente</span><input id="t_dominio" placeholder="Ej: CD456EF" style="text-transform:uppercase" /></label>
-          <label><span>Compañía</span><input id="t_cia" placeholder="Aseguradora del tercero" /></label>
-          <label><span>N° de póliza</span><input id="t_poliza" placeholder="Si lo tenés" /></label>
+          <label id="campoTCia"><span>Compañía</span><input id="t_cia" placeholder="Aseguradora del tercero" /></label>
+          <label id="campoTPoliza"><span>N° de póliza</span><input id="t_poliza" placeholder="Si lo tenés" /></label>
         </div>
 
-        <!-- Choque múltiple: del segundo tercero en adelante alcanza con
-             identificarlos. Los datos de póliza del principal ya están arriba. -->
+        <!-- Más de un damnificado: un atropello puede tener varios heridos y un
+             choque en cadena, varios autos. De cada uno se pide lo mismo que del
+             primero salvo los datos de póliza, que casi nunca se saben en el
+             momento y se completan después desde el portal. -->
         <label class="tilde">
           <input type="checkbox" id="masTerceros" />
           <span>Hubo más de un tercero involucrado</span>
@@ -356,8 +366,20 @@ textarea{ resize:vertical; min-height:110px; }
     var t = tipoElegido();
     var hay = !!(t && t.terceros);
     $("seccionTercero").style.display = hay ? "" : "none";
-    // La patente del tercero solo tiene sentido si el ramo es Auto.
-    $("campoTDominio").style.display = $("ramo").value === "AUTO" ? "" : "none";
+
+    // Patente, compañía y póliza son del tercero que maneja algo asegurado.
+    // En un atropello el tercero es una persona: preguntarle la patente no solo
+    // sobra, hace dudar de si está completando bien el formulario.
+    var conVehiculo = !!(t && t.terceroVehiculo);
+    ["campoTDominio", "campoTCia", "campoTPoliza"].forEach(function (id) {
+      $(id).style.display = conVehiculo ? "" : "none";
+    });
+    if (!conVehiculo) ["t_dominio", "t_cia", "t_poliza"].forEach(function (id) { $(id).value = ""; });
+
+    // El encabezado y el ejemplo cambian según de qué tercero se trate.
+    $("tituloTercero").textContent = conVehiculo ? "Datos del tercero" : "Datos del tercero damnificado";
+    $("t_nombre").placeholder = conVehiculo ? "Del otro involucrado" : "A quién se le hizo el daño";
+
     if (!hay) {
       ["t_nombre", "t_dni", "t_cel", "t_dominio", "t_cia", "t_poliza"].forEach(function (id) { $(id).value = ""; });
       $("masTerceros").checked = false;
@@ -366,8 +388,24 @@ textarea{ resize:vertical; min-height:110px; }
     }
   }
 
-  // ---- terceros adicionales (choque múltiple) ----
-  var terceros = [];   // [{nombre, dni}]
+  // ---- terceros adicionales ----
+  // De cada uno se piden las tres cosas con las que después se lo puede
+  // ubicar: nombre, documento y un teléfono. Sin el teléfono, el día que haya
+  // que llamarlo para coordinar un perito hay que volver a llamar al asegurado
+  // a preguntarle quién era el otro.
+  var terceros = [];   // [{nombre, dni, cel}]
+  function campoTercero(etiqueta, valor, placeholder, modo, alCambiar) {
+    var l = document.createElement("label");
+    var s = document.createElement("span");
+    s.textContent = etiqueta;
+    var i = document.createElement("input");
+    i.value = valor || ""; i.placeholder = placeholder;
+    if (modo) i.inputMode = modo;
+    if (modo === "tel") i.type = "tel";
+    i.addEventListener("input", function () { alCambiar(i.value); });
+    l.appendChild(s); l.appendChild(i);
+    return l;
+  }
   function renderTerceros() {
     $("listaTerceros").style.display = $("masTerceros").checked ? "" : "none";
     var cont = $("terceros");
@@ -375,38 +413,32 @@ textarea{ resize:vertical; min-height:110px; }
     terceros.forEach(function (p, i) {
       var fila = document.createElement("div");
       fila.className = "persona";
-      var lNom = document.createElement("label");
-      lNom.innerHTML = '<span>Nombre y apellido</span>';
-      var iNom = document.createElement("input");
-      iNom.value = p.nombre; iNom.placeholder = "Nombre completo";
-      iNom.addEventListener("input", function () { terceros[i].nombre = iNom.value; });
-      lNom.appendChild(iNom);
-
-      var lDni = document.createElement("label");
-      lDni.innerHTML = '<span>DNI</span>';
-      var iDni = document.createElement("input");
-      iDni.value = p.dni; iDni.placeholder = "Sin puntos"; iDni.inputMode = "numeric";
-      iDni.addEventListener("input", function () { terceros[i].dni = iDni.value; });
-      lDni.appendChild(iDni);
+      fila.appendChild(campoTercero("Nombre y apellido", p.nombre, "Nombre completo", null,
+        function (v) { terceros[i].nombre = v; }));
+      fila.appendChild(campoTercero("DNI", p.dni, "Sin puntos", "numeric",
+        function (v) { terceros[i].dni = v; }));
+      fila.appendChild(campoTercero("Celular", p.cel, "11 5555-5555", "tel",
+        function (v) { terceros[i].cel = v; }));
 
       var quitar = document.createElement("button");
       quitar.type = "button"; quitar.className = "quitar"; quitar.textContent = "×";
       quitar.title = "Quitar esta persona";
       quitar.addEventListener("click", function () { terceros.splice(i, 1); renderTerceros(); });
 
-      fila.appendChild(lNom); fila.appendChild(lDni); fila.appendChild(quitar);
+      fila.appendChild(quitar);
       cont.appendChild(fila);
     });
   }
+  function terceroVacio() { return { nombre: "", dni: "", cel: "" }; }
   $("masTerceros").addEventListener("change", function () {
     // Al tildar aparece ya una fila vacía: si no, el primer clic no muestra nada
     // y parece que la casilla no hizo efecto.
-    if (this.checked && !terceros.length) terceros.push({ nombre: "", dni: "" });
+    if (this.checked && !terceros.length) terceros.push(terceroVacio());
     if (!this.checked) terceros = [];
     renderTerceros();
   });
   $("addTercero").addEventListener("click", function () {
-    terceros.push({ nombre: "", dni: "" });
+    terceros.push(terceroVacio());
     renderTerceros();
   });
 
@@ -429,13 +461,26 @@ textarea{ resize:vertical; min-height:110px; }
   // Catálogo de tipos de siniestro por ramo. Cada uno define qué fotos pedimos.
   var TIPOS = {
     AUTO: [
-      { id: "CHOQUE", txt: "Choque / daños con otro vehículo", terceros: true, marcos: [
+      // `terceroVehiculo` dice si el tercero maneja algo asegurado. En un choque
+      // sí, y se le piden patente, compañía y póliza. En un atropello o contra
+      // un paredón, no: ahí el tercero es una persona, y preguntarle la patente
+      // confunde a quien está denunciando.
+      { id: "CHOQUE", txt: "Choque / daños con otro vehículo", terceros: true, terceroVehiculo: true, marcos: [
         { id: "reg_aseg", ico: "registro", txt: "Registro del conductor", sub: "", req: true },
         { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "Del asegurado", req: true },
         { id: "dan_aseg", ico: "danio", txt: "Daños con patente visible", sub: "Del asegurado" },
         { id: "reg_terc", ico: "registro", txt: "Registro del conductor", sub: "Del tercero" },
         { id: "ced_terc", ico: "cedula", txt: "Cédula verde", sub: "Del tercero" },
         { id: "dan_terc", ico: "danio", txt: "Daños con patente visible", sub: "Del tercero" } ] },
+      // Responsabilidad civil: atropellos y daños contra cosas de otro. Se usa
+      // el mismo id "RC" que en los otros ramos, así el portal lo convierte en
+      // un siniestro con el hecho correcto sin tocar nada.
+      { id: "RC", txt: "Daños a terceros o cosas de terceros", terceros: true, terceroVehiculo: false, marcos: [
+        { id: "reg_aseg", ico: "registro", txt: "Registro del conductor", sub: "", req: true },
+        { id: "ced_aseg", ico: "cedula", txt: "Cédula verde", sub: "Del asegurado", req: true },
+        { id: "dan_terc", ico: "persona", txt: "Lo que se dañó", sub: "Del tercero, de cerca" },
+        { id: "lugar",    ico: "auto", txt: "Lugar del hecho", sub: "Vista general" },
+        { id: "denuncia", ico: "policia", txt: "Denuncia policial", sub: "Si hubo lesionados" } ] },
       { id: "DANIO_PROPIO", txt: "Daño propio (sin terceros)", terceros: false, marcos: [
         { id: "dan_gral", ico: "danio", txt: "Daños", sub: "Vista general con patente" },
         { id: "dan_det",  ico: "danio", txt: "Daños", sub: "Detalle de cerca" },
@@ -492,7 +537,10 @@ textarea{ resize:vertical; min-height:110px; }
       { id: "CRISTALES", txt: "Cristales", marcos: [
         { id: "cristal", ico: "cristal", txt: "Cristal roto", sub: "De cerca" },
         { id: "ambiente", ico: "casa", txt: "Ambiente", sub: "Se vea dónde está el cristal" } ] },
-      { id: "RC", txt: "Daños a terceros", marcos: [
+      // Mismo criterio que en Auto: si el siniestro es contra un tercero, hay
+      // que saber quién es. Antes entraba una denuncia de daños a terceros sin
+      // un solo dato de a quién se le hizo el daño.
+      { id: "RC", txt: "Daños a terceros o cosas de terceros", terceros: true, terceroVehiculo: false, marcos: [
         { id: "dan_terc", ico: "persona", txt: "Daños causados al tercero", sub: "" },
         { id: "lugar",    ico: "casa", txt: "Lugar del hecho", sub: "Vista general" } ] },
     ],
@@ -797,7 +845,13 @@ textarea{ resize:vertical; min-height:110px; }
         tercero_poliza: $("t_poliza").value.trim() || null,
         terceros_extra: terceros
           .filter(function (p) { return String(p.nombre || "").trim(); })
-          .map(function (p) { return { nombre: p.nombre.trim(), dni: String(p.dni || "").trim() }; }),
+          .map(function (p) {
+            return {
+              nombre: p.nombre.trim(),
+              dni: String(p.dni || "").trim(),
+              cel: String(p.cel || "").trim(),
+            };
+          }),
         conductor_distinto: conductorDistinto,
         conductor_nombre: conductorDistinto ? ($("c_nombre").value.trim() || null) : null,
         conductor_dni: conductorDistinto ? ($("c_dni").value.trim() || null) : null,

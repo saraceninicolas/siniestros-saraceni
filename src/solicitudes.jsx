@@ -8,7 +8,7 @@ const TIPO_SOL_LABEL = {
   CHOQUE: "Choque / daños con otro vehículo", DANIO_PROPIO: "Daño propio (sin terceros)",
   CRISTALES: "Cristales", ROBO_RUEDAS: "Robo de ruedas", ROBO_TOTAL: "Robo total",
   GRANIZO: "Granizo", INCENDIO: "Incendio", ROBO: "Robo", AGUA: "Daños por agua",
-  ELECTRICO: "Daños eléctricos", RC: "Daños a terceros",
+  ELECTRICO: "Daños eléctricos", RC: "Daños a terceros o cosas de terceros",
 };
 const TIPO_SOL_HECHO = {
   CHOQUE: "DAÑO PARCIAL", DANIO_PROPIO: "DAÑO PARCIAL", CRISTALES: "CRISTAL",
@@ -100,7 +100,7 @@ function SolCard({ s, onConvertir, onDescartar, onReabrir }) {
                 valor está vacío, y un tercero sin DNI desaparecería de la lista. */}
             {s.tercerosExtra.map((p, i) => (
               <D key={i} k={"Persona " + (i + 2)}
-                v={p.nombre + (p.dni ? " · DNI " + p.dni : "")} />
+                v={[p.nombre, p.dni && "DNI " + p.dni, p.cel].filter(Boolean).join(" · ")} />
             ))}
           </div>
         </>
