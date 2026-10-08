@@ -734,9 +734,19 @@ function RepartoView({ companias, movs, pagos, periodos, transferencias, anio, m
     neto: s.neto + f.neto, iva: s.iva + f.iva, bruto: s.bruto + f.bruto, cobrado: s.cobrado + f.cobrado,
   }), { neto: 0, iva: 0, bruto: 0, cobrado: 0 });
 
-  const pagado = parseMonto(pagoIva) || 0;
-  const ivaQueQueda = tot.iva - pagado;
-  const paraRepartir = tot.cobrado - pagado;
+  // El IVA se debe sobre lo FACTURADO, no sobre lo cobrado: el débito fiscal
+  // nace con la factura. Septiembre facturó 9,2 millones y cobró 6,6, y hay que
+  // pagarle a la AFIP el IVA de los 9,2 igual. Por eso lo que queda para
+  // repartir es el cobrado menos TODO el IVA del mes, y no menos la parte
+  // proporcional de lo que entró.
+  //
+  // Sale solo de las facturas y no hay que escribirlo. El campo queda por si el
+  // IVA a pagar de verdad es otro —cuando hay crédito fiscal o retenciones que
+  // ya se sufrieron—: lo que se escriba manda sobre el calculado.
+  const ivaDeLasFacturas = tot.iva;
+  const ivaEscrito = parseMonto(pagoIva);
+  const ivaAPagar = ivaEscrito != null ? ivaEscrito : ivaDeLasFacturas;
+  const paraRepartir = tot.cobrado - ivaAPagar;
 
   // ── El reparto ───────────────────────────────────────────────────────────
   const delMesTr = (transferencias || []).filter((t) => t.anio === anio && t.mes === mes);
@@ -785,8 +795,7 @@ function RepartoView({ companias, movs, pagos, periodos, transferencias, anio, m
     filas.forEach((f) => lineas.push([f.cia.razonSocial, f.neto, f.iva, f.bruto, f.cobrado].join("\t")));
     lineas.push(["TOTAL", tot.neto, tot.iva, tot.bruto, tot.cobrado].join("\t"));
     lineas.push([]);
-    lineas.push(["Pago de IVA", pagado].join("\t"));
-    lineas.push(["IVA que queda", ivaQueQueda].join("\t"));
+    lineas.push(["IVA a pagar", ivaAPagar].join("\t"));
     lineas.push(["Para repartir", paraRepartir].join("\t"));
     lineas.push([]);
     lineas.push(["Quién", "%", "Le toca", "Transferido", "Falta girar"].join("\t"));
@@ -836,19 +845,22 @@ function RepartoView({ companias, movs, pagos, periodos, transferencias, anio, m
             </div>
 
             <div className="rep-l rep-l-sep rep-l-input">
-              <span>Pago de IVA <i className="rep-nota">lo que se transfirió a la AFIP</i></span>
+              <span>IVA a pagar
+                <i className="rep-nota">
+                  {ivaEscrito != null
+                    ? "corregido a mano · de las facturas sale " + money2(ivaDeLasFacturas)
+                    : "sale del IVA de las facturas del mes"}
+                </i></span>
               <div className="rep-campo">
-                <MontoInput valor={pagoIva} onChange={setPagoIva} placeholder="0" />
+                <MontoInput valor={pagoIva} onChange={setPagoIva} placeholder={fmtMonto(ivaDeLasFacturas)} />
                 <button className="btn-primary sm" onClick={guardar} disabled={guardando}>
                   {guardando ? "Guardando…" : "Guardar"}
                 </button>
               </div>
             </div>
-            <div className="rep-l"><span>IVA que queda</span>
-              <b className={"mono" + (ivaQueQueda < 0 ? " peligro" : "")}>{money2(ivaQueQueda)}</b></div>
 
             <div className="rep-l rep-total">
-              <span>Para repartir <i className="rep-nota">cobrado menos el IVA pagado</i></span>
+              <span>Para repartir <i className="rep-nota">lo cobrado menos el IVA a pagar</i></span>
               <b className="mono">{money2(paraRepartir)}</b>
             </div>
           </div>
