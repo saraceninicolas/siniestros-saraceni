@@ -357,7 +357,10 @@ async function dbMaxN() {
 
   // --- el mes como un todo: lo que se descuenta antes de repartir (0022) ---
   function fromRowPer(r) {
-    return { anio: r.anio, mes: r.mes, pagoIva: r.pago_iva, notas: r.notas || "" };
+    return {
+      anio: r.anio, mes: r.mes, pagoIva: r.pago_iva, notas: r.notas || "",
+      reparto: Array.isArray(r.reparto) ? r.reparto : null,
+    };
   }
   async function perList() {
     const c = client(); if (!c) throw new Error("Supabase no configurado");
@@ -370,10 +373,35 @@ async function dbMaxN() {
       .upsert({
         anio: Number(it.anio), mes: Number(it.mes),
         pago_iva: numOrNull(it.pagoIva), notas: orNull(it.notas),
+        // `undefined` deja la columna como está; null la vacía a propósito.
+        ...(it.reparto !== undefined ? { reparto: it.reparto } : {}),
         updated_at: new Date().toISOString(),
       }, { onConflict: "org_id,anio,mes" })
       .select().single();
     if (error) throw error; return fromRowPer(data);
+  }
+
+  // --- transferencias a cada socio (0023) ---
+  function fromRowTr(r) {
+    return { id: r.id, anio: r.anio, mes: r.mes, persona: r.persona, fecha: r.fecha || "", importe: r.importe };
+  }
+  async function trList() {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("fact_transferencias").select("*").order("fecha").order("id");
+    if (error) throw error; return (data || []).map(fromRowTr);
+  }
+  async function trCreate(it) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { data, error } = await c.from("fact_transferencias").insert({
+      anio: Number(it.anio), mes: Number(it.mes), persona: it.persona,
+      fecha: orNull(it.fecha), importe: numOrNull(it.importe),
+    }).select().single();
+    if (error) throw error; return fromRowTr(data);
+  }
+  async function trRemove(id) {
+    const c = client(); if (!c) throw new Error("Supabase no configurado");
+    const { error } = await c.from("fact_transferencias").delete().eq("id", id);
+    if (error) throw error;
   }
 
   function fmSubscribe(onChange) {
@@ -383,6 +411,7 @@ async function dbMaxN() {
       .on("postgres_changes", { event: "*", schema: "public", table: "fact_companias" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
       .on("postgres_changes", { event: "*", schema: "public", table: "fact_pagos" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
       .on("postgres_changes", { event: "*", schema: "public", table: "fact_periodo" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
+      .on("postgres_changes", { event: "*", schema: "public", table: "fact_transferencias" }, (p) => { try { onChange(p); } catch (e) { console.error(e); } })
       .subscribe();
     return () => { try { c.removeChannel(ch); } catch (e) { /* noop */ } };
   }
@@ -1212,6 +1241,8 @@ async function dbMaxN() {
       pagos: { list: fpList, create: fpCreate, remove: fpRemove },
       // lo que se descuenta del mes entero antes de repartir
       periodo: { list: perList, save: perSave },
+      // lo que se le giro a cada socio por ese mes
+      transferencias: { list: trList, create: trCreate, remove: trRemove },
       subscribe: fmSubscribe,
     },
     renov: {

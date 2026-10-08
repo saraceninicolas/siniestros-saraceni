@@ -642,15 +642,75 @@ function CompaniasView({ companias, movs, onNueva, onEditar, onEliminar }) {
 // emitida que todavía nadie pagó no es plata que exista. El cobrado de acá es
 // la suma de todos los cobros cargados en la carga mensual, incluidos los que
 // entraron en partes.
-function RepartoView({ companias, movs, periodo, anio, mes, onAnio, onMes, onGuardarPeriodo }) {
+
+// Los porcentajes con los que arranca una empresa que nunca cargó un reparto.
+// Son editables y se guardan por mes: acá están solo para no empezar en blanco.
+const REPARTO_FABRICA = [
+  { nombre: "Hernán", pct: 75 },
+  { nombre: "Nicolás", pct: 17.5 },
+  { nombre: "Facundo", pct: 7.5 },
+];
+
+// Un giro a un socio. Varios por persona y por mes, porque casi nunca se paga
+// todo junto y lo que importa es cuándo salió cada parte.
+function AltaTransferencia({ socios, onAgregar }) {
+  const [persona, setPersona] = React.useState("");
+  const [fecha, setFecha] = React.useState(hoyISO());
+  const [importe, setImporte] = React.useState("");
+  const [ocupado, setOcupado] = React.useState(false);
+  const quien = persona || (socios[0] && socios[0].nombre) || "";
+
+  const agregar = async () => {
+    const n = parseMonto(importe);
+    if (n == null || !quien) return;
+    setOcupado(true);
+    await onAgregar({ persona: quien, fecha: fecha || null, importe: n });
+    setImporte(""); setFecha(hoyISO());
+    setOcupado(false);
+  };
+
+  return (
+    <div className="tr-alta">
+      <label className="field"><span className="field-label">Para</span>
+        <select className="input" value={quien} onChange={(e) => setPersona(e.target.value)}>
+          {socios.map((s) => <option key={s.nombre} value={s.nombre}>{s.nombre}</option>)}
+        </select></label>
+      <label className="field"><span className="field-label">Fecha de transferencia</span>
+        <input className="input" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} /></label>
+      <label className="field"><span className="field-label">Importe</span>
+        <MontoInput valor={importe} onChange={setImporte} placeholder="0" /></label>
+      <button className="btn-primary" onClick={agregar} disabled={ocupado || parseMonto(importe) == null}>
+        <Ico name="plus" size={15} />Registrar
+      </button>
+    </div>
+  );
+}
+function RepartoView({ companias, movs, pagos, periodos, transferencias, anio, mes,
+                      onAnio, onMes, onGuardarPeriodo, onAgregarTransferencia, onBorrarTransferencia }) {
+  const periodo = (periodos || []).find((p) => p.anio === anio && p.mes === mes) || null;
   const [pagoIva, setPagoIva] = React.useState("");
+  const [reparto, setReparto] = React.useState(REPARTO_FABRICA);
   const [guardando, setGuardando] = React.useState(false);
   const [copiado, setCopiado] = React.useState(false);
+
+  // Los porcentajes de un mes sin guardar se arrastran del último mes que sí
+  // los tenga. Si no, cada mes habría que volver a escribir lo mismo; y si
+  // alguna vez cambian, los meses viejos conservan el suyo porque quedó
+  // guardado en su propia fila.
+  const repartoHeredado = React.useMemo(() => {
+    const previos = (periodos || [])
+      .filter((p) => Array.isArray(p.reparto) && p.reparto.length &&
+        (p.anio < anio || (p.anio === anio && p.mes <= mes)))
+      .sort((a, b) => (b.anio - a.anio) || (b.mes - a.mes));
+    return previos.length ? previos[0].reparto : REPARTO_FABRICA;
+  }, [periodos, anio, mes]);
 
   // Al cambiar de mes se trae lo guardado de ese mes, no lo que quedó escrito.
   React.useEffect(() => {
     setPagoIva(periodo && periodo.pagoIva != null ? String(periodo.pagoIva) : "");
-  }, [anio, mes, periodo]);
+    setReparto(periodo && Array.isArray(periodo.reparto) && periodo.reparto.length
+      ? periodo.reparto : repartoHeredado);
+  }, [anio, mes, periodo, repartoHeredado]);
 
   const delMes = React.useMemo(() => {
     const m = {};
@@ -677,13 +737,45 @@ function RepartoView({ companias, movs, periodo, anio, mes, onAnio, onMes, onGua
   const pagado = parseMonto(pagoIva) || 0;
   const ivaQueQueda = tot.iva - pagado;
   const paraRepartir = tot.cobrado - pagado;
-  const sinCobrar = tot.bruto - tot.cobrado;
+
+  // ── El reparto ───────────────────────────────────────────────────────────
+  const delMesTr = (transferencias || []).filter((t) => t.anio === anio && t.mes === mes);
+  const pctTotal = reparto.reduce((s, p) => s + (Number(p.pct) || 0), 0);
+  const socios = reparto.map((p) => {
+    const pct = Number(p.pct) || 0;
+    const leToca = paraRepartir * (pct / 100);
+    const girado = delMesTr.filter((t) => t.persona === p.nombre).reduce((s, t) => s + Number(t.importe || 0), 0);
+    return { nombre: p.nombre, pct, leToca, girado, falta: leToca - girado };
+  });
+
+  const setSocio = (i, campo, valor) =>
+    setReparto((prev) => prev.map((p, j) => (j === i ? { ...p, [campo]: valor } : p)));
 
   const guardar = async () => {
     setGuardando(true);
-    await onGuardarPeriodo({ anio, mes, pagoIva: parseMonto(pagoIva) });
+    await onGuardarPeriodo({
+      anio, mes, pagoIva: parseMonto(pagoIva),
+      reparto: reparto
+        .filter((p) => String(p.nombre || "").trim())
+        .map((p) => ({ nombre: String(p.nombre).trim(), pct: Number(p.pct) || 0 })),
+    });
     setGuardando(false);
   };
+
+  // ── Los cobros del mes, uno por uno ──────────────────────────────────────
+  // El detalle existe en la carga mensual pero repartido en doce modales. Acá
+  // va seguido y con fecha: es la lista contra la que se controla el extracto
+  // del banco antes de girar.
+  const cobrosDelMes = React.useMemo(() => {
+    const porFact = {};
+    movs.filter((x) => x.anio === anio && x.mes === mes).forEach((x) => { porFact[x._dbId] = x; });
+    const nombre = {};
+    companias.forEach((c) => { nombre[c.id] = c.razonSocial; });
+    return (pagos || [])
+      .filter((p) => porFact[p.factId])
+      .map((p) => ({ ...p, cia: nombre[porFact[p.factId].companiaId] || "—" }))
+      .sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
+  }, [pagos, movs, companias, anio, mes]);
 
   // Para pasarlo a una planilla. Nico trabaja con Excel y copiar a mano doce
   // filas de números es justo donde se cuela un error que después nadie
@@ -696,6 +788,9 @@ function RepartoView({ companias, movs, periodo, anio, mes, onAnio, onMes, onGua
     lineas.push(["Pago de IVA", pagado].join("\t"));
     lineas.push(["IVA que queda", ivaQueQueda].join("\t"));
     lineas.push(["Para repartir", paraRepartir].join("\t"));
+    lineas.push([]);
+    lineas.push(["Quién", "%", "Le toca", "Transferido", "Falta girar"].join("\t"));
+    socios.forEach((s) => lineas.push([s.nombre, s.pct, s.leToca, s.girado, s.falta].join("\t")));
     try {
       await navigator.clipboard.writeText(lineas.join("\n"));
       setCopiado(true); setTimeout(() => setCopiado(false), 2000);
@@ -722,6 +817,9 @@ function RepartoView({ companias, movs, periodo, anio, mes, onAnio, onMes, onGua
       </div>
 
       <div className="rep-grid">
+        {/* Izquierda: la cuenta del mes, que es corta y se lee de arriba abajo.
+            Derecha: las tablas, que necesitan ancho. */}
+        <div className="rep-col">
         <section className="est-card rep-cuentas">
           <div className="est-card-head">
             <div><h3>El mes en números</h3><p>{MESES_F[mes - 1]} {anio} · {filas.length} compañías cargadas</p></div>
@@ -736,9 +834,6 @@ function RepartoView({ companias, movs, periodo, anio, mes, onAnio, onMes, onGua
               <span>Cobrado <i className="rep-nota">lo que entró de verdad</i></span>
               <b className="mono ok">{money2(tot.cobrado)}</b>
             </div>
-            {sinCobrar > 0.009 && (
-              <div className="rep-l rep-l-flojo"><span>Todavía sin cobrar</span><b className="mono">{money2(sinCobrar)}</b></div>
-            )}
 
             <div className="rep-l rep-l-sep rep-l-input">
               <span>Pago de IVA <i className="rep-nota">lo que se transfirió a la AFIP</i></span>
@@ -757,6 +852,128 @@ function RepartoView({ companias, movs, periodo, anio, mes, onAnio, onMes, onGua
               <b className="mono">{money2(paraRepartir)}</b>
             </div>
           </div>
+        </section>
+
+        </div>
+
+        <div className="rep-col">
+        <section className="est-card rep-socios">
+          <div className="est-card-head">
+            <div><h3>Reparto</h3><p>sobre {money2(paraRepartir)}</p></div>
+            {Math.abs(pctTotal - 100) > 0.01 && (
+              <span className="rep-pct-mal">Los porcentajes suman {pctTotal.toLocaleString("es-AR")}%</span>
+            )}
+          </div>
+
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  {/* minWidth y no width: en una tabla de ancho automático el
+                      `width` es una sugerencia, y la columna del porcentaje se
+                      achicaba hasta que el campo no se veía. */}
+                  <th style={{ minWidth: 130 }}>Quién</th>
+                  <th style={{ minWidth: 86 }}>%</th>
+                  <th style={{ textAlign: "right", minWidth: 118 }}>Le toca</th>
+                  <th style={{ textAlign: "right", minWidth: 118 }}>Transferido</th>
+                  <th style={{ textAlign: "right", minWidth: 118 }}>Falta girar</th>
+                  <th style={{ minWidth: 40 }} />
+                </tr>
+              </thead>
+              <tbody>
+                {reparto.map((p, i) => {
+                  const s = socios[i];
+                  return (
+                    <tr key={i}>
+                      <td><input className="input sm" value={p.nombre}
+                        onChange={(e) => setSocio(i, "nombre", e.target.value)} placeholder="Nombre" /></td>
+                      <td><input className="input sm mono num" value={p.pct}
+                        onChange={(e) => setSocio(i, "pct", e.target.value.replace(",", "."))}
+                        inputMode="decimal" /></td>
+                      <td className="mono" style={{ textAlign: "right" }}><b>{money2(s.leToca)}</b></td>
+                      <td className="mono" style={{ textAlign: "right", color: s.girado > 0 ? "var(--ok)" : "var(--muted)" }}>
+                        {s.girado ? money2(s.girado) : "—"}</td>
+                      <td className="mono" style={{ textAlign: "right" }}>
+                        {Math.abs(s.falta) < 0.01
+                          ? <span className="badge" style={{ background: "var(--ok-soft)", color: "var(--ok)" }}>Al día</span>
+                          : money2(s.falta)}</td>
+                      <td>
+                        {reparto.length > 1 && (
+                          <button className="row-open danger" title="Sacar del reparto"
+                            onClick={() => setReparto((prev) => prev.filter((_, j) => j !== i))}>
+                            <Ico name="close" size={15} />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="rep-socios-pie">
+            <button className="btn-ghost sm" onClick={() => setReparto((p) => [...p, { nombre: "", pct: 0 }])}>
+              <Ico name="plus" size={14} />Agregar a alguien
+            </button>
+            <button className="btn-primary sm" onClick={guardar} disabled={guardando}>
+              {guardando ? "Guardando…" : "Guardar el reparto del mes"}
+            </button>
+          </div>
+          <p className="fact-nota-card">
+            Los porcentajes se guardan en este mes. Si algún día cambian, los meses
+            ya cerrados siguen mostrando el reparto con el que se cerraron.
+          </p>
+        </section>
+
+        <section className="est-card">
+          <div className="est-card-head">
+            <div><h3>Transferencias del mes</h3><p>lo que ya se le giró a cada uno</p></div>
+          </div>
+          <AltaTransferencia socios={socios} onAgregar={(t) => onAgregarTransferencia({ ...t, anio, mes })} />
+          {delMesTr.length === 0
+            ? <div className="acc-vacio">Todavía no se registró ninguna transferencia de este mes.</div>
+            : <div className="table-wrap">
+                <table className="table">
+                  <thead><tr><th>Fecha</th><th>Para</th><th style={{ textAlign: "right" }}>Importe</th><th style={{ width: 40 }} /></tr></thead>
+                  <tbody>
+                    {delMesTr.map((t) => (
+                      <tr key={t.id}>
+                        <td className="mono">{t.fecha ? fmtDate(t.fecha) : "—"}</td>
+                        <td><b>{t.persona}</b></td>
+                        <td className="mono" style={{ textAlign: "right" }}>{money2(t.importe)}</td>
+                        <td>
+                          <button className="row-open danger" title="Borrar esta transferencia"
+                            onClick={() => onBorrarTransferencia(t)}><Ico name="close" size={15} /></button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>}
+        </section>
+
+        <section className="est-card">
+          <div className="est-card-head">
+            <div><h3>Cobros del mes</h3><p>{cobrosDelMes.length} {cobrosDelMes.length === 1 ? "cobro" : "cobros"}, con la fecha en que entró cada uno</p></div>
+            <span className="fact-res-v" style={{ fontSize: 15 }}>{money0(tot.cobrado)}</span>
+          </div>
+          {cobrosDelMes.length === 0
+            ? <div className="acc-vacio">No hay cobros cargados en este mes. Se cargan desde la carga mensual.</div>
+            : <div className="table-wrap">
+                <table className="table">
+                  <thead><tr><th>Fecha de cobro</th><th style={{ minWidth: 170 }}>Compañía</th><th style={{ textAlign: "right" }}>Importe</th></tr></thead>
+                  <tbody>
+                    {cobrosDelMes.map((p) => (
+                      <tr key={p.id}>
+                        <td className="mono">{p.fecha ? fmtDate(p.fecha) : "—"}</td>
+                        <td><div className="cell-strong sm">{p.cia}</div></td>
+                        <td className="mono" style={{ textAlign: "right" }}>{money2(p.importe)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>}
         </section>
 
         <section className="est-card">
@@ -809,6 +1026,7 @@ function RepartoView({ companias, movs, periodo, anio, mes, onAnio, onMes, onGua
               <div className="empty-sub">Cargá las facturas del mes y acá aparecen los totales.</div></div>
           )}
         </section>
+        </div>
       </div>
     </div>
   );
@@ -841,13 +1059,6 @@ function FactDelta({ v, sub }) {
     </span>
   );
 }
-function EstadoCobro({ facturado, cobrado }) {
-  if (!facturado) return <span className="badge" style={{ background: "var(--line-2)", color: "var(--ink-2)" }}>Sin cargar</span>;
-  if (cobrado >= facturado) return <span className="badge" style={{ background: "var(--ok-soft)", color: "var(--ok)" }}>Cobrado</span>;
-  if (cobrado > 0) return <span className="badge" style={{ background: "var(--warn-soft)", color: "var(--warn)" }}>Parcial</span>;
-  return <span className="badge" style={{ background: "var(--peligro-soft)", color: "var(--peligro)" }}>Pendiente</span>;
-}
-
 // Detalle anual de una compañía (se abre desde "Ver detalle")
 function FactDetalleCia({ cia, movs, anio, onClose }) {
   React.useEffect(() => {
@@ -872,11 +1083,10 @@ function FactDetalleCia({ cia, movs, anio, onClose }) {
           <div className="fact-det-res">
             <div><span className="fact-res-k">Facturado {anio}</span><span className="fact-res-v">{money0(totF)}</span></div>
             <div><span className="fact-res-k">Cobrado</span><span className="fact-res-v">{money0(totC)}</span></div>
-            <div><span className="fact-res-k">Pendiente</span><span className="fact-res-v" style={{ color: totF - totC > 0 ? "var(--peligro)" : "var(--ok)" }}>{money0(totF - totC)}</span></div>
           </div>
           <div className="table-wrap" style={{ marginTop: 14 }}>
             <table className="table fact-det-tabla">
-              <thead><tr><th>Mes</th><th>N° factura</th><th style={{ textAlign: "right" }}>Facturado</th><th style={{ textAlign: "right" }}>Cobrado</th><th style={{ textAlign: "right" }}>Pendiente</th><th>Estado</th></tr></thead>
+              <thead><tr><th>Mes</th><th>N° factura</th><th style={{ textAlign: "right" }}>Facturado</th><th style={{ textAlign: "right" }}>Cobrado</th></tr></thead>
               <tbody>
                 {filas.map((f) => (
                   <tr key={f.mes}>
@@ -884,8 +1094,6 @@ function FactDetalleCia({ cia, movs, anio, onClose }) {
                     <td className="mono cell-sub">{f.nro || "—"}</td>
                     <td className="mono" style={{ textAlign: "right" }}>{f.facturado == null ? "—" : money0(f.facturado)}</td>
                     <td className="mono" style={{ textAlign: "right" }}>{f.cobrado == null ? "—" : money0(f.cobrado)}</td>
-                    <td className="mono" style={{ textAlign: "right" }}>{f.facturado == null ? "—" : money0((f.facturado || 0) - (f.cobrado || 0))}</td>
-                    <td><EstadoCobro facturado={f.facturado || 0} cobrado={f.cobrado || 0} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -920,7 +1128,7 @@ function FactEstadisticas({ companias, movs, anio, mes, onAnio, onMes, onNav }) 
     const cobrado = cobDe(c.id, anio, mes);
     const antes = facDe(c.id, prev.anio, prev.mes);
     return {
-      cia: c, facturado, cobrado, pendiente: facturado - cobrado,
+      cia: c, facturado, cobrado,
       pctCobro: facturado > 0 ? (cobrado / facturado) * 100 : null,
       crecimiento: antes > 0 ? ((facturado - antes) / antes) * 100 : null,
       antes, cargada: cargada(c.id, anio, mes),
@@ -930,14 +1138,10 @@ function FactEstadisticas({ companias, movs, anio, mes, onAnio, onMes, onNav }) 
   const conMovimiento = filas.filter((f) => f.facturado > 0);
   const facturado = conMovimiento.reduce((s, f) => s + f.facturado, 0);
   const cobrado = conMovimiento.reduce((s, f) => s + f.cobrado, 0);
-  const pendiente = facturado - cobrado;
   const facturadoPrev = filas.reduce((s, f) => s + f.antes, 0);
   const cobradoPrev = companias.reduce((s, c) => s + cobDe(c.id, prev.anio, prev.mes), 0);
-  const pendientePrev = facturadoPrev - cobradoPrev;
   const varTotal = facturadoPrev > 0 ? ((facturado - facturadoPrev) / facturadoPrev) * 100 : null;
   const varCobrado = cobradoPrev > 0 ? ((cobrado - cobradoPrev) / cobradoPrev) * 100 : null;
-  const varPendiente = pendientePrev > 0 ? ((pendiente - pendientePrev) / pendientePrev) * 100 : null;
-  const conSaldo = conMovimiento.filter((f) => f.pendiente > 0);
   const sinCargar = companias.filter((c) => c.activa && !cargada(c.id, anio, mes));
   const mesPrevLabel = MESES_F[prev.mes - 1] + " " + prev.anio;
 
@@ -958,29 +1162,14 @@ function FactEstadisticas({ companias, movs, anio, mes, onAnio, onMes, onNav }) 
     return cols;
   }, [companias, idx, anio, mes, rango]);
 
-  // estado de cobro por importe facturado
-  const dona = [
-    { label: "Cobrado", color: CH_COLOR.verde, valor: conMovimiento.filter((f) => f.cobrado >= f.facturado).reduce((s, f) => s + f.facturado, 0) },
-    { label: "Parcial", color: CH_COLOR.ambar, valor: conMovimiento.filter((f) => f.cobrado > 0 && f.cobrado < f.facturado).reduce((s, f) => s + f.facturado, 0) },
-    { label: "Pendiente", color: CH_COLOR.rojo, valor: conMovimiento.filter((f) => f.cobrado <= 0).reduce((s, f) => s + f.facturado, 0) },
-  ];
-  const donaTotal = dona.reduce((s, d) => s + d.valor, 0);
-
   // alertas
   const alertas = [];
-  conMovimiento.filter((f) => f.cobrado <= 0).forEach((f) => alertas.push({
-    tono: "alta", titulo: f.cia.razonSocial, txt: "No registra pagos en el período. Pendiente " + money0(f.pendiente),
-  }));
   conMovimiento.filter((f) => f.crecimiento != null && f.crecimiento <= -15).forEach((f) => alertas.push({
     tono: "media", titulo: f.cia.razonSocial, txt: `Caída del ${Math.abs(Math.round(f.crecimiento))}% en facturación respecto a ${mesPrevLabel}.`,
   }));
   if (sinCargar.length) alertas.push({
     tono: "media", titulo: `${sinCargar.length} ${sinCargar.length === 1 ? "compañía activa sin cargar" : "compañías activas sin cargar"}`,
     txt: sinCargar.map((c) => c.razonSocial).join(", "), accion: { label: "Ir a la carga", key: "fact-carga" },
-  });
-  if (conSaldo.length) alertas.push({
-    tono: "baja", titulo: `${conSaldo.length} ${conSaldo.length === 1 ? "compañía con saldo pendiente" : "compañías con saldos pendientes"}`,
-    txt: "Total a cobrar del período: " + money0(pendiente),
   });
 
   const ranking = filas.filter((f) => f.crecimiento != null || f.facturado > 0)
@@ -1047,8 +1236,6 @@ function FactEstadisticas({ companias, movs, anio, mes, onAnio, onMes, onNav }) 
   const kpis = [
     { label: "Facturado total", value: money2(facturado), delta: varTotal, tone: { bg: "var(--info-soft)", fg: "var(--info-2)" }, icon: "doc" },
     { label: "Cobrado total", value: money2(cobrado), delta: varCobrado, tone: { bg: "var(--ok-soft)", fg: "var(--ok)" }, icon: "card" },
-    { label: "Pendiente de cobro", value: money2(pendiente), delta: varPendiente, invertir: true, tone: { bg: "var(--warn-soft)", fg: "var(--warn)" }, icon: "clock" },
-    { label: "Compañías con saldo", value: conSaldo.length + " de " + conMovimiento.length, hint: "facturaron y deben algo", tone: { bg: "var(--peligro-soft)", fg: "var(--peligro)" }, icon: "folder" },
     { label: "Acumulado " + anio, value: money2(acumulado.facturado), delta: acumulado.variacion,
       hintAcum: "enero a " + MESES_F[mes - 1].toLowerCase() + ", contra " + (anio - 1),
       tone: { bg: "var(--brand-soft)", fg: "var(--brand-txt)" }, icon: "trend" },
@@ -1106,7 +1293,6 @@ function FactEstadisticas({ companias, movs, anio, mes, onAnio, onMes, onNav }) 
                     <th style={{ textAlign: "right" }}>Facturado</th>
                     <th style={{ textAlign: "right" }}>Cobrado</th>
                     <th style={{ minWidth: 120 }}>% Cobro</th>
-                    <th style={{ textAlign: "right" }}>Pendiente</th>
                     <th>Estado</th>
                     <th style={{ width: 40 }}></th>
                   </tr>
@@ -1133,8 +1319,6 @@ function FactEstadisticas({ companias, movs, anio, mes, onAnio, onMes, onNav }) 
                           <b className="mono">{f.pctCobro == null ? "—" : Math.round(f.pctCobro) + "%"}</b>
                         </div>
                       </td>
-                      <td className="mono" style={{ textAlign: "right", color: f.pendiente > 0 ? "var(--peligro)" : "var(--ink-2)" }}>{f.facturado ? money0(f.pendiente) : "—"}</td>
-                      <td><EstadoCobro facturado={f.facturado} cobrado={f.cobrado} /></td>
                       <td>
                         <button className="row-open" title="Ver el año de esta compañía" onClick={() => setDetalle(f.cia)}><Ico name="chevR" size={16} /></button>
                       </td>
@@ -1231,26 +1415,6 @@ function FactEstadisticas({ companias, movs, anio, mes, onAnio, onMes, onNav }) 
               fmtEje={moneyK} fmtValor={money0} alto={240} />
           </section>
 
-          <section className="est-card">
-            <div className="est-card-head"><div><h3>Estado de cobro</h3><p>por importe facturado</p></div></div>
-            {donaTotal > 0 ? (
-              <div className="fact-dona-wrap">
-                <ChDona items={dona} centro={{ valor: Math.round((cobrado / (facturado || 1)) * 100) + "%", label: "cobrado" }} />
-                <div className="fact-dona-leg">
-                  {dona.map((d) => (
-                    <div className="fact-dona-item" key={d.label}>
-                      <span className="ch-leyenda-dot" style={{ background: d.color }} />
-                      <div>
-                        <b>{d.label}</b>
-                        <span className="mono">{money0(d.valor)} ({(Math.round((d.valor / donaTotal) * 1000) / 10).toLocaleString("es-AR")}%)</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : <div className="ch-vacio">Todavía no hay facturación cargada en {MESES_F[mes - 1]}.</div>}
-          </section>
-
           {onNav && (
             <section className="est-card">
               <div className="est-card-head"><div><h3>Acciones rápidas</h3></div></div>
@@ -1284,6 +1448,7 @@ function FacturacionModule({ active, station, query, onNav }) {
   const [movs, setMovs] = React.useState([]);
   const [pagos, setPagos] = React.useState([]);
   const [periodos, setPeriodos] = React.useState([]);
+  const [transferencias, setTransferencias] = React.useState([]);
   const [anio, setAnio] = React.useState(hoy.getFullYear());
   const [mes, setMes] = React.useState(hoy.getMonth() + 1);
   const [loading, setLoading] = React.useState(true);
@@ -1298,13 +1463,14 @@ function FacturacionModule({ active, station, query, onNav }) {
   const load = React.useCallback(async () => {
     if (!window.DB || !window.DB.configured() || !window.DB.fact) { setLoading(false); return; }
     try {
-      const [cs, ms, ps, pers] = await Promise.all([
+      const [cs, ms, ps, pers, trs] = await Promise.all([
         window.DB.fact.companias.list(),
         window.DB.fact.mensual.list(),
         window.DB.fact.pagos.list(),
         window.DB.fact.periodo.list(),
+        window.DB.fact.transferencias.list(),
       ]);
-      setCompanias(cs); setMovs(ms); setPagos(ps); setPeriodos(pers);
+      setCompanias(cs); setMovs(ms); setPagos(ps); setPeriodos(pers); setTransferencias(trs);
     } catch (e) { console.error("Facturación:", e); flash("No se pudo cargar la facturación", true); }
     setLoading(false);
   }, []);
@@ -1358,6 +1524,22 @@ function FacturacionModule({ active, station, query, onNav }) {
     } catch (e) { console.error(e); flash("No se pudo guardar", true); }
   };
 
+  const agregarTransferencia = async (t) => {
+    try {
+      const nueva = await window.DB.fact.transferencias.create(t);
+      setTransferencias((p) => [...p, nueva]);
+      flash("Transferencia registrada");
+    } catch (e) { console.error(e); flash("No se pudo registrar", true); }
+  };
+  const borrarTransferencia = async (t) => {
+    if (!window.confirm("¿Borrar la transferencia de " + money2(t.importe) + " a " + t.persona + "?")) return;
+    try {
+      await window.DB.fact.transferencias.remove(t.id);
+      setTransferencias((p) => p.filter((x) => x.id !== t.id));
+      flash("Transferencia borrada");
+    } catch (e) { console.error(e); flash("No se pudo borrar", true); }
+  };
+
   const guardarCompania = async (f) => {
     try {
       if (f.id) {
@@ -1407,9 +1589,10 @@ function FacturacionModule({ active, station, query, onNav }) {
         : active === "fact-crecimiento"
         ? <CrecimientoAnual companias={visibles} movs={movs} anio={anio} onAnio={setAnio} />
         : active === "fact-reparto"
-        ? <RepartoView companias={visibles} movs={movs} anio={anio} mes={mes}
-            periodo={periodos.find((p) => p.anio === anio && p.mes === mes) || null}
-            onAnio={setAnio} onMes={setMes} onGuardarPeriodo={guardarPeriodo} />
+        ? <RepartoView companias={visibles} movs={movs} pagos={pagos} anio={anio} mes={mes}
+            periodos={periodos} transferencias={transferencias}
+            onAnio={setAnio} onMes={setMes} onGuardarPeriodo={guardarPeriodo}
+            onAgregarTransferencia={agregarTransferencia} onBorrarTransferencia={borrarTransferencia} />
         : active === "fact-companias"
         ? <CompaniasView companias={visibles} movs={movs}
             onNueva={() => setModal({ tipo: "cia" })}

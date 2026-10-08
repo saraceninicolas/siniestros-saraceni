@@ -48,6 +48,7 @@ Siempre **test primero**, se verifica, y recién después producción.
 | `20261002_0020_aviso_por_mail_al_toque.sql` | aplicada (2026-10-02) | **pendiente, y sin apuro** |
 | `20261007_0021_cobros_en_partes.sql` | aplicada (2026-10-07) | aplicada (2026-10-07) |
 | `20261007_0022_cierre_del_mes.sql` | aplicada (2026-10-07) | aplicada (2026-10-07) |
+| `20261008_0023_reparto_y_transferencias.sql` | aplicada (2026-10-08) | aplicada (2026-10-08) |
 
 ## El pase a producción de la 0009 a la 0018 (multiempresa)
 
