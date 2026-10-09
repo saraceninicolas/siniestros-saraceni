@@ -1,4 +1,26 @@
-// app.jsx — Saraceni Seguros · Portal de Siniestros (modelo real + Supabase)
+// app.jsx — PAS360 · Orquestador del portal (modelo real + Supabase)
+
+// ¿Esta carga viene del link del mail de recuperación? Supabase lo marca con
+// `type=recovery` después del # de la dirección.
+//
+// Se mira el hash y no un parámetro normal porque ahí es donde Supabase deja
+// el token, y el hash NO viaja al servidor: el token no queda en los registros
+// de Vercel ni en el `Referer` que el navegador manda a terceros.
+function esVueltaDeRecuperacion() {
+  try {
+    const h = String(window.location.hash || "");
+    return h.includes("type=recovery");
+  } catch (e) { return false; }
+}
+
+// Saca el token de la barra de direcciones una vez usado, sin recargar ni
+// dejar una entrada más en el historial: con `replaceState` el botón "atrás"
+// no vuelve a una dirección que ya no sirve.
+function limpiarHashRecuperacion() {
+  try {
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  } catch (e) { /* noop */ }
+}
 
 function App() {
   const [station, setStation] = React.useState(STATIONS[0]);
@@ -6,6 +28,11 @@ function App() {
   const [loading, setLoading] = React.useState(true);
   const [usingDb, setUsingDb] = React.useState(false);
   const [session, setSession] = React.useState(null);
+  // Supabase devuelve al que recupera la contraseña con `type=recovery` en el
+  // pedazo de dirección que va después del #. Se mira UNA vez, al arrancar: si
+  // se mirara en cada dibujo, al limpiar la dirección la pantalla se iría sola
+  // en el medio de que estás tipeando la contraseña nueva.
+  const [recuperando, setRecuperando] = React.useState(() => esVueltaDeRecuperacion());
   const [authChecked, setAuthChecked] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const [estadoFilter, setEstadoFilter] = React.useState("Todos");
@@ -57,7 +84,13 @@ function App() {
       catch (e) { console.error("Auth:", e); }
       if (alive) setAuthChecked(true);
     })();
-    const unsub = window.DB.auth.onChange((s) => { if (alive) setSession((prev) => (uid(prev) === uid(s) ? prev : s)); });
+    const unsub = window.DB.auth.onChange((s, evento) => {
+      if (!alive) return;
+      // Supabase avisa con este evento cuando el link del mail trae un token de
+      // recuperación. Es la red por si para entonces ya limpió el hash.
+      if (evento === "PASSWORD_RECOVERY") setRecuperando(true);
+      setSession((prev) => (uid(prev) === uid(s) ? prev : s));
+    });
     return () => { alive = false; if (unsub) unsub(); };
   }, []);
 
@@ -531,6 +564,15 @@ function App() {
     setSession(null); setPerfil(null); setPerfiles([]); setNotifs([]);
   };
 
+  // Volvió desde el mail de recuperación: antes que nada, la contraseña nueva.
+  //
+  // Va ARRIBA de todo lo demás a propósito. El link de Supabase deja una sesión
+  // abierta, así que sin este corte el portal lo daría por logueado y entraría
+  // derecho — sin cambiar nunca la contraseña que no recuerda, y con el link
+  // todavía en el historial del navegador.
+  if (configured && recuperando) {
+    return <ResetPassScreen onListo={() => { limpiarHashRecuperacion(); setRecuperando(false); }} />;
+  }
   // verificando sesión / perfil
   if (configured && (!authChecked || (session && !perfilChecked))) {
     return (

@@ -21,35 +21,81 @@ button{ font-family:inherit; cursor:pointer; }
 @keyframes boot-rot{ to{ transform:rotate(360deg); } }
 
 /* ---------- login ---------- */
-.login{ height:100vh; display:grid; place-items:center; background:var(--bg); padding:24px; }
-.login-card{ width:100%; max-width:360px; background:var(--surface); border:1px solid var(--line);
-  border-radius:16px; box-shadow:var(--shadow-md); padding:30px 28px 24px; display:flex; flex-direction:column;
-  gap:13px; position:relative; overflow:hidden; animation:pop .2s cubic-bezier(.2,.9,.3,1.3); }
-.login-card::before{ content:""; position:absolute; top:0; left:0; right:0; height:4px; background:var(--brand); }
+/* ---------- acceso: panel de marca + formulario ---------- */
+/* Dos mitades: a la izquierda la marca del broker, a la derecha el formulario
+   sobre blanco. El panel se pinta con el color de marca, NO con un azul fijo:
+   es la primera pantalla que ve el equipo de cada broker y tiene que ser suya.
+   Por eso la letra de ese lado sale de --brand-ink, que marca.js calcula por
+   contraste: blanco sobre el rojo de Saraceni, negro sobre el amarillo de
+   Aicardi. Un blanco clavado dejaba el panel ilegible para el segundo cliente. */
+.login{ min-height:100vh; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  background:var(--surface); }
+.login-panel{ background:var(--brand); color:var(--brand-ink); padding:40px 44px;
+  display:flex; flex-direction:column; gap:28px; position:relative; overflow:hidden; }
+/* Un velo apenas para que el bloque de color no sea una pared plana. */
+.login-panel::after{ content:""; position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(120% 80% at 15% 0%, rgba(255,255,255,.22), transparent 60%); }
+.login-panel-top, .login-panel-mid, .login-panel-pie{ position:relative; z-index:1; }
+.login-panel-mid{ margin-top:auto; }
+.login-panel-mid h2{ margin:0 0 10px; font-size:30px; line-height:1.15; font-weight:800; letter-spacing:-.02em; }
+/* Sin opacidad. Bajarle el alfa al texto sobre el color de marca parece más
+   elegante y lo rompe: blanco al 80% sobre el rojo de Saraceni da 3,6:1, por
+   debajo del mínimo legible. La jerarquía la hacen el tamaño y el peso, que no
+   dependen del color que haya elegido el broker. */
+.login-panel-mid p{ margin:0 0 24px; font-size:14.5px; line-height:1.55; max-width:42ch; }
+.login-puntos{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
+.login-puntos li{ display:flex; align-items:center; gap:11px; font-size:14px; font-weight:600;
+  background:rgba(255,255,255,.14); border-radius:11px; padding:12px 15px; }
+.login-punto-ico{ display:grid; place-items:center; flex:none; }
+.login-panel-pie{ margin-top:auto; font-size:11px; font-weight:700; letter-spacing:.14em;
+  text-transform:uppercase; }
+
+.login-lado{ display:grid; place-items:center; padding:32px 24px; background:var(--surface); }
+.login-form{ width:100%; max-width:380px; display:flex; flex-direction:column; gap:14px;
+  animation:pop .2s cubic-bezier(.2,.9,.3,1.3); }
+.login-marca-chica{ display:none; }
 .login-logo{ background:var(--surface); border-radius:12px; padding:14px 16px; box-shadow:var(--shadow-sm);
-  border:1px solid var(--line); margin-bottom:4px; }
+  border:1px solid var(--line); }
 /* Ver el comentario de .sb-logo img: el alto manda, el ancho acompana. */
 .login-logo img{ display:block; max-width:100%; max-height:120px; height:auto; margin:0 auto; }
-.login-title{ margin:4px 0 0; font-size:19px; font-weight:800; letter-spacing:-.01em; }
-.login-sub{ margin:0 0 6px; font-size:13px; color:var(--muted); }
+.login-panel .login-logo{ background:var(--surface); display:inline-block; }
+.login-title{ margin:0; font-size:27px; font-weight:800; letter-spacing:-.02em; text-align:center; }
+.login-sub{ margin:-6px 0 4px; font-size:13.5px; color:var(--muted); text-align:center; }
 .login-field{ display:flex; flex-direction:column; gap:6px; }
-.login-field span{ font-size:12px; font-weight:600; color:var(--ink-2); }
-.login-err{ font-size:12.5px; color:var(--brand-txt); background:var(--brand-soft); border:1px solid var(--brand-line);
-  border-radius:8px; padding:8px 11px; }
-.login-btn{ justify-content:center; margin-top:4px; padding:11px; font-size:14px; }
-.login-foot{ text-align:center; font-size:11px; font-weight:700; letter-spacing:.14em; color:var(--muted); margin-top:6px; }
+.login-field span{ font-size:12.5px; font-weight:600; color:var(--ink-2); }
+.login-pass{ position:relative; display:block; }
+.login-pass .input{ padding-right:42px; }
+.login-ojo{ position:absolute; right:6px; top:50%; transform:translateY(-50%); background:none; border:none;
+  padding:6px; color:var(--muted); cursor:pointer; display:grid; place-items:center; border-radius:7px; }
+.login-ojo:hover{ color:var(--ink-2); background:var(--surface-2); }
+.login-linea{ display:flex; justify-content:flex-end; margin-top:-4px; }
+.login-link{ background:none; border:none; padding:0; font-size:13px; font-weight:700;
+  color:var(--brand-txt); cursor:pointer; font-family:inherit; }
+.login-link:hover{ text-decoration:underline; }
+.login-err{ font-size:12.5px; color:var(--peligro); background:var(--peligro-soft); border:1px solid var(--peligro-line);
+  border-radius:8px; padding:9px 11px; }
 .login-info{ font-size:12.5px; color:var(--ok); background:var(--ok-soft); border:1px solid var(--ok-line);
-  border-radius:8px; padding:8px 11px; }
-.login-tabs{ display:flex; gap:0; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  border-radius:8px; padding:9px 11px; }
+.login-btn{ justify-content:center; margin-top:2px; padding:13px; font-size:14.5px; }
+.login-salir{ width:100%; justify-content:center; }
+.login-cambiar{ text-align:center; font-size:13px; color:var(--muted); }
 .login-logo-texto{ font-size:19px; font-weight:800; color:var(--brand-txt); letter-spacing:-.01em;
   display:grid; place-items:center; min-height:34px; text-align:center; }
 /* Mientras no sabemos de quién es la pantalla, la caja guarda su lugar vacía
    para que el formulario no salte cuando aparece el logo. */
 .login-logo-vacio{ min-height:34px; box-shadow:none; background:none; }
-.login-tab{ flex:1; padding:9px 10px; font-size:13px; font-weight:700; background:var(--surface); color:var(--muted); transition:.15s; }
-.login-tab.is-on{ background:var(--brand); color:var(--brand-ink); }
-.login-magic{ font-size:12.5px; color:var(--brand-txt); font-weight:600; text-decoration:underline;
-  background:none; border:none; padding:2px 0; align-self:center; }
+
+/* En el celular el panel de marca no entra: se cae, y el logo vuelve arriba del
+   formulario para que la pantalla no quede sin marca ninguna. */
+@media (max-width: 860px){
+  .login{ grid-template-columns:1fr; background:var(--bg); }
+  .login-panel{ display:none; }
+  .login-lado{ background:var(--bg); align-items:start; padding-top:40px; }
+  .login-form{ background:var(--surface); border:1px solid var(--line); border-radius:16px;
+    box-shadow:var(--shadow-md); padding:26px 22px; }
+  .login-marca-chica{ display:block; }
+  .login-title{ font-size:23px; }
+}
 
 /* ---------- notificaciones (campana del topbar) ---------- */
 .notif-wrap{ position:relative; }

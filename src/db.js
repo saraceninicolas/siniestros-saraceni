@@ -201,16 +201,38 @@
     const c = client();
     if (c) { try { await c.auth.signOut(); } catch (e) { /* noop */ } }
   }
+  // El segundo argumento es el evento ("SIGNED_IN", "PASSWORD_RECOVERY"…). Hace
+  // falta para el que vuelve del mail de recuperación: el portal lo detecta por
+  // el hash de la dirección, pero si el cliente de Supabase llega a limpiarlo
+  // antes, este evento es el que avisa igual.
   function authOnChange(cb) {
     const c = client();
     if (!c) return null;
-    const { data } = c.auth.onAuthStateChange((_event, session) => cb(session));
+    const { data } = c.auth.onAuthStateChange((evento, session) => cb(session, evento));
     return () => { try { data.subscription.unsubscribe(); } catch (e) { /* noop */ } };
   }
   async function authUpdatePassword(newPassword) {
     const c = client();
     if (!c) throw new Error("Supabase no configurado");
     const { error } = await c.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+  }
+  // Mail para recuperar la contraseña.
+  //
+  // Lo manda Supabase con su propio servicio, el mismo que manda el de
+  // confirmación al registrarse. NO pasa por Resend, así que esto funciona
+  // aunque los avisos del portal sigan sin salir. A cambio tiene un límite de
+  // unos pocos por hora: alcanza para un olvido, no para mandar avisos.
+  //
+  // `redirectTo` lleva el slug para que el que vuelve vea la marca de SU
+  // broker. Si esa dirección no está en la lista blanca del proyecto, Supabase
+  // lo manda igual a la Site URL y el link sigue sirviendo: la pantalla
+  // reconoce el token esté donde esté.
+  async function authResetPassword(email) {
+    const c = client();
+    if (!c) throw new Error("Supabase no configurado");
+    const destino = window.location.origin + (window.ORG_SLUG ? "/" + window.ORG_SLUG : "");
+    const { error } = await c.auth.resetPasswordForEmail(email, { redirectTo: destino });
     if (error) throw error;
   }
   // Registro con email real. Si el proyecto exige verificación, data.session
@@ -1228,6 +1250,7 @@ async function dbMaxN() {
       signOut: authSignOut,
       onChange: authOnChange,
       updatePassword: authUpdatePassword,
+      resetPassword: authResetPassword,
       signUp: authSignUp,
     },
     perfiles: { me: perfMe, list: perfList, update: perfUpdate, subscribe: perfSubscribe },
