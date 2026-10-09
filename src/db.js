@@ -243,11 +243,16 @@
     // `org_slug` viaja en los datos del usuario porque el trigger de alta lo lee
     // para crear la membresía: sin empresa, el organizador no ve la cuenta nueva
     // para aprobarla. Si no viene, la base la manda a la empresa original.
+    // El link de confirmacion tiene que devolverlo a la puerta de SU broker:
+    // con solo el origin, el que se registra en /aicardi confirma y aterriza en
+    // la raiz, que muestra la marca de otra empresa. Mala primera impresion, y
+    // encima parece un error.
+    const destino = window.location.origin + (window.ORG_SLUG ? "/" + window.ORG_SLUG : "");
     const { data, error } = await c.auth.signUp({
       email, password,
       options: {
         data: { nombre: nombre || "", org_slug: window.ORG_SLUG || "" },
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: destino,
       },
     });
     if (error) throw error;

@@ -24,6 +24,14 @@ declare
   v_uid  uuid := (select m.usuario_id from public.membresias m
                     join public.perfiles p on p.id = m.usuario_id
                    where p.estado = 'activo' order by m.created_at limit 1);
+  -- Lo que Aicardi tiene de verdad, contado sin RLS. La pregunta no es
+  -- "¿ve filas?" sino "¿ve filas que no son suyas?": el test nacio cuando
+  -- Aicardi estaba vacio y daba por ajena cualquier fila: el dia que se le
+  -- sembraron datos de prueba empezo a gritar AISLAMIENTO ROTO sin que nada
+  -- estuviera roto, y un test que avisa en falso deja de ser creible.
+  esp_sin  bigint := (select count(*) from public.siniestros  where org_id = (select id from public.organizaciones where slug = 'aicardi'));
+  esp_sol  bigint := (select count(*) from public.solicitudes where org_id = (select id from public.organizaciones where slug = 'aicardi'));
+  esp_aseg bigint := (select count(*) from public.asegurados  where org_id = (select id from public.organizaciones where slug = 'aicardi'));
   fallas text := '';
   ok     text := '';
   ver    text;
@@ -35,6 +43,12 @@ begin
   if v_uid is null then
     raise exception 'No hay ningún usuario activo con membresía para simular';
   end if;
+
+  -- Una invitacion de Saraceni, para ver si el otro broker la alcanza. Lleva
+  -- el mail de alguien que todavia no es usuario de nadie: si se filtrara,
+  -- un broker sabria a quien esta sumando la competencia.
+  insert into public.invitaciones (org_id, email, rol)
+  values (v_sar, 'invitado.de.saraceni@ejemplo.test', 'empleado');
 
   -- ── Como usuario de AICARDI ───────────────────────────────────────────────
   perform set_config('request.jwt.claims',
@@ -69,17 +83,30 @@ begin
   else ok := ok || '· No tiene los módulos que no compró. '; end if;
 
   -- ── Las tablas del portal: lo que de verdad importa ───────────────────────
-  select count(*) into n from public.siniestros;
+  select count(*) into n from public.siniestros where org_id <> v_aic;
   if n > 0 then fallas := fallas || format('· Aicardi ve %s siniestros ajenos. ', n);
   else ok := ok || '· No ve ni un siniestro ajeno. '; end if;
 
-  select count(*) into n from public.asegurados;
+  -- Y la otra mitad: aislar no puede significar esconderle lo suyo.
+  select count(*) into n from public.siniestros;
+  if n <> esp_sin then fallas := fallas || format('· Aicardi ve %s de sus %s siniestros. ', n, esp_sin);
+  else ok := ok || format('· Ve sus %s siniestros, ni uno mas. ', esp_sin); end if;
+
+  select count(*) into n from public.asegurados where org_id <> v_aic;
   if n > 0 then fallas := fallas || format('· Aicardi ve %s fichas de asegurado ajenas. ', n);
   else ok := ok || '· No ve fichas ajenas. '; end if;
 
-  select count(*) into n from public.solicitudes;
+  select count(*) into n from public.asegurados;
+  if n <> esp_aseg then fallas := fallas || format('· Aicardi ve %s de sus %s fichas. ', n, esp_aseg);
+  else ok := ok || '· Ve sus fichas propias. '; end if;
+
+  select count(*) into n from public.solicitudes where org_id <> v_aic;
   if n > 0 then fallas := fallas || format('· Aicardi ve %s denuncias web ajenas. ', n);
   else ok := ok || '· No ve denuncias ajenas. '; end if;
+
+  select count(*) into n from public.solicitudes;
+  if n <> esp_sol then fallas := fallas || format('· Aicardi ve %s de sus %s denuncias. ', n, esp_sol);
+  else ok := ok || '· Ve sus denuncias propias. '; end if;
 
   -- Su lista de compañías es suya: si viera la del otro broker sabría con
   -- quién trabaja la competencia, y al cargar un siniestro elegiría de una
@@ -95,16 +122,23 @@ begin
 
   -- Del otro broker no tiene que ver ni los nombres del equipo. La fila propia
   -- (la del usuario que estamos simulando) sí: cada uno se ve a sí mismo.
-  select count(*) into n from public.perfiles;
-  if n > 1 then fallas := fallas || format('· Aicardi ve %s usuarios; debería ver solo el suyo. ', n);
+  -- Los perfiles del equipo del OTRO broker. No se cuentan "todos los que ve"
+  -- porque el dia que Aicardi tenga sus cinco cuentas eso daria falso.
+  select count(*) into n from public.perfiles p
+   where exists (select 1 from public.membresias m where m.usuario_id = p.id and m.org_id <> v_aic);
+  if n > 0 then fallas := fallas || format('· Aicardi ve %s usuarios del otro broker. ', n);
   else ok := ok || '· No ve la guía de usuarios del otro broker. '; end if;
+
+  select count(*) into n from public.invitaciones;
+  if n > 0 then fallas := fallas || format('· Aicardi ve %s invitaciones ajenas. ', n);
+  else ok := ok || '· No ve a quien invito el otro broker. '; end if;
 
   -- Lo que carga queda a su nombre sin que el portal tenga que acordarse: el
   -- dueño lo pone la base (default org_actual()).
   insert into public.siniestros (codigo, n, cliente)
   values ('AIC-PRUEBA', 999999, 'CLIENTE DE AICARDI');
   select count(*) into n from public.siniestros;
-  if n <> 1 then fallas := fallas || format('· Aicardi cargó un siniestro y ahora ve %s. ', n);
+  if n <> esp_sin + 1 then fallas := fallas || format('· Aicardi cargó un siniestro: tenia %s y ahora ve %s. ', esp_sin, n);
   else ok := ok || '· Lo que carga queda a su nombre, y solo lo ve ella. '; end if;
 
   -- Un módulo que no compró tiene que rebotar EN LA BASE, no solo en el menú.
@@ -144,6 +178,10 @@ begin
   if n > 0 then fallas := fallas || '· Saraceni ve el siniestro que cargó Aicardi. ';
   else ok := ok || '· No ve lo que cargó el otro broker. '; end if;
 
+  select count(*) into n from public.invitaciones;
+  if n <> 1 then fallas := fallas || format('· Saraceni ve %s invitaciones; cargó 1. ', n);
+  else ok := ok || '· Saraceni ve la invitación que cargó. '; end if;
+
   select count(*) into n from public.asegurados;
   if n = 0 then fallas := fallas || '· Saraceni no ve ninguna ficha propia. ';
   else ok := ok || '· Ve sus fichas de asegurado. '; end if;
@@ -159,6 +197,9 @@ begin
   select string_agg(slug, ',') into ver from public.organizaciones;
   if ver is not null then fallas := fallas || format('· Sin sesión se ven empresas: [%s]. ', ver);
   else ok := ok || '· Sin sesión no se ve ninguna empresa. '; end if;
+  select count(*) into n from public.invitaciones;
+  if n > 0 then fallas := fallas || format('· Sin sesión se ven %s invitaciones. ', n);
+  else ok := ok || '· Sin sesión no se ve ninguna invitación. '; end if;
   if public.tiene_modulo('siniestros') then
     fallas := fallas || '· Sin sesión da por habilitado un módulo. ';
   else ok := ok || '· Sin sesión no hay módulos. '; end if;

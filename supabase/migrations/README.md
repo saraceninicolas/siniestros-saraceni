@@ -50,6 +50,7 @@ Siempre **test primero**, se verifica, y recién después producción.
 | `20261007_0022_cierre_del_mes.sql` | aplicada (2026-10-07) | aplicada (2026-10-07) |
 | `20261008_0023_reparto_y_transferencias.sql` | aplicada (2026-10-08) | aplicada (2026-10-08) |
 | `20261008_0024_el_iva_que_se_debe.sql` | aplicada (2026-10-08) | aplicada (2026-10-08) |
+| `20261009_0025_invitaciones.sql` | aplicada (2026-10-09) | aplicada (2026-10-09) |
 
 ## El pase a producción de la 0009 a la 0018 (multiempresa)
 
