@@ -1,8 +1,14 @@
-# Portal Saraceni — guía para trabajar en este repo
+# PAS360 — guía para trabajar en este repo
 
-Portal de gestión interna de **Saraceni Broker de Seguros** (siniestros,
+Portal de gestión para productores asesores de seguros (siniestros,
 renovaciones, facturación, pendientes, objetivos y comercial), más dos páginas
-públicas para que los clientes carguen denuncias y pidan cotizaciones.
+públicas para que los asegurados carguen denuncias y pidan cotizaciones.
+
+Nació como el portal interno de **Saraceni Broker de Seguros** y desde el
+2026-09-30 es multiempresa: cada broker entra por su propia dirección, con su
+marca y sus datos. **El producto se llama PAS360 desde el 2026-10-09**; el
+repositorio y el dominio viejo siguen diciendo "saraceni" por razones de
+historia, no porque el producto sea de un solo cliente.
 
 > ⚠️ **El repositorio es público.** Nunca commitear contraseñas, claves de API
 > ni datos personales de clientes. La `anon key` de Supabase sí va versionada

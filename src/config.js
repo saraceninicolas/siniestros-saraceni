@@ -40,12 +40,12 @@
   // propósito (lo imprevisto cae en test, nunca al revés), pero quiere decir
   // que agregar un dominio en Vercel son DOS pasos: el panel y esta línea.
   //
-  // `gestionsiniestros` es el nombre con el que se presenta el producto a los
-  // brokers que no son Saraceni. El viejo sigue andando: hay gente con el link
-  // guardado y las dos direcciones llevan al mismo lugar.
+  // `pas360` es el nombre del producto, el que se les pasa a los brokers. El
+  // viejo sigue andando: hay gente con ese link guardado y las dos direcciones
+  // llevan al mismo lugar.
   var DOMINIOS_PRODUCCION = [
     "siniestros-saraceni.vercel.app",
-    "gestionsiniestros.vercel.app",
+    "pas360.vercel.app",
   ];
 
   var host = (window.location && window.location.hostname || "").toLowerCase();
